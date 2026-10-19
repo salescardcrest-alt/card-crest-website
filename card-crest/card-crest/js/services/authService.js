@@ -13,7 +13,9 @@
   var sb = null;
   if (cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY && w.supabase) {
     sb = w.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      // PKCE puts the link's ?code= in the query string; the implicit flow would
+      // use the URL hash, which the app's hash router already owns.
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }
     });
   }
 
@@ -64,6 +66,9 @@
     init: function () {
       if (!sb) return Promise.resolve();
       return sb.auth.getSession().then(function (r) {
+        if (/[?&]code=/.test(location.search)) { // tidy the one-time code left by an email link
+          history.replaceState(null, '', location.pathname + location.hash);
+        }
         var s = r.data && r.data.session;
         if (!s) { S.set('session', null); return; }
         return syncUser(s.user).then(hydrate).then(function (u) { S.set('session', u.active ? u.id : null); });
@@ -138,6 +143,16 @@
       w.CC.Notifications.push(u.id, 'system', 'Welcome to Card Crest',
         'Start by checking which cards you are eligible for.');
       return Promise.resolve({ ok: true, user: u });
+    },
+
+    /* Passwordless: email a one-click sign-in link. Creates the account if new. */
+    magicLink: function (email) {
+      if (!sb) return Promise.resolve(fail('Email sign-in needs the live Supabase connection.'));
+      return sb.auth.signInWithOtp({
+        email: String(email).trim().toLowerCase(),
+        options: { shouldCreateUser: true, emailRedirectTo: location.origin + location.pathname }
+      }).then(function (r) { return r.error ? fail(friendly(r.error)) : { ok: true }; })
+        .catch(function (e) { return fail(friendly(e)); });
     },
 
     logout: function () {

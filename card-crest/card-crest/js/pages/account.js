@@ -29,6 +29,26 @@
       }).join('') + '</nav><div>' + inner + '</div></div></div>';
   }
 
+  /* "Email me a link" button shared by the login and signup pages. */
+  function wireMagic(root, emailSel) {
+    var btn = root.querySelector('[data-magic]');
+    if (!btn) return;
+    var label = btn.textContent;
+    btn.onclick = function () {
+      var input = root.querySelector(emailSel);
+      var field = input.closest('.field');
+      var ok = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(input.value.trim());
+      field.classList.toggle('is-bad', !ok);
+      if (!ok) { input.focus(); return UI.toast('Enter your email address first', 'error'); }
+      btn.disabled = true; btn.textContent = 'Sending link…';
+      Auth.magicLink(input.value).then(function (res) {
+        btn.disabled = false; btn.textContent = label;
+        if (!res.ok) return UI.toast(res.error, 'error');
+        UI.toast('Check ' + input.value.trim() + ' for your sign-in link. Open it in this browser.');
+      });
+    };
+  }
+
   /* ---------------- /login ---------------- */
   w.CC.Pages.login = function (params, query) {
     if (Auth.current()) { w.CC.Router.go('#/dashboard'); return false; }
@@ -47,6 +67,7 @@
         '<label class="check"><input type="checkbox" id="l-remember" checked> Keep me signed in</label>' +
         '<button type="button" class="btn btn--link small" data-forgot>Forgot password?</button></div>' +
         '<button class="btn btn--primary btn--block" type="submit">Sign in</button>' +
+        (Auth.remote ? '<button class="btn btn--ghost btn--block" type="button" data-magic style="margin-top:10px">Email me a sign-in link instead</button>' : '') +
         '</form>' +
         (Auth.remote ? '' : '<div class="note" style="margin-top:22px"><strong>Demo accounts</strong><br>' +
         'User: demo@cardcrest.in / demo1234<br>Admin: admin@cardcrest.in / admin1234</div>') +
@@ -58,6 +79,7 @@
           i.type = i.type === 'password' ? 'text' : 'password';
           this.textContent = i.type === 'password' ? 'Show' : 'Hide';
         };
+        wireMagic(root, '#l-email');
         root.querySelector('[data-forgot]').onclick = function () {
           UI.modal({
             title: 'Reset your password',
@@ -119,7 +141,9 @@
         '<span class="hint">At least 8 characters.</span><span class="err">Use at least 8 characters.</span></div>' +
         '<div class="field" style="margin-bottom:18px"><label for="s-pw2">Confirm password</label><input id="s-pw2" type="password" autocomplete="new-password"><span class="err">Both passwords need to match.</span></div>' +
         '<label class="check" style="margin-bottom:20px"><input type="checkbox" id="s-terms"> I agree to the <a href="#/legal/terms" style="color:var(--crest)">terms</a> and <a href="#/legal/privacy" style="color:var(--crest)">privacy policy</a>.</label>' +
-        '<button class="btn btn--primary btn--block" type="submit">Create account</button></form>' +
+        '<button class="btn btn--primary btn--block" type="submit">Create account</button>' +
+        (Auth.remote ? '<button class="btn btn--ghost btn--block" type="button" data-magic style="margin-top:10px">Sign up with just an email link</button>' : '') +
+        '</form>' +
         '<p class="auth-alt">Already have an account? <a href="#/login" style="color:var(--crest); font-weight:600">Sign in</a></p>' +
         '</div></div>',
       mount: function (root) {
@@ -128,6 +152,7 @@
           i.type = i.type === 'password' ? 'text' : 'password';
           this.textContent = i.type === 'password' ? 'Show' : 'Hide';
         };
+        wireMagic(root, '#s-email');
         root.querySelector('#signupForm').addEventListener('submit', function (e) {
           e.preventDefault();
           var f = {
