@@ -1,0 +1,89 @@
+/* ============================================================
+   Card Crest — responsive.css
+   Breakpoints: 1280 / 1024 / 900 / 768 / 560 / 380
+   ============================================================ */
+
+@media (max-width:1280px){
+  .hdr__nav a{padding:8px 9px; font-size:.86rem}
+  .search{width:180px}
+}
+
+@media (max-width:1120px){
+  .hdr__nav{display:none}
+  .hdr__burger{display:flex}
+  .search{width:150px}
+  .hero__in{gap:36px}
+}
+
+@media (max-width:1024px){
+  .section{padding:56px 0}
+  .hero__in{grid-template-columns:1fr; padding:48px 0 60px}
+  .stage{min-height:320px; order:-1}
+  .stage__score{right:0}
+  .detail{grid-template-columns:1fr; gap:28px}
+  .detail__side{position:static}
+  .calc{grid-template-columns:1fr}
+  .calc__out{position:static}
+  .dash{grid-template-columns:1fr}
+  .side-nav{position:static; flex-direction:row; overflow-x:auto; gap:6px; padding-bottom:8px; scrollbar-width:none}
+  .side-nav::-webkit-scrollbar{display:none}
+  .side-nav a{white-space:nowrap; border:1px solid var(--line); border-radius:var(--r-pill)}
+  .side-nav h4{display:none}
+  .admin{grid-template-columns:1fr}
+  .ftr__in{grid-template-columns:1fr 1fr 1fr; gap:28px}
+  .ftr__brand{grid-column:1/-1}
+}
+
+@media (max-width:900px){
+  .mkt{grid-template-columns:1fr}
+  .filters{position:fixed; inset:0; z-index:130; max-height:none; border-radius:0; overflow-y:auto; padding:24px; display:none}
+  .filters.is-open{display:block}
+  .filters-toggle{display:inline-flex}
+  .g-4{grid-template-columns:repeat(2,1fr)}
+  .flow{grid-template-columns:repeat(2,1fr); gap:26px}
+  .intent{grid-template-columns:repeat(2,1fr)}
+  .quick{grid-template-columns:repeat(2,1fr)}
+  .spec{grid-template-columns:1fr 1fr}
+}
+
+@media (max-width:768px){
+  :root{--hdr-h:62px}
+  body{padding-bottom:64px}
+  .tabbar{display:flex}
+  .search{display:none}
+  .wrap{padding-inline:18px}
+  .section{padding:44px 0}
+  .g-3,.g-2{grid-template-columns:1fr}
+  .mkt__grid{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+  .proscons{grid-template-columns:1fr}
+  .panel{padding:20px}
+  .modal{padding:0; place-items:end center}
+  .modal__box{border-radius:var(--r-lg) var(--r-lg) 0 0; max-height:92vh; animation:sheetUp .28s cubic-bezier(.2,.7,.3,1)}
+  @keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+  .modal__foot{flex-direction:column-reverse}
+  .modal__foot .btn{width:100%}
+  .toasts{bottom:78px}
+  .tray{bottom:78px; left:16px; right:16px; transform:none; max-width:none}
+  .hero__proof{gap:22px}
+  .ftr__base{flex-direction:column; gap:6px}
+  .cmp-tbl tbody th{width:130px; position:sticky; left:0; z-index:1}
+}
+
+@media (max-width:560px){
+  .g-4,.intent,.quick,.flow,.spec{grid-template-columns:1fr 1fr}
+  .ftr__in{grid-template-columns:1fr 1fr}
+  .ctile__top{grid-template-columns:92px 1fr; gap:13px}
+  .h-display{font-size:2.25rem}
+  .btn{height:44px}
+  .hero__cta .btn{flex:1; min-width:140px}
+  .stat__v{font-size:1.5rem}
+  .admin-hd{padding:18px}
+}
+
+@media (max-width:380px){
+  .wrap{padding-inline:14px}
+  .g-4,.intent,.quick,.flow{grid-template-columns:1fr}
+  .ctile__facts{grid-template-columns:1fr}
+  .tabbar a span{font-size:.6rem}
+}
