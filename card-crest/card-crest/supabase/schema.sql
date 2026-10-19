@@ -17,10 +17,12 @@ create table if not exists public.profiles (
 alter table public.profiles enable row level security;
 
 -- Users can read their own profile.
+drop policy if exists "profiles: read own" on public.profiles;
 create policy "profiles: read own" on public.profiles
   for select using (auth.uid() = id);
 
 -- Users can edit their own profile, but never role/active/email.
+drop policy if exists "profiles: update own" on public.profiles;
 create policy "profiles: update own" on public.profiles
   for update using (auth.uid() = id)
   with check (auth.uid() = id);

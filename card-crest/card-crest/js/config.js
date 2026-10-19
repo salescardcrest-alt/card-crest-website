@@ -6,6 +6,6 @@
    Leave both empty to run in local demo mode.
    ============================================================ */
 window.CC_CONFIG = {
-  SUPABASE_URL: '',
-  SUPABASE_ANON_KEY: ''
+  SUPABASE_URL: 'https://bkedgkarjwihipegloia.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrZWRna2FyandpaGlwZWdsb2lhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMTU2NTEsImV4cCI6MjEwNzg5MTY1MX0.4gVOuOTSe5cv-NrvYzVICYDV7KA-pKaUbOINQl4I2O4'
 };
