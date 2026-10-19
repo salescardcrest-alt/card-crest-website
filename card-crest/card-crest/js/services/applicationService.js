@@ -40,7 +40,7 @@
       var card = w.CC.Cards.byId(cardId);
       w.CC.Notifications.push(userId, 'application', 'Application submitted',
         'Your ' + (card ? card.name : 'card') + ' application is with the bank. Demo mode — nothing was sent to a real bank.');
-      setTimeout(function () {
+      if (!w.CC.Auth.remote) setTimeout(function () {
         if (S.find('applications', row.id)) Applications.setStatus(row.id, 'under-review');
       }, 14000);
       return { ok: true, application: row };

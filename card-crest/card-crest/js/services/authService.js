@@ -17,6 +17,11 @@
     });
   }
 
+  w.CC.Sync.init(sb);
+
+  /* Load this user's server-side rows into the local store. */
+  function hydrate(u) { return w.CC.Sync.hydrate(u).then(function () { return u; }); }
+
   function fail(msg) { return { ok: false, error: msg }; }
 
   function friendly(err) {
@@ -48,10 +53,6 @@
       };
       var existing = S.find('users', row.id);
       var user = existing ? S.update('users', row.id, row) : S.insert('users', row);
-      if (!existing) {
-        w.CC.Notifications.push(row.id, 'system', 'Welcome to Card Crest',
-          'Start by checking which cards you are eligible for.');
-      }
       return user;
     });
   }
@@ -65,7 +66,7 @@
       return sb.auth.getSession().then(function (r) {
         var s = r.data && r.data.session;
         if (!s) { S.set('session', null); return; }
-        return syncUser(s.user).then(function (u) { S.set('session', u.active ? u.id : null); });
+        return syncUser(s.user).then(hydrate).then(function (u) { S.set('session', u.active ? u.id : null); });
       }).catch(function () { S.set('session', null); });
     },
 
@@ -83,7 +84,7 @@
       if (sb) {
         return sb.auth.signInWithPassword({ email: email, password: password }).then(function (r) {
           if (r.error) return fail(friendly(r.error));
-          return syncUser(r.data.user).then(function (u) {
+          return syncUser(r.data.user).then(hydrate).then(function (u) {
             if (!u.active) {
               return sb.auth.signOut().then(function () {
                 return fail('This account has been disabled. Contact support to reopen it.');
@@ -118,7 +119,7 @@
           }
           // No session = email confirmation is switched on in the project.
           if (!r.data.session) return { ok: true, confirmEmail: true };
-          return syncUser(r.data.user).then(function (u) {
+          return syncUser(r.data.user).then(hydrate).then(function (u) {
             S.set('session', u.id);
             return { ok: true, user: u };
           });
@@ -141,7 +142,7 @@
 
     logout: function () {
       S.set('session', null);
-      if (sb) sb.auth.signOut();
+      if (sb) { sb.auth.signOut(); w.CC.Sync.clear(); }
     },
 
     resetPassword: function (email) {

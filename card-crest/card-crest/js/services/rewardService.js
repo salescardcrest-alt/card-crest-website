@@ -49,7 +49,7 @@
       w.CC.Notifications.push(userId, 'reward', 'Redemption requested',
         w.CC.UI.money(amount) + ' to ' + method + '. Demo mode — no real transfer is made.');
 
-      setTimeout(function () {
+      if (!w.CC.Auth.remote) setTimeout(function () {
         if (S.find('redemptions', row.id)) {
           S.update('redemptions', row.id, { status: 'completed' });
           w.CC.Notifications.push(userId, 'reward', 'Redemption processed',

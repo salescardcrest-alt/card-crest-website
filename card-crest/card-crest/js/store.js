@@ -85,7 +85,10 @@
     catch (e) { /* private mode or quota — the app still works for this session */ }
   }
 
+  var hook = null; // sync.js registers here to mirror writes to Supabase
+
   var Store = {
+    hook: function (fn) { hook = fn; },
     get: function (key) { return load()[key]; },
     set: function (key, val) { load()[key] = val; save(); return val; },
     all: function () { return load(); },
@@ -98,6 +101,7 @@
       if (!row.id) row.id = uid(col.slice(0, 3));
       s[col].unshift(row);
       save();
+      if (hook) hook('insert', col, row);
       return row;
     },
     update: function (col, id, patch) {
@@ -105,12 +109,15 @@
       if (!row) return null;
       Object.assign(row, patch);
       save();
+      if (hook) hook('update', col, row, patch);
       return row;
     },
     remove: function (col, id) {
       var s = load();
+      var gone = s[col].filter(function (r) { return r.id === id; })[0];
       s[col] = s[col].filter(function (r) { return r.id !== id; });
       save();
+      if (hook && gone) hook('remove', col, gone);
     },
     find: function (col, id) {
       return load()[col].filter(function (r) { return r.id === id; })[0] || null;

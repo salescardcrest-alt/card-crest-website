@@ -50,7 +50,7 @@
 
       /* In demo mode we move the record along on a timer so the
          lifecycle is visible without waiting 90 days. */
-      setTimeout(function () {
+      if (!w.CC.Auth.remote) setTimeout(function () {
         if (S.find('transactions', txn.id)) {
           Cashback.setStatus(txn.id, 'tracked', true);
         }
