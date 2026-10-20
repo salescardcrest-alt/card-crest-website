@@ -183,7 +183,7 @@ input[type=text],input[type=email],input[type=password],input[type=tel],input[ty
   background:#fff; font-size:.94rem; transition:border-color .16s, box-shadow .16s;
 }
 textarea{height:auto; min-height:110px; padding:12px 14px; resize:vertical; line-height:1.5}
-select{appearance:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%2363857a' stroke-width='1.8' stroke-linecap='round'/></svg>"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px}
+select{-webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%2363857a' stroke-width='1.8' stroke-linecap='round'/></svg>"); background-repeat:no-repeat; background-position:right 14px center; background-size:12px 8px; padding-right:38px; cursor:pointer}
 input:focus,select:focus,textarea:focus{outline:none; border-color:var(--leaf); box-shadow:0 0 0 3px var(--leaf-soft)}
 input[type=range]{width:100%; height:auto; padding:0; accent-color:var(--crest); border:0}
 .pw-wrap{position:relative}
