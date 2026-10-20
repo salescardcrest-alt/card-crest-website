@@ -121,7 +121,7 @@ ul{margin:0; padding:0; list-style:none}
 
 .brand{display:flex; align-items:center; gap:11px; flex-shrink:0; color:var(--crest)}
 .brand__mark{width:40px; height:40px; flex-shrink:0; display:block; filter:drop-shadow(0 1px 2px rgba(9,61,40,.18))}
-.brand__word{font-family:var(--display); font-size:1.02rem; font-weight:700; color:var(--ink); letter-spacing:.2em; text-transform:uppercase; white-space:nowrap}
+.brand__word{font-family:var(--display); font-size:1.28rem; font-weight:800; color:var(--ink); letter-spacing:.015em; text-transform:uppercase; white-space:nowrap; line-height:1}
 .brand__word em{font-style:normal; color:var(--leaf); margin-left:0}
 
 .hdr__nav{display:flex; gap:2px; margin-right:auto}
