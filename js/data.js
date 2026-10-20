@@ -371,6 +371,25 @@
     S('decathlon','Decathlon','Sports',5,'#0082c3')
   ];
 
+  /* ---------------- brand domains ----------------
+     Logos are fetched from each brand's own site icon (see UI.logoUrl),
+     so nothing is stored in the repo. A missing/blocked logo falls back to a letter. */
+  var BANK_DOMAIN = {
+    hdfc:'hdfcbank.com', sbi:'sbicard.com', icici:'icicibank.com', axis:'axisbank.com', idfc:'idfcfirstbank.com',
+    kotak:'kotak.com', indusind:'indusind.com', hsbc:'hsbc.co.in', amex:'americanexpress.com',
+    rbl:'rblbank.com', yes:'yesbank.in', au:'aubank.in'
+  };
+  var STORE_DOMAIN = {
+    amazon:'amazon.in', flipkart:'flipkart.com', myntra:'myntra.com', ajio:'ajio.com', nykaa:'nykaa.com',
+    tatacliq:'tatacliq.com', croma:'croma.com', reliancedigital:'reliancedigital.in', makemytrip:'makemytrip.com',
+    goibibo:'goibibo.com', cleartrip:'cleartrip.com', yatra:'yatra.com', swiggy:'swiggy.com', zomato:'zomato.com',
+    bigbasket:'bigbasket.com', blinkit:'blinkit.com', bookmyshow:'bookmyshow.com', firstcry:'firstcry.com',
+    pharmeasy:'pharmeasy.in', lenskart:'lenskart.com', boat:'boat-lifestyle.com', policybazaar:'policybazaar.com',
+    urbancompany:'urbancompany.com', decathlon:'decathlon.in'
+  };
+  BANKS.forEach(function (b) { b.domain = BANK_DOMAIN[b.id]; });
+  STORES.forEach(function (s) { s.domain = STORE_DOMAIN[s.id]; });
+
   /* ---------------- offers ---------------- */
   var OFFER_SEED = [
     ['amazon','Up to 4.5% cashback on everything','deal','',4.5,'Applies across Amazon India. Gift cards and grocery are excluded.',1,1],
@@ -538,6 +557,7 @@
 
   w.CC = w.CC || {};
   w.CC.DATA = {
+    bankDomains: BANK_DOMAIN, storeDomains: STORE_DOMAIN,
     banks: BANKS, cards: CARDS, stores: STORES, offers: OFFERS, users: USERS,
     txnSeed: TXN_SEED, appSeed: APP_SEED, refSeed: REF_SEED, notifSeed: NOTIF_SEED,
     faqs: FAQS, daysAgo: daysAgo,

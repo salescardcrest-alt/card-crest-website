@@ -123,18 +123,41 @@
       '</div>';
   };
 
+  /* Brand logo from the company's own site icon. */
+  UI.logoUrl = function (domain) {
+    return 'https://www.google.com/s2/favicons?sz=128&domain=' + encodeURIComponent(domain);
+  };
+  var FALLBACK = 'this.parentNode.classList.add(\'is-fallback\');this.remove()';
+
+  UI.bankLogo = function (bank, cls) {
+    var domain = bank && (bank.domain || w.CC.DATA.bankDomains[bank.id]);
+    if (!domain) return '';
+    return '<span class="bank-logo ' + (cls || '') + '"><img src="' + UI.logoUrl(domain) + '" alt="' +
+      UI.esc(bank.name) + ' logo" loading="lazy" onerror="' + FALLBACK + '"></span>';
+  };
+
   UI.plastic = function (card, small) {
     var bank = w.CC.Cards.bank(card.bank);
+    // A real card photo wins if one is set on the card (card.image = URL or assets/ path).
+    if (card.image) {
+      return '<div class="plastic plastic--photo' + (small ? ' plastic--sm' : '') + '"><img src="' +
+        UI.esc(card.image) + '" alt="' + UI.esc(card.name) + ' card" loading="lazy"></div>';
+    }
     return '<div class="plastic plastic--' + card.art + (small ? ' plastic--sm' : '') + '">' +
-      '<div class="plastic__bank">' + UI.esc(bank ? bank.short : '') + '</div>' +
+      '<div class="plastic__bank">' + UI.bankLogo(bank, 'bank-logo--card') + '<span>' + UI.esc(bank ? bank.short : '') + '</span></div>' +
       '<div class="plastic__chip"></div>' +
       '<div><div class="plastic__name">' + UI.esc(card.name) + '</div>' +
       '<div class="plastic__no">•••• •••• •••• ' + (card.id.length * 7 % 90 + 10) + '</div></div></div>';
   };
 
   UI.logo = function (store, cls) {
-    return '<div class="logo-badge ' + (cls || '') + '" style="background:' + store.color + '">' +
-      UI.esc(store.name[0]) + '</div>';
+    var domain = store.domain || w.CC.DATA.storeDomains[store.id];
+    var letter = UI.esc(store.name[0]);
+    if (!domain) {
+      return '<div class="logo-badge ' + (cls || '') + '" style="background:' + store.color + '">' + letter + '</div>';
+    }
+    return '<div class="logo-badge logo-badge--img ' + (cls || '') + '" style="--brand:' + store.color + '" data-letter="' + letter + '">' +
+      '<img src="' + UI.logoUrl(domain) + '" alt="' + UI.esc(store.name) + ' logo" loading="lazy" onerror="' + FALLBACK + '"></div>';
   };
 
   UI.stars = function (r) {
