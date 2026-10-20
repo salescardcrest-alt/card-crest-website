@@ -802,7 +802,7 @@
             title: 'Verify it\u2019s you',
             body: '<p class="muted" id="otpMsg">Sending a verification code to your email\u2026</p>' +
               '<div class="field" style="margin-top:16px"><label for="otp">Verification code</label>' +
-              '<input id="otp" type="text" inputmode="numeric" maxlength="8" autocomplete="one-time-code" placeholder="Verification code"></div>' +
+              '<input id="otp" type="text" inputmode="numeric" maxlength="8" autocomplete="one-time-code" placeholder="8-digit code"></div>' +
               '<p class="small muted" style="margin-top:12px"><button type="button" class="btn btn--link small" data-resend disabled>Resend code</button></p>',
             foot: '<button class="btn btn--ghost" data-x>Cancel</button><button class="btn btn--primary" data-verify>Verify and save</button>',
             onMount: function (m) {
