@@ -32,6 +32,12 @@
 .icon-btn:hover{border-color:var(--crest); color:var(--crest)}
 .icon-btn svg{width:16px; height:16px}
 .icon-btn.is-on{background:var(--mint); border-color:var(--leaf); color:var(--crest)}
+/* saved (heart) state: filled red with a small pop */
+.icon-btn[data-fav] svg{transition:transform .2s, fill .2s}
+.icon-btn[data-fav]:hover{border-color:#e5383b; color:#e5383b}
+.icon-btn[data-fav].is-on{background:#fff1f1; border-color:#f0a8ab; color:#e5383b}
+.icon-btn[data-fav].is-on svg{fill:currentColor; animation:heartPop .45s cubic-bezier(.2,.9,.3,1.4)}
+@keyframes heartPop{0%{transform:scale(.6)}55%{transform:scale(1.35)}100%{transform:scale(1)}}
 
 /* ---------- surfaces ---------- */
 .panel{background:#fff; border:1px solid var(--line); border-radius:var(--r-lg); padding:24px}
