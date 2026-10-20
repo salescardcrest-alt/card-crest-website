@@ -800,15 +800,15 @@
         function askCode(onOk) {
           UI.modal({
             title: 'Verify it\u2019s you',
-            body: '<p class="muted" id="otpMsg">Sending a 6-digit code to your email\u2026</p>' +
+            body: '<p class="muted" id="otpMsg">Sending a verification code to your email\u2026</p>' +
               '<div class="field" style="margin-top:16px"><label for="otp">Verification code</label>' +
-              '<input id="otp" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6-digit code"></div>' +
+              '<input id="otp" type="text" inputmode="numeric" maxlength="8" autocomplete="one-time-code" placeholder="Verification code"></div>' +
               '<p class="small muted" style="margin-top:12px"><button type="button" class="btn btn--link small" data-resend disabled>Resend code</button></p>',
             foot: '<button class="btn btn--ghost" data-x>Cancel</button><button class="btn btn--primary" data-verify>Verify and save</button>',
             onMount: function (m) {
               var msg = m.querySelector('#otpMsg'), otp = m.querySelector('#otp'),
                   resend = m.querySelector('[data-resend]'), go = m.querySelector('[data-verify]'), timer = null;
-              otp.addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 6); });
+              otp.addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 8); });
               function cooldown(sec) {
                 clearInterval(timer);
                 resend.disabled = true;
@@ -820,10 +820,10 @@
                 resend.textContent = 'Resend code in ' + sec + 's';
               }
               function send() {
-                msg.textContent = 'Sending a 6-digit code to your email\u2026';
+                msg.textContent = 'Sending a verification code to your email\u2026';
                 Auth.sendCode().then(function (res) {
                   if (!res.ok) { msg.textContent = res.error; resend.disabled = false; resend.textContent = 'Try again'; return; }
-                  msg.innerHTML = 'We sent a 6-digit code to <strong>' + UI.esc(res.to) + '</strong>. Enter it below to confirm this change.' +
+                  msg.innerHTML = 'We sent a verification code to <strong>' + UI.esc(res.to) + '</strong>. Enter it below to confirm this change.' +
                     (res.demoCode ? '<br><span class="small">Demo mode \u2014 your code is <strong>' + res.demoCode + '</strong>.</span>' : '');
                   cooldown(45);
                   otp.focus();
@@ -831,7 +831,7 @@
               }
               resend.onclick = send;
               go.onclick = function () {
-                if (otp.value.length !== 6) return UI.toast('Enter the 6-digit code', 'error');
+                if (otp.value.length < 6) return UI.toast("Enter the code from your email", 'error');
                 go.disabled = true; go.textContent = 'Checking\u2026';
                 Auth.checkCode(otp.value).then(function (res) {
                   go.disabled = false; go.textContent = 'Verify and save';
