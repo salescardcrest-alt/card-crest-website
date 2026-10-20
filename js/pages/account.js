@@ -132,7 +132,7 @@
         '<form id="signupForm" novalidate>' +
         '<div class="field" style="margin-bottom:14px"><label for="s-name">Full name</label><input id="s-name" type="text" autocomplete="name"><span class="err">Tell us what to call you.</span></div>' +
         '<div class="field" style="margin-bottom:14px"><label for="s-email">Email address</label><input id="s-email" type="email" autocomplete="email"><span class="err">Enter a valid email address.</span></div>' +
-        '<div class="field" style="margin-bottom:14px"><label for="s-mobile">Mobile number</label><input id="s-mobile" type="tel" autocomplete="tel" placeholder="10 digits"><span class="err">Enter a 10-digit mobile number.</span></div>' +
+        '<div class="field" style="margin-bottom:14px"><label for="s-mobile">Mobile number</label><input id="s-mobile" type="tel" inputmode="numeric" maxlength="10" autocomplete="tel-national" placeholder="10 digits"><span class="err">Enter a 10-digit mobile number.</span></div>' +
         '<div class="field" style="margin-bottom:14px"><label for="s-pw">Password</label>' +
         '<div class="pw-wrap"><input id="s-pw" type="password" autocomplete="new-password"><button type="button" class="pw-toggle" data-pw="s-pw">Show</button></div>' +
         '<span class="hint">At least 8 characters.</span><span class="err">Use at least 8 characters.</span></div>' +
@@ -148,6 +148,7 @@
           i.type = i.type === 'password' ? 'text' : 'password';
           this.textContent = i.type === 'password' ? 'Show' : 'Hide';
         };
+        root.querySelector('#s-mobile').addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 10); });
         root.querySelector('#signupForm').addEventListener('submit', function (e) {
           e.preventDefault();
           var f = {
@@ -666,7 +667,7 @@
       '<div class="field"><label for="p-name">Full name</label><input id="p-name" type="text" value="' + UI.esc(u.name) + '"></div>' +
       '<div class="field"><label for="p-city">City</label><input id="p-city" type="text" value="' + UI.esc(u.city || '') + '"></div>' +
       '<div class="field"><label for="p-email">Email address</label><input id="p-email" type="email" value="' + UI.esc(u.email) + '"></div>' +
-      '<div class="field"><label for="p-mobile">Mobile number</label><input id="p-mobile" type="tel" value="' + UI.esc(u.mobile || '') + '"></div>' +
+      '<div class="field"><label for="p-mobile">Mobile number</label><input id="p-mobile" type="tel" inputmode="numeric" maxlength="10" placeholder="10 digits" autocomplete="tel-national" value="' + UI.esc(u.mobile || '') + '"></div>' +
       '</div><button class="btn btn--primary btn--sm" style="margin-top:18px" data-save-personal>Save changes</button></div>' +
 
       '<div class="panel" style="margin-bottom:20px"><h2 class="h3" style="margin-bottom:18px">Financial profile</h2>' +
@@ -792,18 +793,81 @@
             refreshPhoto(); UI.toast('Profile photo removed');
           });
         };
+        /* ---- personal info: 10-digit mobile, and a code sent to the current email before email/mobile can change ---- */
+        var mobEl = root.querySelector('#p-mobile');
+        mobEl.addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 10); });
+
+        function askCode(onOk) {
+          UI.modal({
+            title: 'Verify it\u2019s you',
+            body: '<p class="muted" id="otpMsg">Sending a 6-digit code to your email\u2026</p>' +
+              '<div class="field" style="margin-top:16px"><label for="otp">Verification code</label>' +
+              '<input id="otp" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6-digit code"></div>' +
+              '<p class="small muted" style="margin-top:12px"><button type="button" class="btn btn--link small" data-resend disabled>Resend code</button></p>',
+            foot: '<button class="btn btn--ghost" data-x>Cancel</button><button class="btn btn--primary" data-verify>Verify and save</button>',
+            onMount: function (m) {
+              var msg = m.querySelector('#otpMsg'), otp = m.querySelector('#otp'),
+                  resend = m.querySelector('[data-resend]'), go = m.querySelector('[data-verify]'), timer = null;
+              otp.addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 6); });
+              function cooldown(sec) {
+                clearInterval(timer);
+                resend.disabled = true;
+                timer = setInterval(function () {
+                  sec--;
+                  if (sec <= 0 || !m.isConnected) { clearInterval(timer); resend.disabled = false; resend.textContent = 'Resend code'; }
+                  else resend.textContent = 'Resend code in ' + sec + 's';
+                }, 1000);
+                resend.textContent = 'Resend code in ' + sec + 's';
+              }
+              function send() {
+                msg.textContent = 'Sending a 6-digit code to your email\u2026';
+                Auth.sendCode().then(function (res) {
+                  if (!res.ok) { msg.textContent = res.error; resend.disabled = false; resend.textContent = 'Try again'; return; }
+                  msg.innerHTML = 'We sent a 6-digit code to <strong>' + UI.esc(res.to) + '</strong>. Enter it below to confirm this change.' +
+                    (res.demoCode ? '<br><span class="small">Demo mode \u2014 your code is <strong>' + res.demoCode + '</strong>.</span>' : '');
+                  cooldown(45);
+                  otp.focus();
+                });
+              }
+              resend.onclick = send;
+              go.onclick = function () {
+                if (otp.value.length !== 6) return UI.toast('Enter the 6-digit code', 'error');
+                go.disabled = true; go.textContent = 'Checking\u2026';
+                Auth.checkCode(otp.value).then(function (res) {
+                  go.disabled = false; go.textContent = 'Verify and save';
+                  if (!res.ok) return UI.toast(res.error, 'error');
+                  clearInterval(timer); UI.closeModal(); onOk();
+                });
+              };
+              send();
+            }
+          });
+        }
+
         root.querySelector('[data-save-personal]').onclick = function () {
+          var me = Auth.current();
           var name = root.querySelector('#p-name').value.trim();
           var email = root.querySelector('#p-email').value.trim();
+          var mobile = mobEl.value.replace(/\D/g, '');
+          var city = root.querySelector('#p-city').value.trim();
           if (!name) return UI.toast('Your name cannot be empty', 'error');
           if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return UI.toast('That email address does not look right', 'error');
-          Auth.updateProfile({
-            name: name, email: email,
-            city: root.querySelector('#p-city').value.trim(),
-            mobile: root.querySelector('#p-mobile').value.trim()
-          });
-          UI.toast('Profile updated');
-          w.CC.App.paintAuth();
+          if (!/^\d{10}$/.test(mobile)) { mobEl.focus(); return UI.toast('Enter a 10-digit mobile number', 'error'); }
+
+          var emailChanged = email.toLowerCase() !== String(me.email).toLowerCase();
+          var mobileChanged = mobile !== String(me.mobile || '').replace(/\D/g, '');
+
+          function apply() {
+            Auth.updateProfile({ name: name, city: city, mobile: mobile });
+            if (!emailChanged) { UI.toast('Profile updated'); w.CC.App.paintAuth(); return; }
+            Auth.changeEmail(email).then(function (res) {
+              if (!res.ok) UI.toast(res.error, 'error');
+              else UI.toast(res.pending ? 'Details saved. Open the link we sent to ' + email + ' to confirm your new email address.' : 'Profile updated');
+              w.CC.App.paintAuth();
+            });
+          }
+          if (!emailChanged && !mobileChanged) return apply(); // name / city only: no code needed
+          askCode(apply);
         };
         root.querySelector('[data-save-fin]').onclick = function () {
           Auth.updateProfile({

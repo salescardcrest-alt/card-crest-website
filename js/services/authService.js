@@ -11,6 +11,7 @@
   var S = w.CC.Store;
   var cfg = w.CC_CONFIG || {};
   var sb = null;
+  var demoCode = '';
   if (cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY && w.supabase) {
     sb = w.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, {
       // PKCE puts the link's ?code= in the query string; the implicit flow would
@@ -32,6 +33,7 @@
     if (/email not confirmed/i.test(m)) return 'Confirm your email first — check your inbox for the link.';
     if (/already registered|already been registered/i.test(m)) return 'An account already uses that email address.';
     if (/rate limit/i.test(m)) return 'Too many attempts. Wait a minute and try again.';
+    if (/only request this after|security purposes/i.test(m)) return 'Please wait a minute before asking for another code.';
     return m;
   }
 
@@ -157,6 +159,45 @@
         redirectTo: location.origin + location.pathname
       }).then(function (r) { return r.error ? fail(friendly(r.error)) : { ok: true }; })
         .catch(function (e) { return fail(friendly(e)); });
+    },
+
+    /* ---- verification code for sensitive changes (email / mobile) ----
+       Supabase: a one-time code is emailed to the CURRENT address (the "Magic Link" email template
+       must include {{ .Token }}). Demo mode: the code is made locally and shown in the dialog. */
+    sendCode: function () {
+      var u = Auth.current();
+      if (!u) return Promise.resolve(fail('You need to be signed in.'));
+      if (sb) {
+        return sb.auth.signInWithOtp({ email: u.email, options: { shouldCreateUser: false } })
+          .then(function (r) { return r.error ? fail(friendly(r.error)) : { ok: true, to: u.email }; })
+          .catch(function (e) { return fail(friendly(e)); });
+      }
+      demoCode = String(Math.floor(100000 + Math.random() * 900000));
+      return Promise.resolve({ ok: true, to: u.email, demoCode: demoCode });
+    },
+    checkCode: function (code) {
+      var u = Auth.current();
+      code = String(code).replace(/\D/g, '');
+      if (!u) return Promise.resolve(fail('You need to be signed in.'));
+      if (sb) {
+        return sb.auth.verifyOtp({ email: u.email, token: code, type: 'email' })
+          .then(function (r) { return r.error ? fail('That code is not right, or it has expired.') : { ok: true }; })
+          .catch(function (e) { return fail(friendly(e)); });
+      }
+      return Promise.resolve(code && code === demoCode ? { ok: true } : fail('That code is not right.'));
+    },
+    /* Supabase emails a confirmation link to the new address; the login email changes once it is opened. */
+    changeEmail: function (newEmail) {
+      var u = Auth.current();
+      newEmail = String(newEmail).trim().toLowerCase();
+      if (!u) return Promise.resolve(fail('You need to be signed in.'));
+      if (sb) {
+        return sb.auth.updateUser({ email: newEmail }, { emailRedirectTo: location.origin + location.pathname })
+          .then(function (r) { return r.error ? fail(friendly(r.error)) : { ok: true, pending: true }; })
+          .catch(function (e) { return fail(friendly(e)); });
+      }
+      S.update('users', u.id, { email: newEmail });
+      return Promise.resolve({ ok: true });
     },
 
     updateProfile: function (patch) {
