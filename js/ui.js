@@ -155,8 +155,9 @@
     return '<div class="plastic plastic--' + card.art + (small ? ' plastic--sm' : '') + '">' +
       '<div class="plastic__bank">' + UI.bankLogo(bank, 'bank-logo--card') + '<span>' + UI.esc(bank ? bank.short : '') + '</span></div>' +
       '<div class="plastic__chip"></div>' +
-      '<div><div class="plastic__name">' + UI.esc(card.name) + '</div>' +
-      '<div class="plastic__no">•••• •••• •••• ' + (card.id.length * 7 % 90 + 10) + '</div></div>' + photo + '</div>';
+      '<svg class="plastic__nfc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">' +
+      '<path d="M8 7a7 7 0 0 1 0 10"/><path d="M12 4a11 11 0 0 1 0 16"/><path d="M16 1.5a15 15 0 0 1 0 21"/></svg>' +
+      '<div class="plastic__name">' + UI.esc(card.name) + '</div>' + photo + '</div>';
   };
 
   UI.logo = function (store, cls) {

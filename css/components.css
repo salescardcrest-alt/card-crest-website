@@ -73,24 +73,35 @@
 .cvs--lg .cvs__val{font-size:1.6rem}
 .cvs--lg .cvs__track,.cvs--lg .cvs__fill{stroke-width:6}
 
-/* ---------- credit card visual ---------- */
+/* ---------- credit card visual ----------
+   Sized with container units (cqw) so the chip, logo and text scale with the card. */
 .plastic{
-  position:relative; aspect-ratio:1.586/1; border-radius:14px; padding:16px; color:#fff; overflow:hidden;
+  position:relative; container-type:inline-size; aspect-ratio:1.586/1; border-radius:14px; color:#fff; overflow:hidden;
   background:linear-gradient(135deg,#0e5c3c,#093d28 60%,#0b4a31);
-  box-shadow:0 8px 24px rgba(9,61,40,.25); display:flex; flex-direction:column; justify-content:space-between;
+  box-shadow:0 8px 24px rgba(9,61,40,.25);
 }
+/* fine ring texture, like the engraved patterns on real cards */
+.plastic::before{content:""; position:absolute; inset:0;
+  background:repeating-radial-gradient(circle at 26% 70%,rgba(255,255,255,.075) 0 .3cqw,transparent .3cqw 2.6cqw);
+  -webkit-mask-image:radial-gradient(90% 90% at 26% 70%,#000 20%,transparent 75%); mask-image:radial-gradient(90% 90% at 26% 70%,#000 20%,transparent 75%)}
 .plastic::after{content:""; position:absolute; inset:0; background:radial-gradient(120% 90% at 85% 8%,rgba(255,255,255,.22),transparent 55%)}
-.plastic__bank{font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; position:relative; z-index:1; display:flex; align-items:center; gap:8px}
-.plastic__bank > span:last-child{opacity:.82}
+.plastic__bank{position:absolute; top:7cqw; right:7cqw; z-index:1; display:flex; align-items:center; gap:2.4cqw;
+  font-size:6.2cqw; font-weight:700; letter-spacing:.02em; line-height:1; text-shadow:0 1px 3px rgba(0,0,0,.35)}
 .plastic__photo{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:3; border-radius:inherit; display:block}
 /* bank logo chip (white so any logo colours stay readable) */
 .bank-logo{display:inline-grid; place-items:center; width:26px; height:26px; border-radius:8px; background:#fff; padding:3px; flex-shrink:0; box-shadow:0 1px 4px rgba(0,0,0,.18)}
 .bank-logo img{width:100%; height:100%; object-fit:contain; display:block}
 .bank-logo.is-fallback{display:none}
-.plastic--sm .bank-logo{width:20px; height:20px; border-radius:6px; padding:2px}
-.plastic__chip{width:32px; height:24px; border-radius:5px; background:linear-gradient(135deg,#e8cf92,#b98b2e); position:relative; z-index:1}
-.plastic__name{font-family:var(--display); font-size:1rem; line-height:1.2; position:relative; z-index:1}
-.plastic__no{font-family:var(--mono); font-size:.74rem; letter-spacing:.14em; opacity:.75; position:relative; z-index:1}
+.plastic .bank-logo{width:9.5cqw; height:9.5cqw; border-radius:2.4cqw; padding:1cqw}
+.plastic__chip{position:absolute; left:8cqw; top:25cqw; z-index:1; width:15cqw; height:11.5cqw; border-radius:2cqw;
+  background:
+    linear-gradient(90deg,transparent 31%,rgba(90,60,10,.5) 31% 33%,transparent 33% 67%,rgba(90,60,10,.5) 67% 69%,transparent 69%),
+    linear-gradient(0deg,transparent 45%,rgba(90,60,10,.5) 45% 55%,transparent 55%),
+    linear-gradient(135deg,#f3dfa6,#b98b2e);
+  box-shadow:inset 0 0 0 .3cqw rgba(90,60,10,.45), 0 .4cqw 1cqw rgba(0,0,0,.25)}
+.plastic__nfc{position:absolute; right:8cqw; top:26cqw; z-index:1; width:9cqw; height:9cqw; opacity:.9}
+.plastic__name{position:absolute; left:8cqw; right:8cqw; bottom:7cqw; z-index:1; font-family:var(--display); font-size:6.4cqw; line-height:1.15; text-shadow:0 1px 3px rgba(0,0,0,.3)}
+.plastic__no{display:none}
 .plastic--travel{background:linear-gradient(135deg,#123a5c,#08203a 60%,#0d2e4a)}
 .plastic--premium{background:linear-gradient(135deg,#2a2622,#100e0c 60%,#3a3229)}
 .plastic--fuel{background:linear-gradient(135deg,#6b3b12,#3d2009 60%,#5a3210)}
@@ -98,20 +109,19 @@
 .plastic--cashback{background:linear-gradient(135deg,#0e5c3c,#093d28 60%,#0b4a31)}
 .plastic--rewards{background:linear-gradient(135deg,#37306b,#1a1640 60%,#2c2657)}
 .plastic--dining{background:linear-gradient(135deg,#7a1f2b,#400d15 60%,#661a24)}
-.plastic--sm{border-radius:10px; padding:11px}
-.plastic--sm .plastic__name{font-size:.78rem}
-.plastic--sm .plastic__chip{width:22px; height:17px}
-.plastic--sm .plastic__no, .plastic--sm .plastic__name{display:none}
-/* in list tiles the card name sits right beside the small card, so keep the card face clean */
-.ctile__top .plastic__name, .ctile__top .plastic__no, .ctile__top .plastic__chip, .plastic--sm .plastic__chip{display:none}
-
+.plastic--sm{border-radius:10px}
+/* the card name is written next to small cards and list tiles, so leave it off the card face there */
+.plastic--sm .plastic__name, .ctile__top .plastic__name{display:none}
+/* at tile size the bank text is unreadable, so show a larger logo only */
+.plastic--sm .plastic__bank > span:last-child, .ctile__top .plastic__bank > span:last-child{display:none}
+.plastic--sm .bank-logo, .ctile__top .plastic .bank-logo{width:16cqw; height:16cqw; border-radius:3.4cqw; padding:1.8cqw}
 /* ---------- card tile ---------- */
 .ctile{
   background:#fff; border:1px solid var(--line); border-radius:var(--r-lg); overflow:hidden;
   display:flex; flex-direction:column; transition:transform .22s cubic-bezier(.2,.7,.3,1), box-shadow .22s, border-color .22s;
 }
 .ctile:hover{transform:translateY(-4px); box-shadow:var(--sh-3); border-color:var(--line-soft)}
-.ctile__top{padding:18px 18px 0; display:grid; grid-template-columns:112px 1fr; gap:16px; align-items:start}
+.ctile__top{padding:18px 18px 0; display:grid; grid-template-columns:150px 1fr; gap:16px; align-items:start}
 .ctile__body{padding:16px 18px 18px; display:flex; flex-direction:column; gap:13px; flex:1}
 .ctile__name{font-family:var(--display); font-size:1.12rem; line-height:1.2; margin-bottom:3px}
 .ctile__bank{font-size:.76rem; letter-spacing:.09em; text-transform:uppercase; color:var(--muted)}
