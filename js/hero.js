@@ -1,9 +1,12 @@
 /* ============================================================
    Card Crest — hero.js
-   Hero card stage: smoothed pointer parallax (cards, chips and sheen
-   all read --px/--py), a gentle idle drift when nobody is moving the
-   pointer (also covers touch screens), and a count-up on the numbers.
-   Everything is skipped for prefers-reduced-motion.
+   The circulation ring: cards revolve around a glowing core.
+   - auto-rotates; slows when the pointer is over it
+   - drag (mouse or touch) to spin, with momentum on release
+   - scrolling the page nudges the rotation
+   - the card nearest the front is brightened and described below the ring
+   - a click (not a drag) opens that card
+   Reduced-motion: no auto-rotation or scroll link, but dragging still works.
    ============================================================ */
 (function (w, d) {
   'use strict';
@@ -33,37 +36,82 @@
       var scope = root || d;
       var stage = scope.querySelector('#heroStage');
       if (!stage) return;
-      if (w.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var reduced = w.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      countUp(scope.querySelector('.hero') || scope);
+      if (!reduced) countUp(scope.querySelector('.hero') || scope);
 
-      var host = stage.closest('.hero') || stage;
-      var tx = 0, ty = 0, cx = 0, cy = 0, lastMove = 0, raf = 0, alive = true;
+      var ring = stage.querySelector('.ring');
+      var cards = [].slice.call(ring.querySelectorAll('.rc'));
+      var n = cards.length, step = 360 / n;
+      var info = stage.querySelector('.stage__info');
+      var elBank = info.querySelector('.stage__bank'), elName = info.querySelector('.stage__name'),
+          elScore = info.querySelector('.stage__score b'), elGo = info.querySelector('.stage__go');
 
-      function onMove(e) {
-        var r = stage.getBoundingClientRect();
-        tx = Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width - 0.5) * 2));
-        ty = Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height - 0.5) * 2));
-        lastMove = performance.now();
+      var rot = 0, vel = 0, dragging = false, hover = false, lastX = 0, moved = 0, startCard = null;
+      var front = -1, swapTimer = 0;
+
+      function setFront(i) {
+        front = i;
+        var c = cards[i];
+        info.classList.add('is-swap');
+        clearTimeout(swapTimer);
+        swapTimer = setTimeout(function () {
+          elBank.textContent = c.getAttribute('data-bank');
+          elName.textContent = c.getAttribute('data-name');
+          elScore.textContent = c.getAttribute('data-score');
+          elGo.setAttribute('href', '#/cards/' + c.getAttribute('data-id'));
+          info.classList.remove('is-swap');
+        }, front === -1 ? 0 : 160);
       }
-      function onLeave() { lastMove = 0; }
 
-      function tick(now) {
-        if (!alive || !stage.isConnected) { host.removeEventListener('pointermove', onMove); return; }
-        if (now - lastMove > 1800) { // idle drift
-          tx = Math.sin(now / 2600) * 0.45;
-          ty = Math.cos(now / 3300) * 0.25;
+      stage.addEventListener('pointerdown', function (e) {
+        dragging = true; moved = 0; vel = 0; lastX = e.clientX;
+        startCard = e.target.closest ? e.target.closest('.rc') : null;
+        stage.classList.add('is-drag');
+        try { stage.setPointerCapture(e.pointerId); } catch (err) {}
+      });
+      stage.addEventListener('pointermove', function (e) {
+        if (!dragging) return;
+        var dx = e.clientX - lastX; lastX = e.clientX;
+        moved += Math.abs(dx);
+        vel = dx * 0.32;
+        rot += vel;
+      });
+      function release() {
+        if (!dragging) return;
+        dragging = false;
+        stage.classList.remove('is-drag');
+        if (moved < 6 && startCard) w.CC.Router.go('#/cards/' + startCard.getAttribute('data-id'));
+        startCard = null;
+      }
+      stage.addEventListener('pointerup', release);
+      stage.addEventListener('pointercancel', release);
+      stage.addEventListener('pointerenter', function () { hover = true; });
+      stage.addEventListener('pointerleave', function () { hover = false; });
+
+      function tick() {
+        if (!stage.isConnected) return; // page changed — stop
+        if (!dragging) {
+          rot += vel;
+          vel *= 0.94;
+          if (Math.abs(vel) < 0.01) vel = 0;
+          if (!reduced) rot += hover ? 0.05 : 0.18; // idle spin
         }
-        cx += (tx - cx) * 0.07; // ease toward the target
-        cy += (ty - cy) * 0.07;
-        stage.style.setProperty('--px', cx.toFixed(4));
-        stage.style.setProperty('--py', cy.toFixed(4));
-        raf = requestAnimationFrame(tick);
-      }
+        var total = rot + (reduced ? 0 : (w.scrollY || 0) * 0.1);
+        ring.style.transform = 'rotateX(-12deg) rotateY(' + total.toFixed(2) + 'deg)';
+        stage.style.setProperty('--r2', (-total * 1.7).toFixed(2) + 'deg');
 
-      host.addEventListener('pointermove', onMove, { passive: true });
-      host.addEventListener('pointerleave', onLeave);
-      raf = requestAnimationFrame(tick);
+        var best = 0, bestV = -1;
+        for (var i = 0; i < n; i++) {
+          var a = (((i * step + total) % 360) + 540) % 360 - 180; // -180..180, 0 = facing the camera
+          var v = (Math.cos(a * Math.PI / 180) + 1) / 2;
+          cards[i].style.setProperty('--v', (v * v).toFixed(3)); // squared so only the front few light up
+          if (v > bestV) { bestV = v; best = i; }
+        }
+        if (best !== front) setFront(best);
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
     }
   };
 

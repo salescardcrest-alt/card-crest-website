@@ -23,6 +23,7 @@
     var offers = O.query({ section: 'top' }).slice(0, 6);
     var bestCard = top[0];
     var bestScore = C.score(bestCard);
+    var ringCards = C.topByScore(9);
 
     var html =
       /* ---- hero ---- */
@@ -42,18 +43,22 @@
             '<div><strong data-count="' + Math.round(bestScore.value.net) + '" data-money="1">' + UI.money(bestScore.value.net) + '</strong><span>Top card\'s net annual value</span></div>' +
           '</div>' +
         '</div>' +
-        '<div class="stage" id="heroStage">' +
-          '<div class="stage__glow" aria-hidden="true"></div>' +
-          '<div class="stage__ring" aria-hidden="true"><div class="stage__orbit"><i></i></div></div>' +
-          '<div class="stage__deck">' +
-            '<div class="stage__card stage__card--l">' + UI.plastic(C.byId('axis-magnus') || top[1] || bestCard) + '</div>' +
-            '<div class="stage__card stage__card--r">' + UI.plastic(C.byId('sbi-cashback') || top[2] || bestCard) + '</div>' +
-            '<div class="stage__card stage__card--f">' + UI.plastic(bestCard) + '<span class="stage__sheen" aria-hidden="true"></span></div>' +
-            '<div class="stage__chip stage__chip--score" style="--d:26"><div class="stage__chipin">' + UI.gauge(bestScore.total) + '</div></div>' +
-            '<div class="stage__chip stage__chip--cash" style="--d:38"><div class="stage__chipin"><span class="stage__ico">₹</span>' +
-              '<span><small>Est. yearly rewards</small><b data-count="' + Math.round(bestScore.value.rewards) + '" data-money="1">' + UI.money(bestScore.value.rewards) + '</b></span></div></div>' +
-            '<div class="stage__chip stage__chip--pick" style="--d:18"><div class="stage__chipin"><span class="stage__ico stage__ico--star">★</span><span><small>Top pick</small><b>' + UI.esc(bestCard.name) + '</b></span></div></div>' +
+        '<div class="stage" id="heroStage" style="--step:' + (360 / ringCards.length) + 'deg">' +
+          '<div class="stage__floor" aria-hidden="true"><i></i><i></i><i></i></div>' +
+          '<div class="ring">' + ringCards.map(function (c, i) {
+            var b = C.bank(c.bank);
+            return '<div class="rc" style="--i:' + i + '" data-id="' + c.id + '" data-name="' + UI.esc(c.name) + '" data-bank="' +
+              UI.esc(b ? b.name : '') + '" data-score="' + Math.round(C.score(c).total) + '">' + UI.plastic(c) + '</div>';
+          }).join('') + '</div>' +
+          '<div class="coins" aria-hidden="true">' + [0, 1, 2, 3, 4, 5].map(function (k) {
+            return '<span class="coin" style="--k:' + k + '"><b>₹</b></span>';
+          }).join('') + '</div>' +
+          '<div class="stage__info" aria-live="polite">' +
+            '<div class="stage__bank"></div><div class="stage__name"></div>' +
+            '<div class="stage__meta"><span class="stage__score"><b></b>/100 value score</span>' +
+            '<a class="stage__go" href="#/cards">View card →</a></div>' +
           '</div>' +
+          '<div class="stage__hint" aria-hidden="true">Drag to spin</div>' +
         '</div>' +
       '</div></section>' +
 

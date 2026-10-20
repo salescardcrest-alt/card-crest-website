@@ -17,8 +17,8 @@
 
 @media (max-width:1024px){
   .section{padding:56px 0}
-  .hero__in{grid-template-columns:1fr; padding:48px 0 60px}
-  .stage{min-height:320px; order:-1}
+  .hero__in{grid-template-columns:minmax(0,1fr); padding:48px 0 60px}
+  .stage{min-height:440px; order:-1}
   .detail{grid-template-columns:1fr; gap:28px}
   .detail__side{position:static}
   .calc{grid-template-columns:1fr}
