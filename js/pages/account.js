@@ -29,6 +29,20 @@
       }).join('') + '</nav><div>' + inner + '</div></div></div>';
   }
 
+  /* Sign-in / sign-up motion: shake on a failed attempt, fade the card out on success. */
+  function shake(root) {
+    var card = root.querySelector('.auth-card');
+    if (!card) return;
+    card.classList.remove('is-shaking');
+    void card.offsetWidth; // restart the animation
+    card.classList.add('is-shaking');
+  }
+  function leave(root, next) {
+    var card = root.querySelector('.auth-card');
+    if (card) card.classList.add('is-leaving');
+    setTimeout(next, 260);
+  }
+
   /* ---------------- /login ---------------- */
   w.CC.Pages.login = function (params, query) {
     if (Auth.current()) { w.CC.Router.go('#/dashboard'); return false; }
@@ -87,15 +101,20 @@
             i.closest('.field').classList.toggle('is-bad', !ok);
             if (!ok) bad = true;
           });
-          if (bad) return;
+          if (bad) return shake(root);
           var btn = root.querySelector('#loginForm button[type=submit]');
           btn.disabled = true; btn.textContent = 'Signing in…';
           Auth.login(email.value, pw.value).then(function (res) {
-            btn.disabled = false; btn.textContent = 'Sign in';
-            if (!res.ok) { UI.toast(res.error, 'error'); return; }
+            if (!res.ok) {
+              btn.disabled = false; btn.textContent = 'Sign in';
+              UI.toast(res.error, 'error'); return shake(root);
+            }
+            btn.textContent = 'Welcome back';
             UI.toast('Signed in as ' + res.user.name);
             w.CC.App.paintAuth();
-            w.CC.Router.go(query.next ? '#' + query.next : (res.user.role === 'admin' ? '#/admin' : '#/dashboard'));
+            leave(root, function () {
+              w.CC.Router.go(query.next ? '#' + query.next : (res.user.role === 'admin' ? '#/admin' : '#/dashboard'));
+            });
           });
         });
       }
@@ -150,22 +169,25 @@
           if (!root.querySelector('#s-terms').checked) {
             UI.toast('Accept the terms to continue', 'error'); bad = true;
           }
-          if (bad) return;
+          if (bad) return shake(root);
           var btn = root.querySelector('#signupForm button[type=submit]');
           btn.disabled = true; btn.textContent = 'Creating account…';
           Auth.signup({
             name: f.name.value, email: f.email.value,
             mobile: f.mobile.value.replace(/\D/g, ''), password: f.pw.value
           }).then(function (res) {
-            btn.disabled = false; btn.textContent = 'Create account';
-            if (!res.ok) return UI.toast(res.error, 'error');
+            if (!res.ok) {
+              btn.disabled = false; btn.textContent = 'Create account';
+              UI.toast(res.error, 'error'); return shake(root);
+            }
+            btn.textContent = 'Account created';
             if (res.confirmEmail) {
               UI.toast('Check your inbox to confirm your email, then sign in');
-              return w.CC.Router.go('#/login');
+              return leave(root, function () { w.CC.Router.go('#/login'); });
             }
             UI.toast('Welcome to Card Crest');
             w.CC.App.paintAuth();
-            w.CC.Router.go('#/eligibility');
+            leave(root, function () { w.CC.Router.go('#/eligibility'); });
           });
         });
       }
