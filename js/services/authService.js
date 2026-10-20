@@ -145,17 +145,6 @@
       return Promise.resolve({ ok: true, user: u });
     },
 
-    /* Google sign-in. Redirects away; on return init() picks up the session.
-       Creates the account on first use. */
-    google: function () {
-      if (!sb) return Promise.resolve(fail('Google sign-in needs the live Supabase connection.'));
-      return sb.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: location.origin + location.pathname }
-      }).then(function (r) { return r.error ? fail(friendly(r.error)) : { ok: true }; })
-        .catch(function (e) { return fail(friendly(e)); });
-    },
-
     logout: function () {
       S.set('session', null);
       if (sb) { sb.auth.signOut(); w.CC.Sync.clear(); }

@@ -29,29 +29,6 @@
       }).join('') + '</nav><div>' + inner + '</div></div></div>';
   }
 
-  /* "Continue with Google" button shared by the login and signup pages. */
-  var GOOGLE_BTN = '<div class="spread" style="margin:18px 0 14px; gap:12px"><hr style="flex:1; border:0; border-top:1px solid var(--line)">' +
-    '<span class="small muted">or</span><hr style="flex:1; border:0; border-top:1px solid var(--line)"></div>' +
-    '<button class="btn btn--ghost btn--block" type="button" data-google>' +
-    '<svg viewBox="0 0 18 18" width="18" height="18" aria-hidden="true" style="margin-right:10px; vertical-align:-3px">' +
-    '<path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>' +
-    '<path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/>' +
-    '<path fill="#FBBC05" d="M3.97 10.72A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"/>' +
-    '<path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>' +
-    '</svg>Continue with Google</button>';
-
-  function wireGoogle(root) {
-    var btn = root.querySelector('[data-google]');
-    if (!btn) return;
-    btn.onclick = function () {
-      btn.disabled = true;
-      Auth.google().then(function (res) {
-        // On success the browser is already navigating to Google.
-        if (!res.ok) { btn.disabled = false; UI.toast(res.error, 'error'); }
-      });
-    };
-  }
-
   /* ---------------- /login ---------------- */
   w.CC.Pages.login = function (params, query) {
     if (Auth.current()) { w.CC.Router.go('#/dashboard'); return false; }
@@ -70,7 +47,6 @@
         '<label class="check"><input type="checkbox" id="l-remember" checked> Keep me signed in</label>' +
         '<button type="button" class="btn btn--link small" data-forgot>Forgot password?</button></div>' +
         '<button class="btn btn--primary btn--block" type="submit">Sign in</button>' +
-        (Auth.remote ? GOOGLE_BTN : '') +
         '</form>' +
         (Auth.remote ? '' : '<div class="note" style="margin-top:22px"><strong>Demo accounts</strong><br>' +
         'User: demo@cardcrest.in / demo1234<br>Admin: admin@cardcrest.in / admin1234</div>') +
@@ -82,7 +58,6 @@
           i.type = i.type === 'password' ? 'text' : 'password';
           this.textContent = i.type === 'password' ? 'Show' : 'Hide';
         };
-        wireGoogle(root);
         root.querySelector('[data-forgot]').onclick = function () {
           UI.modal({
             title: 'Reset your password',
@@ -145,7 +120,6 @@
         '<div class="field" style="margin-bottom:18px"><label for="s-pw2">Confirm password</label><input id="s-pw2" type="password" autocomplete="new-password"><span class="err">Both passwords need to match.</span></div>' +
         '<label class="check" style="margin-bottom:20px"><input type="checkbox" id="s-terms"> I agree to the <a href="#/legal/terms" style="color:var(--crest)">terms</a> and <a href="#/legal/privacy" style="color:var(--crest)">privacy policy</a>.</label>' +
         '<button class="btn btn--primary btn--block" type="submit">Create account</button>' +
-        (Auth.remote ? GOOGLE_BTN : '') +
         '</form>' +
         '<p class="auth-alt">Already have an account? <a href="#/login" style="color:var(--crest); font-weight:600">Sign in</a></p>' +
         '</div></div>',
@@ -155,7 +129,6 @@
           i.type = i.type === 'password' ? 'text' : 'password';
           this.textContent = i.type === 'password' ? 'Show' : 'Hide';
         };
-        wireGoogle(root);
         root.querySelector('#signupForm').addEventListener('submit', function (e) {
           e.preventDefault();
           var f = {
