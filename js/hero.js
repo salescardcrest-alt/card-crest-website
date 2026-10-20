@@ -82,7 +82,7 @@
         if (!dragging) return;
         dragging = false;
         stage.classList.remove('is-drag');
-        if (moved < 6 && startCard) w.CC.Router.go('#/cards/' + startCard.getAttribute('data-id'));
+        if (moved < 6 && startCard) w.CC.Router.go('#/cards');
         startCard = null;
       }
       stage.addEventListener('pointerup', release);
