@@ -136,18 +136,27 @@
       UI.esc(bank.name) + ' logo" loading="lazy" onerror="' + FALLBACK + '"></span>';
   };
 
+  /* A card photo is looked up at assets/cards/<card-id>.png (then .jpg, .webp), or card.image if set.
+     If no photo exists, the drawn card below stays as the fallback. */
+  var PHOTO_EXT = ['png', 'jpg', 'webp'];
+  UI.photoErr = function (img) {
+    var n = (+img.getAttribute('data-n') || 0) + 1;
+    var base = img.getAttribute('data-base');
+    if (!base || n >= PHOTO_EXT.length) { img.remove(); return; }
+    img.setAttribute('data-n', n);
+    img.src = base + '.' + PHOTO_EXT[n];
+  };
   UI.plastic = function (card, small) {
     var bank = w.CC.Cards.bank(card.bank);
-    // A real card photo wins if one is set on the card (card.image = URL or assets/ path).
-    if (card.image) {
-      return '<div class="plastic plastic--photo' + (small ? ' plastic--sm' : '') + '"><img src="' +
-        UI.esc(card.image) + '" alt="' + UI.esc(card.name) + ' card" loading="lazy"></div>';
-    }
+    var base = 'assets/cards/' + card.id;
+    var photo = card.image
+      ? '<img class="plastic__photo" src="' + UI.esc(card.image) + '" alt="' + UI.esc(card.name) + ' card" loading="lazy" onerror="this.remove()">'
+      : '<img class="plastic__photo" src="' + base + '.' + PHOTO_EXT[0] + '" data-base="' + base + '" alt="' + UI.esc(card.name) + ' card" loading="lazy" onerror="CC.UI.photoErr(this)">';
     return '<div class="plastic plastic--' + card.art + (small ? ' plastic--sm' : '') + '">' +
       '<div class="plastic__bank">' + UI.bankLogo(bank, 'bank-logo--card') + '<span>' + UI.esc(bank ? bank.short : '') + '</span></div>' +
       '<div class="plastic__chip"></div>' +
       '<div><div class="plastic__name">' + UI.esc(card.name) + '</div>' +
-      '<div class="plastic__no">•••• •••• •••• ' + (card.id.length * 7 % 90 + 10) + '</div></div></div>';
+      '<div class="plastic__no">•••• •••• •••• ' + (card.id.length * 7 % 90 + 10) + '</div></div>' + photo + '</div>';
   };
 
   UI.logo = function (store, cls) {
