@@ -17,13 +17,13 @@
    Cards revolve around a glowing core.
    hero.js turns the ring (drag, momentum, scroll) and writes --v (0..1, how close a card
    is to the front). */
-.stage{--R:300px; --cw:188px; position:relative; min-height:500px; perspective:1500px; perspective-origin:50% 28%;
+.stage{--R:300px; --cw:188px; position:relative; min-height:520px; perspective:1500px; perspective-origin:50% 28%;
   touch-action:pan-y; cursor:grab; user-select:none; -webkit-user-select:none; overflow:hidden;
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent),linear-gradient(180deg,#000 93%,transparent);
   mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent),linear-gradient(180deg,#000 93%,transparent);
   -webkit-mask-composite:source-in; mask-composite:intersect}
 .stage.is-drag{cursor:grabbing}
-.ring{position:absolute; left:50%; top:40%; width:0; height:0; transform-style:preserve-3d}
+.ring{position:absolute; left:50%; top:33%; width:0; height:0; transform-style:preserve-3d}
 .ring{transform:rotateX(-12deg) rotateY(0deg); will-change:transform}
 .rc{position:absolute; width:var(--cw); margin-left:calc(var(--cw) / -2); margin-top:calc(var(--cw) / -3.2);
   transform:rotateY(calc(var(--i) * var(--step))) translateZ(calc(var(--R) + var(--v, 0) * 40px));
@@ -34,7 +34,7 @@
   opacity:calc((1 - var(--v, 0)) * .5)}
 @keyframes rcIn{from{opacity:0; transform:rotateY(calc(var(--i) * var(--step) + 140deg)) translateZ(calc(var(--R) + 260px))}}
 /* light on the floor: glow plus ripples that expand outward */
-.stage__floor{position:absolute; left:50%; top:40%; width:0; height:0; transform:translateY(190px) rotateX(74deg); pointer-events:none}
+.stage__floor{position:absolute; left:50%; top:33%; width:0; height:0; transform:translateY(190px) rotateX(74deg); pointer-events:none}
 .stage__floor::before{content:""; position:absolute; width:620px; height:620px; margin:-310px 0 0 -310px; border-radius:50%;
   background:radial-gradient(circle,rgba(23,160,106,.55),rgba(23,160,106,.16) 38%,transparent 66%); animation:corePulse 4s ease-in-out infinite}
 .stage__floor i{position:absolute; width:300px; height:300px; margin:-150px 0 0 -150px; border-radius:50%; border:2px solid rgba(23,160,106,.55);
@@ -44,8 +44,8 @@
 @keyframes ripple{0%{transform:scale(.3); opacity:.9}100%{transform:scale(2.3); opacity:0}}
 @keyframes corePulse{0%,100%{opacity:.75; transform:scale(.94)}50%{opacity:1; transform:scale(1.04)}}
 /* readout for the card at the front */
-.stage__info{position:absolute; left:0; right:0; bottom:30px; text-align:center; pointer-events:none}
-.stage__bank{font-size:.72rem; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--leaf)}
+.stage__info{position:absolute; left:0; right:0; bottom:22px; text-align:center; pointer-events:none}
+.stage__bank{font-size:.72rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--crest)}
 .stage__name{font-size:1.45rem; font-weight:800; letter-spacing:-.035em; margin:4px 0 8px; transition:opacity .25s, transform .25s}
 .stage__meta{display:flex; justify-content:center; align-items:center; gap:14px; font-size:.84rem; color:var(--muted)}
 .stage__score b{font-size:1rem; font-weight:800; color:var(--ink); font-variant-numeric:lining-nums tabular-nums}
