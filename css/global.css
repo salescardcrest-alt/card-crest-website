@@ -29,8 +29,8 @@
   --info-soft:#e6ecfd;
 
   /* type */
-  --display:"Playfair Display", Georgia, serif;
-  --body:"Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --display:"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --body:"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* space + shape */
@@ -68,13 +68,13 @@ ul{margin:0; padding:0; list-style:none}
 }
 
 /* ---------- type scale ---------- */
-.h-display{font-family:var(--display); font-weight:600; font-size:clamp(2.5rem,5.4vw,4.1rem); line-height:1.04; letter-spacing:-.02em}
+.h-display{font-family:var(--display); font-weight:800; font-size:clamp(2.4rem,5.2vw,3.9rem); line-height:1.06; letter-spacing:-.035em; word-spacing:.08em}
 .h-display em{font-style:italic; color:var(--crest)}
-.h1{font-family:var(--display); font-weight:600; font-size:clamp(1.9rem,3.4vw,2.7rem); line-height:1.1; letter-spacing:-.015em}
+.h1{font-family:var(--display); font-weight:800; font-size:clamp(1.8rem,3.2vw,2.5rem); line-height:1.12; letter-spacing:-.03em; word-spacing:.06em}
 .h1 em{font-style:italic; color:var(--crest)}
-.h2{font-family:var(--display); font-weight:600; font-size:clamp(1.5rem,2.4vw,2rem); line-height:1.15}
+.h2{font-family:var(--display); font-weight:700; font-size:clamp(1.4rem,2.3vw,1.9rem); line-height:1.18; letter-spacing:-.025em; word-spacing:.05em}
 .h2 em{font-style:italic; color:var(--crest)}
-.h3{font-family:var(--body); font-weight:600; font-size:1.1rem; letter-spacing:-.01em}
+.h3{font-family:var(--body); font-weight:700; font-size:1.08rem; letter-spacing:-.02em}
 .lede{font-size:1.08rem; color:var(--ink-2); max-width:60ch}
 .small{font-size:.875rem}
 .muted{color:var(--muted)}
@@ -117,22 +117,22 @@ ul{margin:0; padding:0; list-style:none}
 /* ---------- header ---------- */
 .hdr{position:sticky; top:0; z-index:80; background:rgba(255,255,255,.88); backdrop-filter:blur(14px); border-bottom:1px solid transparent; transition:border-color .25s, box-shadow .25s}
 .hdr.is-stuck{border-bottom-color:var(--line); box-shadow:var(--sh-1)}
-.hdr__in{display:flex; align-items:center; gap:22px; height:var(--hdr-h)}
+.hdr__in{display:flex; align-items:center; gap:16px; height:var(--hdr-h)}
 
 .brand{display:flex; align-items:center; gap:9px; flex-shrink:0; color:var(--crest)}
 .brand__mark{width:26px; height:26px; flex-shrink:0}
-.brand__word{font-family:var(--display); font-size:1.22rem; font-weight:600; color:var(--ink); letter-spacing:-.015em; white-space:nowrap}
+.brand__word{font-family:var(--display); font-size:1.2rem; font-weight:800; color:var(--ink); letter-spacing:-.04em; white-space:nowrap}
 .brand__word em{font-style:italic; color:var(--crest)}
 
 .hdr__nav{display:flex; gap:2px; margin-right:auto}
-.hdr__nav a{padding:8px 12px; border-radius:var(--r-pill); font-size:.9rem; font-weight:500; color:var(--ink-2); transition:background .18s, color .18s; white-space:nowrap}
+.hdr__nav a{padding:8px 10px; border-radius:var(--r-pill); font-size:.86rem; font-weight:500; color:var(--ink-2); transition:background .18s, color .18s; white-space:nowrap}
 .hdr__nav a:hover{background:var(--mint); color:var(--crest)}
 .hdr__nav a.is-active{color:var(--crest); font-weight:600}
 
 .hdr__act{display:flex; align-items:center; gap:10px; margin-left:auto}
 .hdr__auth{display:flex; align-items:center; gap:8px}
 
-.search{position:relative; width:230px}
+.search{position:relative; width:200px}
 .search__i{position:absolute; left:12px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--muted); pointer-events:none}
 .search input{
   width:100%; height:40px; padding:0 14px 0 34px; border:1px solid var(--line);

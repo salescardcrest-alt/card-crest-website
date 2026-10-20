@@ -100,7 +100,7 @@
     linear-gradient(135deg,#f3dfa6,#b98b2e);
   box-shadow:inset 0 0 0 .3cqw rgba(90,60,10,.45), 0 .4cqw 1cqw rgba(0,0,0,.25)}
 .plastic__nfc{position:absolute; right:8cqw; top:26cqw; z-index:1; width:9cqw; height:9cqw; opacity:.9}
-.plastic__name{position:absolute; left:8cqw; right:8cqw; bottom:7cqw; z-index:1; font-family:var(--display); font-size:6.4cqw; line-height:1.15; text-shadow:0 1px 3px rgba(0,0,0,.3)}
+.plastic__name{position:absolute; left:8cqw; right:8cqw; bottom:7cqw; z-index:1; font-family:var(--display); font-size:6cqw; font-weight:700; letter-spacing:-.02em; line-height:1.15; text-shadow:0 1px 3px rgba(0,0,0,.3)}
 .plastic__no{display:none}
 .plastic--travel{background:linear-gradient(135deg,#123a5c,#08203a 60%,#0d2e4a)}
 .plastic--premium{background:linear-gradient(135deg,#2a2622,#100e0c 60%,#3a3229)}
@@ -123,7 +123,7 @@
 .ctile:hover{transform:translateY(-4px); box-shadow:var(--sh-3); border-color:var(--line-soft)}
 .ctile__top{padding:18px 18px 0; display:grid; grid-template-columns:150px 1fr; gap:16px; align-items:start}
 .ctile__body{padding:16px 18px 18px; display:flex; flex-direction:column; gap:13px; flex:1}
-.ctile__name{font-family:var(--display); font-size:1.12rem; line-height:1.2; margin-bottom:3px}
+.ctile__name{font-family:var(--display); font-size:1.1rem; font-weight:700; letter-spacing:-.025em; line-height:1.2; margin-bottom:3px}
 .ctile__bank{font-size:.76rem; letter-spacing:.09em; text-transform:uppercase; color:var(--muted)}
 .ctile__facts{display:grid; grid-template-columns:1fr 1fr; gap:12px 10px; padding:13px 0; border-block:1px solid var(--line-soft)}
 .fact__k{font-size:.7rem; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:2px}
@@ -251,7 +251,7 @@ table.tbl{width:100%; border-collapse:collapse; font-size:.89rem}
 .sk-card{height:290px; border-radius:var(--r-lg)}
 
 .empty{text-align:center; padding:56px 24px; border:1px dashed var(--line); border-radius:var(--r-lg); background:var(--mist)}
-.empty__t{font-family:var(--display); font-size:1.3rem; margin-bottom:8px}
+.empty__t{font-family:var(--display); font-size:1.3rem; font-weight:700; letter-spacing:-.025em; margin-bottom:8px}
 .empty__d{color:var(--muted); font-size:.92rem; max-width:44ch; margin:0 auto 18px}
 
 /* ---------- misc ---------- */
