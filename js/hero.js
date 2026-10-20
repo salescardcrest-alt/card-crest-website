@@ -98,8 +98,7 @@
           if (!reduced) rot += hover ? 0.05 : 0.18; // idle spin
         }
         var total = rot + (reduced ? 0 : (w.scrollY || 0) * 0.1);
-        ring.style.transform = 'rotateX(-30deg) rotateY(' + total.toFixed(2) + 'deg)';
-        stage.style.setProperty('--ry', total.toFixed(2) + 'deg'); // cards counter-rotate by this to keep facing the viewer
+        ring.style.transform = 'rotateX(-12deg) rotateY(' + total.toFixed(2) + 'deg)';
 
         var best = 0, bestV = -1;
         for (var i = 0; i < n; i++) {
