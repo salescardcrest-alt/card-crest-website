@@ -59,7 +59,6 @@
           elBank.textContent = c.getAttribute('data-bank');
           elName.textContent = c.getAttribute('data-name');
           elScore.textContent = c.getAttribute('data-score');
-          elGo.setAttribute('href', '#/cards/' + c.getAttribute('data-id'));
           info.classList.remove('is-swap');
         }, front === -1 ? 0 : 160);
       }
