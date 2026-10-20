@@ -23,7 +23,7 @@
     var offers = O.query({ section: 'top' }).slice(0, 6);
     var bestCard = top[0];
     var bestScore = C.score(bestCard);
-    var ringCards = C.topByScore(9);
+    var ringCards = C.topByScore(10);
 
     var html =
       /* ---- hero ---- */

@@ -17,22 +17,23 @@
    Cards revolve around a glowing core.
    hero.js turns the ring (drag, momentum, scroll) and writes --v (0..1, how close a card
    is to the front). */
-.stage{--R:300px; --cw:188px; position:relative; min-height:500px; perspective:1500px; perspective-origin:50% 28%;
+.stage{--R:196px; --cw:122px; --ry:0deg; position:relative; min-height:540px; perspective:1500px; perspective-origin:50% 38%;
   touch-action:pan-y; cursor:grab; user-select:none; -webkit-user-select:none; overflow:hidden;
-  -webkit-mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent),linear-gradient(180deg,#000 93%,transparent);
-  mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent),linear-gradient(180deg,#000 93%,transparent);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent),linear-gradient(180deg,#000 93%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent),linear-gradient(180deg,#000 93%,transparent);
   -webkit-mask-composite:source-in; mask-composite:intersect}
 .stage.is-drag{cursor:grabbing}
 .ring{position:absolute; left:50%; top:40%; width:0; height:0; transform-style:preserve-3d}
-.ring{transform:rotateX(-12deg) rotateY(0deg); will-change:transform}
+.ring{transform:rotateX(-30deg) rotateY(0deg); will-change:transform}
 .rc{position:absolute; width:var(--cw); margin-left:calc(var(--cw) / -2); margin-top:calc(var(--cw) / -3.2);
-  transform:rotateY(calc(var(--i) * var(--step))) translateZ(calc(var(--R) + var(--v, 0) * 40px));
-  backface-visibility:hidden; -webkit-backface-visibility:hidden; opacity:calc(.3 + .7 * var(--v, 0)); cursor:pointer;
+  /* orbit to the card's place on the ring, then turn back to face the viewer so every card is readable, front or far side */
+  transform:rotateY(calc(var(--i) * var(--step))) translateZ(calc(var(--R) + var(--v, 0) * 36px)) rotateY(calc(-1 * (var(--i) * var(--step) + var(--ry)))) rotateX(30deg);
+  opacity:calc(.5 + .5 * var(--v, 0)); cursor:pointer;
   animation:rcIn 1.1s cubic-bezier(.2,.9,.2,1) backwards; animation-delay:calc(var(--i) * 70ms)}
 .rc .plastic{width:100%; box-shadow:0 30px 50px -18px rgba(9,61,40,.55)}
 .rc::after{content:""; position:absolute; inset:0; border-radius:14px; background:#04120b; pointer-events:none;
-  opacity:calc((1 - var(--v, 0)) * .5)}
-@keyframes rcIn{from{opacity:0; transform:rotateY(calc(var(--i) * var(--step) + 140deg)) translateZ(calc(var(--R) + 260px))}}
+  opacity:calc((1 - var(--v, 0)) * .38)}
+@keyframes rcIn{from{opacity:0; transform:rotateY(calc(var(--i) * var(--step))) translateZ(calc(var(--R) + 240px)) rotateY(calc(-1 * (var(--i) * var(--step) + var(--ry)))) rotateX(30deg) scale(.5)}}
 /* light on the floor: glow plus ripples that expand outward */
 .stage__floor{position:absolute; left:50%; top:40%; width:0; height:0; transform:translateY(190px) rotateX(74deg); pointer-events:none}
 .stage__floor::before{content:""; position:absolute; width:620px; height:620px; margin:-310px 0 0 -310px; border-radius:50%;
@@ -55,7 +56,7 @@
   padding:6px 10px; border-radius:var(--r-pill); background:rgba(255,255,255,.7); border:1px solid var(--line); animation:hintOut 1s 5s forwards}
 @keyframes hintOut{to{opacity:0}}
 @media (max-width:760px){
-  .stage{--R:182px; --cw:122px; min-height:430px}
+  .stage{--R:150px; --cw:92px; min-height:420px}
   .stage__name{font-size:1.2rem}
 }
 
