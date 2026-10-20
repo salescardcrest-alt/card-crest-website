@@ -44,7 +44,7 @@
 @keyframes ripple{0%{transform:scale(.3); opacity:.9}100%{transform:scale(2.3); opacity:0}}
 @keyframes corePulse{0%,100%{opacity:.75; transform:scale(.94)}50%{opacity:1; transform:scale(1.04)}}
 /* readout for the card at the front */
-.stage__info{position:absolute; left:0; right:0; bottom:22px; text-align:center; pointer-events:none}
+.stage__info{position:absolute; z-index:5; left:0; right:0; bottom:22px; text-align:center; pointer-events:none}
 .stage__bank{font-size:.72rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--crest)}
 .stage__name{font-size:1.45rem; font-weight:800; letter-spacing:-.035em; margin:4px 0 8px; transition:opacity .25s, transform .25s}
 .stage__meta{display:flex; justify-content:center; align-items:center; gap:14px; font-size:.84rem; color:var(--muted)}

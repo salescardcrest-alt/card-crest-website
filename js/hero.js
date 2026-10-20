@@ -65,6 +65,8 @@
       }
 
       stage.addEventListener('pointerdown', function (e) {
+        // let the "View card" link behave like a normal link (pointer capture would swallow its click)
+        if (e.target.closest && e.target.closest('.stage__go')) return;
         dragging = true; moved = 0; vel = 0; lastX = e.clientX;
         startCard = e.target.closest ? e.target.closest('.rc') : null;
         stage.classList.add('is-drag');
