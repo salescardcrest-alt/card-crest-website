@@ -50,9 +50,6 @@
             return '<div class="rc" style="--i:' + i + '" data-id="' + c.id + '" data-name="' + UI.esc(c.name) + '" data-bank="' +
               UI.esc(b ? b.name : '') + '" data-score="' + Math.round(C.score(c).total) + '">' + UI.plastic(c) + '</div>';
           }).join('') + '</div>' +
-          '<div class="coins" aria-hidden="true">' + [0, 1, 2, 3, 4, 5].map(function (k) {
-            return '<span class="coin" style="--k:' + k + '"><b>₹</b></span>';
-          }).join('') + '</div>' +
           '<div class="stage__info" aria-live="polite">' +
             '<div class="stage__bank"></div><div class="stage__name"></div>' +
             '<div class="stage__meta"><span class="stage__score"><b></b>/100 value score</span>' +

@@ -14,18 +14,17 @@
 .hero__proof div span{font-size:.79rem; color:var(--muted)}
 
 /* ---------- hero: the circulation ring ----------
-   Cards revolve around a glowing core, with rupee coins circling the other way.
+   Cards revolve around a glowing core.
    hero.js turns the ring (drag, momentum, scroll) and writes --v (0..1, how close a card
-   is to the front) and --r2 (coin angle). */
-.stage{--R:300px; --cw:188px; --r2:0deg; position:relative; min-height:500px; perspective:1500px; perspective-origin:50% 28%;
+   is to the front). */
+.stage{--R:300px; --cw:188px; position:relative; min-height:500px; perspective:1500px; perspective-origin:50% 28%;
   touch-action:pan-y; cursor:grab; user-select:none; -webkit-user-select:none; overflow:hidden;
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent),linear-gradient(180deg,#000 93%,transparent);
   mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent),linear-gradient(180deg,#000 93%,transparent);
   -webkit-mask-composite:source-in; mask-composite:intersect}
 .stage.is-drag{cursor:grabbing}
-.ring,.coins{position:absolute; left:50%; top:40%; width:0; height:0; transform-style:preserve-3d}
+.ring{position:absolute; left:50%; top:40%; width:0; height:0; transform-style:preserve-3d}
 .ring{transform:rotateX(-12deg) rotateY(0deg); will-change:transform}
-.coins{transform:rotateX(-12deg)}
 .rc{position:absolute; width:var(--cw); margin-left:calc(var(--cw) / -2); margin-top:calc(var(--cw) / -3.2);
   transform:rotateY(calc(var(--i) * var(--step))) translateZ(calc(var(--R) + var(--v, 0) * 40px));
   backface-visibility:hidden; -webkit-backface-visibility:hidden; opacity:calc(.3 + .7 * var(--v, 0)); cursor:pointer;
@@ -34,14 +33,6 @@
 .rc::after{content:""; position:absolute; inset:0; border-radius:14px; background:#04120b; pointer-events:none;
   opacity:calc((1 - var(--v, 0)) * .5)}
 @keyframes rcIn{from{opacity:0; transform:rotateY(calc(var(--i) * var(--step) + 140deg)) translateZ(calc(var(--R) + 260px))}}
-/* coins that travel the opposite way */
-.coin{position:absolute; width:34px; height:34px; margin:-17px 0 0 -17px;
-  transform:rotateY(calc(var(--k) * 60deg + var(--r2))) translateZ(calc(var(--R) + 78px)) translateY(calc(var(--k) * 14px - 34px)) rotateY(calc(-1 * (var(--k) * 60deg + var(--r2))))}
-.coin b{display:grid; place-items:center; width:100%; height:100%; border-radius:50%; font-size:.95rem; font-weight:800; color:#7a4e00;
-  background:radial-gradient(circle at 32% 28%,#fff1b8,#f5c451 45%,#d99a1c);
-  box-shadow:0 0 0 2px rgba(255,255,255,.55) inset, 0 8px 18px -4px rgba(217,154,28,.7), 0 0 22px rgba(245,196,81,.55);
-  animation:coinBob 3.2s ease-in-out infinite; animation-delay:calc(var(--k) * -.5s)}
-@keyframes coinBob{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-9px) scale(1.07)}}
 /* light on the floor: glow plus ripples that expand outward */
 .stage__floor{position:absolute; left:50%; top:40%; width:0; height:0; transform:translateY(190px) rotateX(74deg); pointer-events:none}
 .stage__floor::before{content:""; position:absolute; width:620px; height:620px; margin:-310px 0 0 -310px; border-radius:50%;
@@ -66,7 +57,6 @@
 @media (max-width:760px){
   .stage{--R:182px; --cw:122px; min-height:430px}
   .stage__name{font-size:1.2rem}
-  .coin{width:28px; height:28px; margin:-14px 0 0 -14px}
 }
 
 /* ---------- intent grid ---------- */
