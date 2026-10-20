@@ -205,9 +205,9 @@ table.tbl{width:100%; border-collapse:collapse; font-size:.89rem}
 .cmp-best{color:var(--crest); font-weight:700}
 
 /* ---------- timeline ---------- */
-.tl{position:relative; padding-left:30px}
+.tl{position:relative; padding-left:30px; list-style:none; margin:0}
 .tl::before{content:""; position:absolute; left:9px; top:6px; bottom:6px; width:2px; background:var(--line)}
-.tl__i{position:relative; padding-bottom:22px}
+.tl__i{position:relative; padding-bottom:22px; list-style:none}
 .tl__i:last-child{padding-bottom:0}
 .tl__i::before{content:""; position:absolute; left:-25px; top:4px; width:12px; height:12px; border-radius:50%; background:#fff; border:2px solid var(--line)}
 .tl__i.is-done::before{background:var(--leaf); border-color:var(--leaf)}
