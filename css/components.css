@@ -105,7 +105,7 @@
 .plastic--sm .plastic__chip{width:22px; height:17px}
 .plastic--sm .plastic__no, .plastic--sm .plastic__name{display:none}
 /* in list tiles the card name sits right beside the small card, so keep the card face clean */
-.ctile__top .plastic__name, .ctile__top .plastic__no{display:none}
+.ctile__top .plastic__name, .ctile__top .plastic__no, .ctile__top .plastic__chip, .plastic--sm .plastic__chip{display:none}
 
 /* ---------- card tile ---------- */
 .ctile{
