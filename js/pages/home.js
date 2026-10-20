@@ -36,18 +36,23 @@
             '<a class="btn btn--ghost btn--lg" href="#/cards">Browse all cards</a>' +
           '</div>' +
           '<div class="hero__proof">' +
-            '<div><strong>' + C.all().length + '</strong><span>Cards scored</span></div>' +
-            '<div><strong>' + O.stores().length + '</strong><span>Cashback stores</span></div>' +
-            '<div><strong>' + O.all().length + '</strong><span>Live offers</span></div>' +
-            '<div><strong>' + UI.money(bestScore.value.net) + '</strong><span>Top card\'s net annual value</span></div>' +
+            '<div><strong data-count="' + C.all().length + '">' + C.all().length + '</strong><span>Cards scored</span></div>' +
+            '<div><strong data-count="' + O.stores().length + '">' + O.stores().length + '</strong><span>Cashback stores</span></div>' +
+            '<div><strong data-count="' + O.all().length + '">' + O.all().length + '</strong><span>Live offers</span></div>' +
+            '<div><strong data-count="' + Math.round(bestScore.value.net) + '" data-money="1">' + UI.money(bestScore.value.net) + '</strong><span>Top card\'s net annual value</span></div>' +
           '</div>' +
         '</div>' +
         '<div class="stage" id="heroStage">' +
+          '<div class="stage__glow" aria-hidden="true"></div>' +
+          '<div class="stage__ring" aria-hidden="true"><div class="stage__orbit"><i></i></div></div>' +
           '<div class="stage__deck">' +
-            UI.plastic(C.byId('axis-magnus') || top[1] || bestCard) +
-            UI.plastic(C.byId('sbi-cashback') || top[2] || bestCard) +
-            UI.plastic(bestCard) +
-            '<div class="stage__score">' + UI.gauge(bestScore.total) + '</div>' +
+            '<div class="stage__card stage__card--l">' + UI.plastic(C.byId('axis-magnus') || top[1] || bestCard) + '</div>' +
+            '<div class="stage__card stage__card--r">' + UI.plastic(C.byId('sbi-cashback') || top[2] || bestCard) + '</div>' +
+            '<div class="stage__card stage__card--f">' + UI.plastic(bestCard) + '<span class="stage__sheen" aria-hidden="true"></span></div>' +
+            '<div class="stage__chip stage__chip--score" style="--d:26"><div class="stage__chipin">' + UI.gauge(bestScore.total) + '</div></div>' +
+            '<div class="stage__chip stage__chip--cash" style="--d:38"><div class="stage__chipin"><span class="stage__ico">₹</span>' +
+              '<span><small>Est. yearly rewards</small><b data-count="' + Math.round(bestScore.value.rewards) + '" data-money="1">' + UI.money(bestScore.value.rewards) + '</b></span></div></div>' +
+            '<div class="stage__chip stage__chip--pick" style="--d:18"><div class="stage__chipin"><span class="stage__ico stage__ico--star">★</span><span><small>Top pick</small><b>' + UI.esc(bestCard.name) + '</b></span></div></div>' +
           '</div>' +
         '</div>' +
       '</div></section>' +

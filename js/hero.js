@@ -1,44 +1,69 @@
 /* ============================================================
    Card Crest — hero.js
-   Pointer parallax for the hero card stack.
-
-   If you are dropping this into the existing Card Crest project
-   that already ships a Three.js hero, replace mount() below with
-   your existing initialiser and keep the same element id
-   (#heroStage). Nothing else in the app touches the hero.
+   Hero card stage: smoothed pointer parallax (cards, chips and sheen
+   all read --px/--py), a gentle idle drift when nobody is moving the
+   pointer (also covers touch screens), and a count-up on the numbers.
+   Everything is skipped for prefers-reduced-motion.
    ============================================================ */
 (function (w, d) {
   'use strict';
 
+  function format(el, n) {
+    return el.hasAttribute('data-money') ? w.CC.UI.money(n) : String(Math.round(n));
+  }
+
+  function countUp(scope) {
+    scope.querySelectorAll('[data-count]').forEach(function (el) {
+      var end = Number(el.getAttribute('data-count')) || 0, t0 = null, dur = 1400;
+      function step(t) {
+        if (t0 === null) t0 = t;
+        var p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 4); // easeOutQuart
+        el.textContent = format(el, end * e);
+        if (p < 1) requestAnimationFrame(step); else el.textContent = format(el, end);
+      }
+      el.textContent = format(el, 0);
+      requestAnimationFrame(step);
+      // animation frames pause in background tabs; make sure the real number always lands
+      setTimeout(function () { el.textContent = format(el, end); }, dur + 400);
+    });
+  }
+
   var Hero = {
     mount: function (root) {
-      var stage = (root || d).querySelector('#heroStage');
+      var scope = root || d;
+      var stage = scope.querySelector('#heroStage');
       if (!stage) return;
-      var deck = stage.querySelector('.stage__deck');
-      if (!deck) return;
       if (w.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      if (w.matchMedia('(hover: none)').matches) return; // skip on touch
 
-      var raf = null;
-      function move(e) {
-        if (raf) return;
-        raf = requestAnimationFrame(function () {
-          raf = null;
-          var r = stage.getBoundingClientRect();
-          var x = (e.clientX - r.left) / r.width - 0.5;
-          var y = (e.clientY - r.top) / r.height - 0.5;
-          deck.style.animation = 'none';
-          deck.style.transform =
-            'rotateY(' + (-14 + x * 16).toFixed(2) + 'deg) ' +
-            'rotateX(' + (7 - y * 12).toFixed(2) + 'deg)';
-        });
+      countUp(scope.querySelector('.hero') || scope);
+
+      var host = stage.closest('.hero') || stage;
+      var tx = 0, ty = 0, cx = 0, cy = 0, lastMove = 0, raf = 0, alive = true;
+
+      function onMove(e) {
+        var r = stage.getBoundingClientRect();
+        tx = Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width - 0.5) * 2));
+        ty = Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height - 0.5) * 2));
+        lastMove = performance.now();
       }
-      function leave() {
-        deck.style.animation = '';
-        deck.style.transform = '';
+      function onLeave() { lastMove = 0; }
+
+      function tick(now) {
+        if (!alive || !stage.isConnected) { host.removeEventListener('pointermove', onMove); return; }
+        if (now - lastMove > 1800) { // idle drift
+          tx = Math.sin(now / 2600) * 0.45;
+          ty = Math.cos(now / 3300) * 0.25;
+        }
+        cx += (tx - cx) * 0.07; // ease toward the target
+        cy += (ty - cy) * 0.07;
+        stage.style.setProperty('--px', cx.toFixed(4));
+        stage.style.setProperty('--py', cy.toFixed(4));
+        raf = requestAnimationFrame(tick);
       }
-      stage.addEventListener('mousemove', move);
-      stage.addEventListener('mouseleave', leave);
+
+      host.addEventListener('pointermove', onMove, { passive: true });
+      host.addEventListener('pointerleave', onLeave);
+      raf = requestAnimationFrame(tick);
     }
   };
 
