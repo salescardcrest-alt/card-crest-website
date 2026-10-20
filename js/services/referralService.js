@@ -4,7 +4,7 @@
 (function (w) {
   'use strict';
   var S = w.CC.Store;
-  var REWARD = 1000;
+  var REWARD = 100;
 
   var Referrals = {
     REWARD: REWARD,

@@ -512,15 +512,15 @@
 
   /* ---------------- seed referrals ---------------- */
   var REF_SEED = [
-    ['u-001','Neha K.','successful',  1000, 40],
-    ['u-001','Imran S.','successful', 1000, 33],
-    ['u-001','Divya R.','successful', 1000, 22],
+    ['u-001','Neha K.','successful', 100, 40],
+    ['u-001','Imran S.','successful', 100, 33],
+    ['u-001','Divya R.','successful', 100, 22],
     ['u-001','Karan B.','pending',       0, 11],
     ['u-001','Sneha P.','pending',       0,  5],
-    ['u-002','Arjun N.','successful', 1000, 18],
-    ['u-003','Meera J.','successful', 1000, 26],
+    ['u-002','Arjun N.','successful', 100, 18],
+    ['u-003','Meera J.','successful', 100, 26],
     ['u-005','Rhea M.','pending',        0,  9],
-    ['u-006','Anon',    'successful', 1000, 14],
+    ['u-006','Anon',    'successful', 100, 14],
     ['u-009','Anon',    'pending',       0,  3]
   ];
 
@@ -533,7 +533,7 @@
     ['u-001','application','Documents needed','Axis Bank has asked for an updated address proof.', 6],
     ['u-001','offer','New offer at Lenskart','10% cashback on all eyewear, ending in 12 days.', 1],
     ['u-001','offer','Flash deal live','Croma is at 5% back for the next 48 hours.', 0],
-    ['u-001','referral','Referral reward credited','Divya joined using your code. ₹1,000 added.', 22],
+    ['u-001','referral','Referral reward credited','Divya joined using your code. ₹100 added.', 22],
     ['u-001','system','Verify your mobile number','Confirm your number to enable reward withdrawals.', 4],
     ['u-001','cashback','Cashback cancelled','Your BigBasket order was returned, so the cashback was reversed.', 20],
     ['u-001','reward','Redemption processed','₹1,500 was sent to your UPI in demo mode.', 9],
