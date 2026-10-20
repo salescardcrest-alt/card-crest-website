@@ -658,7 +658,7 @@
       '<div><div class="row" style="gap:10px; flex-wrap:wrap">' +
       '<button class="btn btn--primary btn--sm" type="button" data-photo-pick>' + (u.avatar ? 'Change photo' : 'Upload photo') + '</button>' +
       '<button class="btn btn--ghost btn--sm" type="button" data-photo-remove' + (u.avatar ? '' : ' hidden') + '>Remove</button></div>' +
-      '<p class="hint small muted" style="margin-top:10px">JPG, PNG or WebP, up to 5 MB. We crop it to a square.</p></div>' +
+      '<p class="hint small muted" style="margin-top:10px">JPG, PNG or WebP, up to 8 MB. You can crop and zoom it before saving.</p></div>' +
       '<input type="file" id="photoFile" accept="image/jpeg,image/png,image/webp" hidden></div></div>' +
 
       '<div class="panel" style="margin-bottom:20px"><h2 class="h3" style="margin-bottom:18px">Personal information</h2>' +
@@ -702,20 +702,7 @@
         /* ---- profile photo ---- */
         var file = root.querySelector('#photoFile'), prev = root.querySelector('#photoPrev');
         var pickBtn = root.querySelector('[data-photo-pick]'), rmBtn = root.querySelector('[data-photo-remove]');
-        function cropSquare(f, size) { // centre-crop to a square JPEG blob
-          return new Promise(function (resolve, reject) {
-            var url = URL.createObjectURL(f), img = new Image();
-            img.onload = function () {
-              var s = Math.min(img.width, img.height), c = d.createElement('canvas');
-              c.width = c.height = size;
-              c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
-              URL.revokeObjectURL(url);
-              c.toBlob(function (b) { b ? resolve(b) : reject(new Error('crop')); }, 'image/jpeg', 0.88);
-            };
-            img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('read')); };
-            img.src = url;
-          });
-        }
+        var OUT = 384; // the saved photo is OUT x OUT px
         function refreshPhoto() {
           var me = Auth.current();
           prev.innerHTML = UI.avatarHtml(me);
@@ -723,20 +710,81 @@
           rmBtn.hidden = !me.avatar;
           w.CC.App.paintAuth();
         }
+        /* Crop dialog: drag to reposition, slider / mouse wheel to zoom, round guide shows the final dp. */
+        function openCropper(f) {
+          var S = 280, url = URL.createObjectURL(f), img = new Image();
+          img.onerror = function () { URL.revokeObjectURL(url); UI.toast('Could not read that image', 'error'); };
+          img.onload = function () {
+            var nw = img.naturalWidth, nh = img.naturalHeight, base = Math.max(S / nw, S / nh);
+            var z = 1, ox = 0, oy = 0;
+            UI.modal({
+              title: 'Crop your photo',
+              body: '<div class="crop"><div class="crop__stage"><img class="crop__img" alt="" draggable="false"><div class="crop__ring"></div></div>' +
+                '<label class="crop__zoom"><span aria-hidden="true">−</span><input type="range" min="1" max="4" step="0.01" value="1" aria-label="Zoom"><span aria-hidden="true">+</span></label>' +
+                '<p class="hint small muted" style="text-align:center">Drag to move the photo. Use the slider or scroll to zoom. The circle is what people will see.</p></div>',
+              foot: '<button class="btn btn--ghost" data-x>Cancel</button><button class="btn btn--primary" data-save>Save photo</button>',
+              onMount: function (m) {
+                var stageEl = m.querySelector('.crop__stage'), im = m.querySelector('.crop__img'), zoom = m.querySelector('.crop__zoom input');
+                im.src = url;
+                function paint() {
+                  var sc = base * z, mx = Math.max(0, (nw * sc - S) / 2), my = Math.max(0, (nh * sc - S) / 2);
+                  ox = Math.max(-mx, Math.min(mx, ox)); oy = Math.max(-my, Math.min(my, oy)); // image must always cover the frame
+                  im.style.width = nw * sc + 'px'; im.style.height = nh * sc + 'px';
+                  im.style.left = (S / 2 + ox - nw * sc / 2) + 'px'; im.style.top = (S / 2 + oy - nh * sc / 2) + 'px';
+                }
+                paint();
+                zoom.oninput = function () { z = +zoom.value; paint(); };
+                var drag = null;
+                stageEl.addEventListener('pointerdown', function (e) {
+                  drag = { x: e.clientX, y: e.clientY, ox: ox, oy: oy };
+                  try { stageEl.setPointerCapture(e.pointerId); } catch (err) {}
+                  stageEl.classList.add('is-drag');
+                });
+                stageEl.addEventListener('pointermove', function (e) {
+                  if (!drag) return;
+                  ox = drag.ox + (e.clientX - drag.x); oy = drag.oy + (e.clientY - drag.y); paint();
+                });
+                ['pointerup', 'pointercancel'].forEach(function (ev) {
+                  stageEl.addEventListener(ev, function () { drag = null; stageEl.classList.remove('is-drag'); });
+                });
+                stageEl.addEventListener('wheel', function (e) {
+                  e.preventDefault();
+                  z = Math.max(1, Math.min(4, z + (e.deltaY < 0 ? 0.08 : -0.08)));
+                  zoom.value = z; paint();
+                }, { passive: false });
+                m.addEventListener('click', function (e) {
+                  if (e.target === m || e.target.closest('[data-x]')) URL.revokeObjectURL(url);
+                });
+                m.querySelector('[data-save]').onclick = function () {
+                  var btn = this, sc = base * z, c = d.createElement('canvas');
+                  c.width = c.height = OUT;
+                  var sx = (nw * sc / 2 - S / 2 - ox) / sc, sy = (nh * sc / 2 - S / 2 - oy) / sc, sw = S / sc;
+                  var ctx = c.getContext('2d');
+                  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, OUT, OUT);
+                  ctx.drawImage(img, sx, sy, sw, sw, 0, 0, OUT, OUT);
+                  btn.disabled = true; btn.textContent = 'Saving…';
+                  c.toBlob(function (blob) {
+                    if (!blob) { btn.disabled = false; btn.textContent = 'Save photo'; return UI.toast('Could not save that crop', 'error'); }
+                    Auth.setAvatar(blob).then(function (res) {
+                      URL.revokeObjectURL(url);
+                      UI.closeModal();
+                      refreshPhoto();
+                      UI.toast(res.ok ? 'Profile photo updated' : res.error, res.ok ? undefined : 'error');
+                    });
+                  }, 'image/jpeg', 0.9);
+                };
+              }
+            });
+          };
+          img.src = url;
+        }
         pickBtn.onclick = function () { file.click(); };
         file.onchange = function () {
           var f = file.files[0]; file.value = '';
           if (!f) return;
           if (!/^image\/(jpeg|png|webp)$/.test(f.type)) return UI.toast('Choose a JPG, PNG or WebP image', 'error');
-          if (f.size > 5 * 1024 * 1024) return UI.toast('That image is over 5 MB', 'error');
-          pickBtn.disabled = true; pickBtn.textContent = 'Uploading…';
-          cropSquare(f, 384).then(function (blob) { return Auth.setAvatar(blob); }).then(function (res) {
-            pickBtn.disabled = false;
-            if (!res.ok) { refreshPhoto(); return UI.toast(res.error, 'error'); }
-            refreshPhoto(); UI.toast('Profile photo updated');
-          }).catch(function () {
-            pickBtn.disabled = false; refreshPhoto(); UI.toast('Could not use that image', 'error');
-          });
+          if (f.size > 8 * 1024 * 1024) return UI.toast('That image is over 8 MB', 'error');
+          openCropper(f);
         };
         rmBtn.onclick = function () {
           Auth.removeAvatar().then(function (res) {

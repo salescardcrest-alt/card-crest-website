@@ -296,3 +296,11 @@ table.tbl{width:100%; border-collapse:collapse; font-size:.89rem}
 .photo{width:92px; height:92px; border-radius:50%; background:linear-gradient(135deg,var(--crest),var(--leaf)); color:#fff; display:grid; place-items:center;
   font-size:1.9rem; font-weight:800; letter-spacing:-.03em; overflow:hidden; flex-shrink:0; box-shadow:0 8px 24px -10px rgba(9,61,40,.5), 0 0 0 4px #fff, 0 0 0 5px var(--line)}
 .photo img{width:100%; height:100%; object-fit:cover; display:block}
+
+/* ---------- photo cropper ---------- */
+.crop__stage{position:relative; width:280px; height:280px; margin:4px auto 18px; overflow:hidden; border-radius:16px; background:#0d1411; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none}
+.crop__stage.is-drag{cursor:grabbing}
+.crop__img{position:absolute; max-width:none; user-select:none; -webkit-user-drag:none; pointer-events:none}
+.crop__ring{position:absolute; inset:0; border-radius:50%; pointer-events:none; box-shadow:0 0 0 400px rgba(8,20,14,.58), inset 0 0 0 2px rgba(255,255,255,.95)}
+.crop__zoom{display:flex; align-items:center; gap:12px; max-width:280px; margin:0 auto 10px; font-weight:800; color:var(--muted)}
+.crop__zoom input{flex:1; accent-color:var(--crest); height:auto; padding:0; border:0; box-shadow:none}
