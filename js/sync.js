@@ -92,7 +92,7 @@
       if (user && user.role === 'admin') {
         jobs.push(sb.from('profiles').select('*').then(function (r) {
           if (r.error) return;
-          S.set('users', r.data);
+          S.set('users', r.data.map(function (p) { return Object.assign({}, p, { avatar: p.avatar_url || '' }); }));
         }));
       }
       return Promise.all(jobs).catch(function () {});

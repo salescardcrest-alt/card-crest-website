@@ -38,7 +38,7 @@
         '</div>' +
       '</div>' +
       '<div class="dropdown" id="userDrop">' +
-        '<button class="avatar" id="avatarBtn" aria-label="Account menu" aria-expanded="false">' + UI.initials(u.name) + '</button>' +
+        '<button class="avatar" id="avatarBtn" aria-label="Account menu" aria-expanded="false">' + UI.avatarHtml(u) + '</button>' +
         '<div class="dropdown__menu" id="userMenu" hidden>' +
           '<div class="dropdown__head"><strong>' + UI.esc(u.name) + '</strong><span>' + UI.esc(u.email) + '</span></div>' +
           '<a href="#/dashboard">Dashboard</a>' +

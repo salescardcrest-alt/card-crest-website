@@ -51,6 +51,7 @@
         income: Number(p.income) || 0,
         credit: Number(p.credit) || 0,
         joined: p.joined || String(authUser.created_at || '').slice(0, 10),
+        avatar: p.avatar_url || '',
         active: p.active !== false
       };
       var existing = S.find('users', row.id);
@@ -172,6 +173,50 @@
       }
       S.update('users', u.id, patch);
       return { ok: true, user: Auth.current() };
+    },
+
+    /* Profile photo. `blob` is an already-cropped square JPEG (see the profile page).
+       Supabase: stored in the public `avatars` bucket under the user's own folder (supabase/03_avatars.sql).
+       Demo mode: kept in the browser as a data URL. */
+    setAvatar: function (blob) {
+      var u = Auth.current();
+      if (!u) return Promise.resolve(fail('You need to be signed in.'));
+      if (sb) {
+        var path = u.id + '/avatar.jpg';
+        return sb.storage.from('avatars').upload(path, blob, { upsert: true, contentType: 'image/jpeg', cacheControl: '3600' })
+          .then(function (r) {
+            if (r.error) return fail(/bucket not found/i.test(r.error.message)
+              ? 'Photo upload is not switched on yet. Run supabase/03_avatars.sql in Supabase.' : friendly(r.error));
+            var url = sb.storage.from('avatars').getPublicUrl(path).data.publicUrl + '?v=' + Date.now();
+            return sb.from('profiles').update({ avatar_url: url }).eq('id', u.id).then(function (r2) {
+              if (r2.error) return fail(friendly(r2.error));
+              S.update('users', u.id, { avatar: url });
+              return { ok: true, url: url };
+            });
+          }).catch(function (e) { return fail(friendly(e)); });
+      }
+      return new Promise(function (resolve) {
+        var fr = new FileReader();
+        fr.onload = function () { S.update('users', u.id, { avatar: fr.result }); resolve({ ok: true, url: fr.result }); };
+        fr.onerror = function () { resolve(fail('Could not read that image.')); };
+        fr.readAsDataURL(blob);
+      });
+    },
+
+    removeAvatar: function () {
+      var u = Auth.current();
+      if (!u) return Promise.resolve(fail('You need to be signed in.'));
+      if (sb) {
+        return sb.storage.from('avatars').remove([u.id + '/avatar.jpg']).then(function () {
+          return sb.from('profiles').update({ avatar_url: null }).eq('id', u.id);
+        }).then(function (r) {
+          if (r && r.error) return fail(friendly(r.error));
+          S.update('users', u.id, { avatar: '' });
+          return { ok: true };
+        }).catch(function (e) { return fail(friendly(e)); });
+      }
+      S.update('users', u.id, { avatar: '' });
+      return Promise.resolve({ ok: true });
     },
 
     changePassword: function (oldPw, newPw) {

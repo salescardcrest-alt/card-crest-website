@@ -37,6 +37,14 @@
   UI.initials = function (name) {
     return String(name || '?').split(/\s+/).slice(0, 2).map(function (p) { return p[0]; }).join('').toUpperCase();
   };
+  /* Profile photo if the user has one, otherwise their initials. */
+  UI.avatarHtml = function (user) {
+    if (user && user.avatar) {
+      return '<img src="' + UI.esc(user.avatar) + '" alt="" onerror="this.replaceWith(document.createTextNode(\'' +
+        UI.esc(UI.initials(user.name)).replace(/'/g, '') + '\'))">';
+    }
+    return UI.esc(UI.initials(user && user.name));
+  };
   UI.debounce = function (fn, ms) {
     var t; return function () {
       var a = arguments, c = this;

@@ -290,3 +290,9 @@ table.tbl{width:100%; border-collapse:collapse; font-size:.89rem}
 .tabs button.is-on{color:var(--crest); border-bottom-color:var(--crest)}
 .reveal{opacity:0; transform:translateY(18px)}
 .reveal.is-in{opacity:1; transform:none; transition:opacity .6s ease, transform .6s cubic-bezier(.2,.7,.3,1)}
+
+/* ---------- profile photo ---------- */
+.photo-row{display:flex; align-items:center; gap:22px; flex-wrap:wrap}
+.photo{width:92px; height:92px; border-radius:50%; background:linear-gradient(135deg,var(--crest),var(--leaf)); color:#fff; display:grid; place-items:center;
+  font-size:1.9rem; font-weight:800; letter-spacing:-.03em; overflow:hidden; flex-shrink:0; box-shadow:0 8px 24px -10px rgba(9,61,40,.5), 0 0 0 4px #fff, 0 0 0 5px var(--line)}
+.photo img{width:100%; height:100%; object-fit:cover; display:block}

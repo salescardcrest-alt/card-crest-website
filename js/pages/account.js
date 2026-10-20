@@ -653,6 +653,14 @@
     var inner = '<div class="section__head"><h1 class="h1">Profile and settings</h1>' +
       '<p class="lede">Keeping your income and credit details current makes our eligibility estimates far more useful.</p></div>' +
 
+      '<div class="panel" style="margin-bottom:20px"><h2 class="h3" style="margin-bottom:18px">Profile photo</h2>' +
+      '<div class="photo-row"><div class="photo" id="photoPrev">' + UI.avatarHtml(u) + '</div>' +
+      '<div><div class="row" style="gap:10px; flex-wrap:wrap">' +
+      '<button class="btn btn--primary btn--sm" type="button" data-photo-pick>' + (u.avatar ? 'Change photo' : 'Upload photo') + '</button>' +
+      '<button class="btn btn--ghost btn--sm" type="button" data-photo-remove' + (u.avatar ? '' : ' hidden') + '>Remove</button></div>' +
+      '<p class="hint small muted" style="margin-top:10px">JPG, PNG or WebP, up to 5 MB. We crop it to a square.</p></div>' +
+      '<input type="file" id="photoFile" accept="image/jpeg,image/png,image/webp" hidden></div></div>' +
+
       '<div class="panel" style="margin-bottom:20px"><h2 class="h3" style="margin-bottom:18px">Personal information</h2>' +
       '<div class="form-grid">' +
       '<div class="field"><label for="p-name">Full name</label><input id="p-name" type="text" value="' + UI.esc(u.name) + '"></div>' +
@@ -691,6 +699,51 @@
       title: 'Profile | Card Crest',
       html: shell('/profile', 'Profile', inner),
       mount: function (root) {
+        /* ---- profile photo ---- */
+        var file = root.querySelector('#photoFile'), prev = root.querySelector('#photoPrev');
+        var pickBtn = root.querySelector('[data-photo-pick]'), rmBtn = root.querySelector('[data-photo-remove]');
+        function cropSquare(f, size) { // centre-crop to a square JPEG blob
+          return new Promise(function (resolve, reject) {
+            var url = URL.createObjectURL(f), img = new Image();
+            img.onload = function () {
+              var s = Math.min(img.width, img.height), c = d.createElement('canvas');
+              c.width = c.height = size;
+              c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+              URL.revokeObjectURL(url);
+              c.toBlob(function (b) { b ? resolve(b) : reject(new Error('crop')); }, 'image/jpeg', 0.88);
+            };
+            img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('read')); };
+            img.src = url;
+          });
+        }
+        function refreshPhoto() {
+          var me = Auth.current();
+          prev.innerHTML = UI.avatarHtml(me);
+          pickBtn.textContent = me.avatar ? 'Change photo' : 'Upload photo';
+          rmBtn.hidden = !me.avatar;
+          w.CC.App.paintAuth();
+        }
+        pickBtn.onclick = function () { file.click(); };
+        file.onchange = function () {
+          var f = file.files[0]; file.value = '';
+          if (!f) return;
+          if (!/^image\/(jpeg|png|webp)$/.test(f.type)) return UI.toast('Choose a JPG, PNG or WebP image', 'error');
+          if (f.size > 5 * 1024 * 1024) return UI.toast('That image is over 5 MB', 'error');
+          pickBtn.disabled = true; pickBtn.textContent = 'Uploading…';
+          cropSquare(f, 384).then(function (blob) { return Auth.setAvatar(blob); }).then(function (res) {
+            pickBtn.disabled = false;
+            if (!res.ok) { refreshPhoto(); return UI.toast(res.error, 'error'); }
+            refreshPhoto(); UI.toast('Profile photo updated');
+          }).catch(function () {
+            pickBtn.disabled = false; refreshPhoto(); UI.toast('Could not use that image', 'error');
+          });
+        };
+        rmBtn.onclick = function () {
+          Auth.removeAvatar().then(function (res) {
+            if (!res.ok) return UI.toast(res.error, 'error');
+            refreshPhoto(); UI.toast('Profile photo removed');
+          });
+        };
         root.querySelector('[data-save-personal]').onclick = function () {
           var name = root.querySelector('#p-name').value.trim();
           var email = root.querySelector('#p-email').value.trim();

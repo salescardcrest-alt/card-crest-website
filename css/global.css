@@ -52,6 +52,7 @@ body{
 body.no-scroll{overflow:hidden}
 img{max-width:100%; display:block}
 button,input,select,textarea{font:inherit; color:inherit}
+[hidden]{display:none !important}
 a{color:inherit; text-decoration:none}
 h1,h2,h3,h4{margin:0; line-height:1.15; font-weight:600}
 p{margin:0 0 1em}
@@ -155,7 +156,8 @@ ul{margin:0; padding:0; list-style:none}
 .hdr__burger span{display:block; width:16px; height:1.8px; background:var(--ink); border-radius:2px}
 
 /* avatar + dropdown */
-.avatar{width:38px; height:38px; border-radius:50%; background:var(--crest); color:#fff; display:grid; place-items:center; font-weight:600; font-size:.85rem; border:0; cursor:pointer; flex-shrink:0}
+.avatar{width:38px; height:38px; border-radius:50%; background:var(--crest); color:#fff; display:grid; place-items:center; font-weight:600; font-size:.85rem; border:0; cursor:pointer; flex-shrink:0; overflow:hidden; padding:0}
+.avatar img{width:100%; height:100%; object-fit:cover; display:block}
 .bell{position:relative; width:38px; height:38px; border-radius:50%; border:1px solid var(--line); background:#fff; display:grid; place-items:center; cursor:pointer}
 .bell svg{width:18px; height:18px}
 .bell__count{position:absolute; top:-3px; right:-3px; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--danger); color:#fff; font-size:.66rem; font-weight:700; display:grid; place-items:center}
