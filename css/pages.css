@@ -10,7 +10,7 @@
 .hero .lede{margin:20px 0 28px; font-size:1.14rem}
 .hero__cta{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:34px}
 .hero__proof{display:flex; gap:34px; flex-wrap:wrap; padding-top:26px; border-top:1px solid var(--line)}
-.hero__proof div strong{display:block; font-family:var(--display); font-size:1.5rem; font-weight:600; font-variant-numeric:tabular-nums}
+.hero__proof div strong{display:block; font-family:var(--body); font-size:2rem; font-weight:800; letter-spacing:-.04em; line-height:1.05; font-variant-numeric:lining-nums tabular-nums}
 .hero__proof div span{font-size:.79rem; color:var(--muted)}
 
 /* 3D card stage — replace with existing Three.js hero if available */
@@ -87,7 +87,7 @@
 .calc__row output{font-family:var(--mono); font-weight:600; font-size:.92rem; color:var(--crest)}
 .calc__out{background:linear-gradient(160deg,var(--crest),var(--crest-d)); color:#fff; border-radius:var(--r-lg); padding:26px; position:sticky; top:calc(var(--hdr-h) + 16px)}
 .calc__out .k{font-size:.78rem; color:rgba(255,255,255,.7); letter-spacing:.06em}
-.calc__out .v{font-family:var(--display); font-size:1.15rem; font-variant-numeric:tabular-nums}
+.calc__out .v{font-family:var(--body); font-size:1.2rem; font-weight:800; letter-spacing:-.03em; font-variant-numeric:lining-nums tabular-nums}
 .calc__line{display:flex; justify-content:space-between; align-items:center; padding:11px 0; border-bottom:1px solid rgba(255,255,255,.14)}
 .calc__line:last-of-type{border-bottom:0}
 .calc__net{background:rgba(255,255,255,.1); border-radius:var(--r); padding:16px; margin-top:14px; text-align:center}
