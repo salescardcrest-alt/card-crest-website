@@ -123,6 +123,8 @@
       on('/admin', P.admin);
       on('/admin/:section', P.admin);
       on('/shop/:id', P.shop);
+      on('/apply/:id', P.applyGo);
+      on('/apply-earn', P.applyEarn);
       on('/market', P.market);
       on('/market/new/:module', P.marketNew);
       on('/market/requests', P.marketRequests);

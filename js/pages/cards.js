@@ -37,6 +37,7 @@
             '<div><span class="fact__k">Top cashback</span><span class="fact__v">' +
               (card.cashback ? UI.pct(card.cashback) : '—') + '</span></div>' +
           '</div>' +
+          (C.rewardFor(card) ? '<div class="ctile__reward"><span>Apply through Card Crest</span><b>Earn ' + UI.money(C.rewardFor(card)) + ' when approved</b></div>' : '') +
           '<ul class="ctile__perks">' + card.perks.map(function (p) {
             return '<li class="badge badge--grey">' + UI.esc(p) + '</li>';
           }).join('') + '</ul>' +
@@ -103,6 +104,7 @@
     var html = '<div class="wrap section--tight">' +
       '<div class="section__head"><h1 class="h1">Credit cards, ranked by <em>what they return</em></h1>' +
       '<p class="lede">Every card is scored on the value it gives back against what it costs you. Filter by bank, fee or the benefit you actually want.</p></div>' +
+      '<a class="apply-banner" href="#/apply-earn"><div><strong>Apply & Earn: get paid when your card is approved</strong><span>' + C.partners().length + ' partner cards, with rewards up to ' + UI.money(Math.max.apply(null, C.partners().map(function (p) { return p.reward; }))) + ' in your wallet.</span></div><span class="btn btn--sm" style="background:#fff; color:var(--crest)">See the cards</span></a>' +
       '<div class="mkt">' +
         '<aside class="filters" id="filters">' +
           '<div class="spread" style="margin-bottom:16px">' +
@@ -329,9 +331,10 @@
             '<div class="calc__line" style="border-color:var(--line-soft)"><span class="small muted">Annual fee</span><strong>' + (card.annualFee ? '−' + UI.money(card.annualFee) : 'None') + '</strong></div>' +
             '<div class="calc__line"><span class="small muted">Net annual value</span><strong style="color:' + (sc.value.net >= 0 ? 'var(--crest)' : 'var(--danger)') + '">' + UI.money(sc.value.net) + '</strong></div>' +
             (elig ? '<div class="note" style="margin:16px 0">Your estimated eligibility: <strong>' + elig.label + '</strong> (' + elig.pct + '%). Based on the details in your profile.</div>' : '') +
+            (C.rewardFor(card) ? '<div class="reward-box"><span>Apply through Card Crest and earn</span><b>' + UI.money(C.rewardFor(card)) + '</b><small>paid into your rewards wallet when the bank approves your application</small></div>' : '') +
             '<div class="stack" style="margin-top:18px">' +
-              '<a class="btn btn--primary btn--block" href="#/eligibility?card=' + card.id + '">Check my eligibility</a>' +
-              '<button class="btn btn--ghost btn--block" data-apply>Apply for this card</button>' +
+              '<a class="btn ' + (C.rewardFor(card) ? 'btn--ghost' : 'btn--primary') + ' btn--block" href="#/eligibility?card=' + card.id + '">Check my eligibility</a>' +
+              '<button class="btn ' + (C.rewardFor(card) ? 'btn--primary' : 'btn--ghost') + ' btn--block" data-apply>' + (C.rewardFor(card) ? 'Apply &amp; earn ' + UI.money(C.rewardFor(card)) : 'Apply for this card') + '</button>' +
               '<div class="row"><button class="btn btn--soft btn--sm" data-cmp-btn style="flex:1">Compare</button>' +
               '<button class="btn btn--soft btn--sm" data-save style="flex:1">' + (saved ? 'Saved' : 'Save card') + '</button></div>' +
             '</div>' +
@@ -346,15 +349,7 @@
       html: html,
       mount: function (root) {
         root.querySelector('[data-apply]').addEventListener('click', function () {
-          if (!Auth.require()) return;
-          UI.confirm('Apply for ' + card.name + '?',
-            'This is a demo application. Nothing is sent to ' + (bank ? bank.name : 'the bank') + ' and no credit enquiry is made. You will be able to follow the simulated status in your applications.',
-            'Submit application', function () {
-              var res = w.CC.Applications.create(Auth.current().id, card.id);
-              if (!res.ok) return UI.toast(res.error, 'error');
-              UI.toast('Application submitted');
-              w.CC.Router.go('#/dashboard/applications');
-            });
+          w.CC.Render.applyForCard(card);
         });
         root.querySelector('[data-cmp-btn]').addEventListener('click', function () {
           var res = C.toggleCompare(card.id);
@@ -395,6 +390,7 @@
 
     var ROWS = [
       ['Card value score', function (c) { return C.score(c).total + ' / 100'; }, 'high'],
+      ['Reward for applying via Card Crest', function (c) { var r = C.rewardFor(c); return r ? UI.money(r) : '2014'; }, 'high'],
       ['Annual fee', function (c) { return c.annualFee === 0 ? 'None' : UI.money(c.annualFee); }, 'low'],
       ['Joining fee', function (c) { return c.joiningFee === 0 ? 'None' : UI.money(c.joiningFee); }, 'low'],
       ['Fee waiver', function (c) { return c.feeWaiver; }],

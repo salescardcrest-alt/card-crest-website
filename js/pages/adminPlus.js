@@ -20,7 +20,7 @@
   var OPEN_TXN = ['clicked', 'tracked', 'pending'];
   function users() { return S.get('users').filter(function (u) { return u.role !== 'admin'; }); }
   function userName(id) { var u = S.find('users', id); return u ? u.name : 'Member'; }
-  function storeName(id) { var s = O.store(id); return s ? s.name : '-'; }
+  function storeName(id) { if (id === 'cardreward') return 'Card reward'; var s = O.store(id); return s ? s.name : '-'; }
   function ago(iso) { return UI.ago(iso); }
   function table(head, rows, empty) {
     return '<div class="panel panel--flush"><div class="tbl-wrap"><table class="tbl"><thead><tr>' + head.map(function (h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' +

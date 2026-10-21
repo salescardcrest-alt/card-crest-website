@@ -132,7 +132,7 @@
   views.stores = function () {
     var rows = O.allStores().map(function (s) {
       return '<tr><td><div class="row" style="gap:10px">' +
-        '<div class="logo-badge" style="width:32px;height:32px;border-radius:9px;font-size:.85rem;background:' + s.color + '">' + UI.esc(s.name[0]) + '</div>' +
+        UI.logo(s, 'logo-badge--sm') +
         '<strong>' + UI.esc(s.name) + '</strong></div></td>' +
         '<td class="muted">' + UI.esc(s.category) + '</td>' +
         '<td class="num">' + UI.pct(s.cashback) + '</td>' +
@@ -172,10 +172,10 @@
 
   views.transactions = function () {
     var rows = CB.all().map(function (t) {
-      var st = O.store(t.storeId), u = S.find('users', t.userId);
+      var st = CB.describe(t), u = S.find('users', t.userId);
       return '<tr><td class="mono small">' + t.id + '</td>' +
         '<td>' + UI.esc(u ? u.name : '—') + '</td>' +
-        '<td>' + UI.esc(st ? st.name : '—') + '</td>' +
+        '<td>' + UI.esc(st.name) + '</td>' +
         '<td class="muted">' + UI.date(t.createdAt) + '</td>' +
         '<td class="num">' + UI.money(t.amount) + '</td>' +
         '<td class="num"><strong>' + UI.money(t.cashback) + '</strong></td>' +
@@ -205,7 +205,7 @@
       var u = S.find('users', a.userId), card = C.byId(a.cardId);
       return '<tr><td class="mono small">' + a.id + '</td>' +
         '<td>' + UI.esc(u ? u.name : '—') + '</td>' +
-        '<td>' + UI.esc(card ? card.name : '—') + '</td>' +
+        '<td>' + UI.esc(card ? card.name : '—') + (C.rewardFor(card) ? '<div class="small muted">Reward ' + UI.money(C.rewardFor(card)) + ' when approved</div>' : '') + '</td>' +
         '<td class="muted">' + UI.date(a.createdAt) + '</td>' +
         '<td>' + statusSelect('app', a.id, ['applied', 'under-review', 'documents', 'approved', 'rejected', 'completed'], a.status) + '</td>' +
         '<td><button class="btn btn--xs btn--ghost" data-app-note="' + a.id + '">Add note</button></td></tr>';

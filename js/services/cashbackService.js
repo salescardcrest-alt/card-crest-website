@@ -15,6 +15,17 @@
 
     find: function (id) { return S.find('transactions', id); },
 
+    /* How a transaction row should read: a store purchase, or a reward paid for an approved card application. */
+    describe: function (t) {
+      var UI = w.CC.UI;
+      if (t.storeId === 'cardreward') {
+        var app = w.CC.Applications.byId(t.offerId), card = app && w.CC.Cards.byId(app.cardId), bank = card && w.CC.Cards.bank(card.bank);
+        return { name: 'Card approval reward' + (card ? ' \u00B7 ' + card.name : ''), logo: bank ? UI.bankLogo(bank, 'bank-logo--md') : '', reward: true };
+      }
+      var st = w.CC.Offers.store(t.storeId);
+      return { name: st ? st.name : 'Store', logo: st ? UI.logo(st, 'logo-badge--sm') : '', reward: false };
+    },
+
     /* The link the shopper is sent to. If an affiliate link for this store is set in js/config.js
        (AFFILIATE_LINKS: { flipkart: 'https://...{click}...' }) it is used, with {click} replaced by the tracking
        reference, which is how the affiliate network reports the order back. Otherwise the store's own site opens

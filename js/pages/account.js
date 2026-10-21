@@ -234,10 +234,10 @@
         '<div class="panel panel--flush"><div class="panel__head"><h2 class="h3">Recent transactions</h2>' +
         '<a class="btn btn--xs btn--link" href="#/dashboard/transactions">See all</a></div><div class="panel__body">' +
         (txns.length ? txns.map(function (x) {
-          var st = O.store(x.storeId);
+          var dsc = CB.describe(x);
           return '<div class="spread" style="padding:11px 0; border-bottom:1px solid var(--line-soft)">' +
-            '<div><strong style="font-size:.92rem">' + UI.esc(st ? st.name : 'Store') + '</strong>' +
-            '<div class="small muted">' + UI.date(x.createdAt) + ' &middot; ' + UI.money(x.amount) + '</div></div>' +
+            '<div><strong style="font-size:.92rem">' + UI.esc(dsc.name) + '</strong>' +
+            '<div class="small muted">' + UI.date(x.createdAt) + (dsc.reward ? '' : ' &middot; ' + UI.money(x.amount)) + '</div></div>' +
             '<div style="text-align:right"><strong>' + UI.money(x.cashback) + '</strong><br>' + UI.statusBadge(x.status) + '</div></div>';
         }).join('') : '<p class="muted small">No transactions yet. Activate an offer and the first one shows up here.</p>') +
         '</div></div>' +
@@ -439,12 +439,12 @@
             return;
           }
           body.innerHTML = list.map(function (x) {
-            var st = O.store(x.storeId);
+            var dsc = CB.describe(x);
             return '<tr><td><div class="row" style="gap:10px">' +
-              (st ? '<div class="logo-badge" style="width:30px;height:30px;border-radius:8px;font-size:.8rem;background:' + st.color + '">' + UI.esc(st.name[0]) + '</div>' : '') +
-              '<strong>' + UI.esc(st ? st.name : 'Store') + '</strong></div></td>' +
+              dsc.logo +
+              '<strong>' + UI.esc(dsc.name) + '</strong></div></td>' +
               '<td class="muted">' + UI.date(x.createdAt) + '</td>' +
-              '<td class="num">' + UI.money(x.amount) + '</td>' +
+              '<td class="num">' + (dsc.reward ? '&mdash;' : UI.money(x.amount)) + '</td>' +
               '<td class="num"><strong>' + UI.money(x.cashback) + '</strong></td>' +
               '<td>' + UI.statusBadge(x.status) + '</td></tr>';
           }).join('');

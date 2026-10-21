@@ -140,7 +140,18 @@
     REF: REF,
     all: function () { return S.where('cards', function (c) { return c.active !== false; }); },
     allIncludingInactive: function () { return S.get('cards'); },
-    byId: function (id) { return S.find('cards', id); },
+    byId: function (id) { return S.find('cards', id) || Cards.partner(id); },
+    /* partner cards: applied for through Card Crest, with a rupee reward on approval (see data.js) */
+    partners: function () { return w.CC.DATA.partnerCards.slice(); },
+    /* The rupee reward for applying through Card Crest and being approved. A partner card has its own; any other card
+       of a partner bank shows the lowest reward that bank pays, so we never promise more than we pay. 0 = none. */
+    rewardFor: function (card) {
+      if (!card) return 0;
+      if (card.partner) return card.reward || 0;
+      var same = w.CC.DATA.partnerCards.filter(function (p) { return p.bank === card.bank; }).map(function (p) { return p.reward; });
+      return same.length ? Math.min.apply(null, same) : 0;
+    },
+    partner: function (id) { return w.CC.DATA.partnerCards.filter(function (p) { return p.id === id; })[0] || null; },
     banks: function () { return D.banks; },
     bank: function (id) { return D.banks.filter(function (b) { return b.id === id; })[0]; },
     value: value,

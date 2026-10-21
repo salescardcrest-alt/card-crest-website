@@ -36,6 +36,22 @@
       for (var i = 0; i < routes.length; i++) { await go(routes[i]); ok(txt().length > 40 && !/could not load/i.test(txt()), 'route renders: ' + routes[i]); }
       await go('#/'); ok(q('.hdr__nav a[href="#/market"]') !== null, 'header has a Share & Earn link');
       await go('#/market/earn'); ok(!!q('#soundBtn') && /Live alerts are on/.test(txt()), 'Earn page shows the live alerts bar with a sound switch');
+      await go('#/dashboard/transactions'); ok(D.querySelectorAll('table.tbl .logo-badge--img img').length > 0 && D.querySelectorAll('table.tbl .logo-badge--img img').length === D.querySelectorAll('table.tbl tbody tr').length - D.querySelectorAll('table.tbl tbody tr.pg-hide').length, 'every transaction row shows the store logo');
+      /* card applications: sent to the bank's site with Card Crest's partner code attached */
+      cw.CC_CONFIG.PARTNER_REF = { default: 'CC-EMP-77' };
+      var opens2 = [], card0 = cw.CC.Store.get('cards')[0];
+      cw.open = function (url, name, feat) { opens2.push(url); return opens2.length === 1 ? null : { focus: function () {} }; };
+      await go('#/cards/' + card0.id); click('[data-apply]');
+      ok(await until(function () { return q('.modal [data-yes]'); }) && /partner code is attached/.test(q('.modal').innerText), 'Apply for this card says the bank gets Card Crest\u2019s partner code');
+      click('.modal [data-yes]');
+      ok(await until(function () { return /\/apply\/.*go=1/.test(cw.location.hash) && q('#shopGo'); }), 'if the window is blocked, the hand-over screen takes the tab to the bank');
+      var app0 = cw.CC.Store.get('applications')[0], au = cw.CC.Applications.trackedUrl(app0);
+      ok(au.indexOf('ref=CC-EMP-77') > -1 && au.indexOf('cc_click=' + app0.id) > -1 && /^https:\/\/www\./.test(au) && /credit-card/.test(au.split('?')[0]) && opens2[0] === au, 'the bank link carries the partner code and the application reference: ' + au);
+      click('#goStay'); await sleep(200);
+      ok(/Your application is linked to Card Crest/.test(txt()) && /CC-EMP-77/.test(txt()), 'the application page shows the partner code that is attached');
+      var before = cw.CC.Store.get('applications').length;
+      await go('#/cards/' + card0.id); click('[data-apply]'); await until(function () { return q('.modal [data-yes]'); }); click('.modal [data-yes]');
+      ok(await until(function () { return /#\/apply\/[^?]+$/.test(cw.location.hash); }) && cw.CC.Store.get('applications').length === before, 'applying again for the same card picks up the open application, not a duplicate');
       /* pages that were replaced must stop listening, or they pile up and make the screen jitter */
       for (var k = 0; k < 6; k++) { await go('#/market/earn'); await go('#/market/requests'); }
       var calls = 0, realOpen = cw.CC.Market.openFor;
@@ -169,6 +185,40 @@
       ok(cw.CC.Store.get('notifications').some(function (n) { return n.userId === 'u-001' && n.title === 'Share & Earn is live'; }), 'the announcement lands in members\u2019 notifications');
       await go('#/admin/activity');
       ok(/Announcement/.test(txt()) && /Cashback/.test(txt()), 'the activity log records what staff did');
+      /* Apply & Earn: partner cards, a reward on approval, credited once */
+      cw.CC.Store.set('session', 'u-001'); cw.CC.App.paintAuth();
+      await go('#/apply-earn');
+      ok(D.querySelectorAll('.ae-tile').length === 20 && /Axis Bank Credit Card/.test(txt()) && /HSBC Credit Card/.test(txt()) && /SBM Magnet/.test(txt()), 'Apply & Earn lists all 20 partner cards');
+      ok(/₹1,300/.test(q('[data-card="axis-bank"]').innerText) && /₹2,300/.test(q('[data-card="hsbc-credit"]').innerText), 'each card shows its reward (60% of the 0-20 payout)');
+      var opens3 = []; cw.open = function (url) { opens3.push(url); return { focus: function () {} }; };
+      click('[data-card="axis-bank"]');
+      ok(await until(function () { return q('.modal [data-yes]'); }) && /you earn ₹1,300/.test(q('.modal').innerText), 'applying says the reward you earn when approved');
+      click('.modal [data-yes]'); await sleep(300);
+      var pApp = cw.CC.Store.get('applications')[0];
+      ok(pApp.cardId === 'axis-bank' && opens3.length === 1 && /axis\.bank\.in\/cards\/credit-card/.test(opens3[0]) && /ref=/.test(opens3[0]), 'the bank opens through Card Crest\u2019s partner link');
+      cw.CC.Store.set('session', 'u-000'); cw.CC.App.paintAuth();
+      await go('#/admin/applications');
+      var sel = q('select[data-app="' + pApp.id + '"]'); sel.value = 'approved'; sel.dispatchEvent(new Event('change', { bubbles: true })); await sleep(300);
+      var rew = cw.CC.Store.get('transactions').filter(function (t) { return t.storeId === 'cardreward' && t.offerId === pApp.id; });
+      ok(rew.length === 1 && rew[0].cashback === 1300 && rew[0].status === 'confirmed' && rew[0].userId === 'u-001', 'approving the application credits the applicant \u20B91,290');
+      sel = q('select[data-app="' + pApp.id + '"]'); sel.value = 'completed'; sel.dispatchEvent(new Event('change', { bubbles: true })); await sleep(300);
+      ok(cw.CC.Store.get('transactions').filter(function (t) { return t.storeId === 'cardreward' && t.offerId === pApp.id; }).length === 1, 'a later status change does not pay the reward twice');
+      cw.CC.Store.set('session', 'u-001'); cw.CC.App.paintAuth();
+      await go('#/dashboard/transactions');
+      ok(/Card approval reward/.test(txt()) && /Axis Bank Credit Card/.test(txt()), 'the reward shows up in the applicant\u2019s Transactions');
+      cw.CC.Store.set('session', 'u-000'); cw.CC.App.paintAuth();   // back to staff for the tests that follow
+      /* the reward is shown on each card, not only on the Apply & Earn page */
+      cw.CC.Store.set('session', 'u-001'); cw.CC.App.paintAuth();
+      await go('#/cards');
+      async function tileText(id, search) { await go('#/cards?q=' + search); var t = q('[data-card="' + id + '"]'); return t ? t.innerText : null; }
+      var hdT = await tileText('hdfc-infinia', 'infinia'), ktT = await tileText('kotak-811', 'kotak'), icT = await tileText('icici-sapphiro', 'sapphiro');
+      ok(hdT && /Earn ₹1,300 when approved/.test(hdT), 'an HDFC card tile shows the reward for applying');
+      ok(ktT && !/when approved/.test(ktT), 'a card from a bank with no reward shows none');
+      ok(icT && /Earn ₹250 when approved/.test(icT), 'a bank with two reward levels shows the lower one (never more than we pay)');
+      await go('#/cards/hdfc-infinia');
+      ok(!!q('.reward-box') && /₹1,300/.test(q('.reward-box').innerText) && /Apply & earn ₹1,300/.test(q('[data-apply]').innerText), 'the card page shows the reward and an Apply & earn button');
+      await go('#/cards/kotak-811'); ok(!q('.reward-box') && /Apply for this card/.test(q('[data-apply]').innerText), 'a card with no reward keeps the plain Apply button');
+      cw.CC.Store.set('session', 'u-000'); cw.CC.App.paintAuth();
       /* long tables show one page at a time */
       localStorage.removeItem('cc.pagesize');
       await go('#/admin/stores');

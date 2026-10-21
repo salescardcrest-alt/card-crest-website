@@ -319,3 +319,16 @@ table.tbl{width:100%; border-collapse:collapse; font-size:.89rem}
 .pager__nav button.is-on{background:var(--crest); border-color:var(--crest); color:#fff}
 .pager__nav button:disabled{opacity:.45; cursor:not-allowed}
 .pager__gap{padding:0 4px; color:var(--muted)}
+
+/* small store logo for table rows (Transactions, admin Stores) */
+.logo-badge--sm{width:34px; height:34px; border-radius:9px; font-size:.85rem}
+.logo-badge--img.logo-badge--sm{padding:5px}
+
+/* the reward a customer earns for applying through Card Crest */
+.ctile__reward{display:flex; flex-direction:column; gap:2px; padding:10px 14px; border-radius:var(--r); background:linear-gradient(135deg,var(--leaf-soft),var(--mint)); border:1px solid rgba(23,160,106,.28)}
+.ctile__reward span{font-size:.72rem; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-2)}
+.ctile__reward b{font-size:1rem; color:var(--crest); font-weight:800; white-space:nowrap}
+.reward-box{display:flex; flex-direction:column; gap:2px; margin:16px 0 0; padding:14px 16px; border-radius:var(--r); background:linear-gradient(135deg,var(--crest),var(--leaf)); color:#fff}
+.reward-box span{font-size:.8rem; opacity:.85}
+.reward-box b{font-size:1.9rem; font-weight:800; letter-spacing:-.03em; line-height:1.15; font-variant-numeric:tabular-nums; white-space:nowrap}
+.reward-box small{font-size:.76rem; opacity:.85}

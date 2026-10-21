@@ -20,7 +20,11 @@
     { id: 'amex',    name: 'American Express',   short: 'Amex', color: '#016fd0' },
     { id: 'rbl',     name: 'RBL Bank',           short: 'RBL',  color: '#c8102e' },
     { id: 'yes',     name: 'YES Bank',           short: 'YES',  color: '#00518f' },
-    { id: 'au',      name: 'AU Small Finance Bank', short: 'AU', color: '#5c2d91' }
+    { id: 'au',      name: 'AU Small Finance Bank', short: 'AU', color: '#5c2d91' },
+    { id: 'federal', name: 'Federal Bank',       short: 'Federal', color: '#f9a01b' },
+    { id: 'bob',     name: 'Bank of Baroda',     short: 'BoB',  color: '#f26522' },
+    { id: 'kiwi',    name: 'Kiwi',               short: 'Kiwi', color: '#6c3cf0' },
+    { id: 'sbm',     name: 'SBM Bank India',     short: 'SBM',  color: '#e30613' }
   ];
 
   /* ---------------- credit cards ----------------
@@ -377,7 +381,7 @@
   var BANK_DOMAIN = {
     hdfc:'hdfcbank.com', sbi:'sbicard.com', icici:'icicibank.com', axis:'axisbank.com', idfc:'idfcfirstbank.com',
     kotak:'kotak.com', indusind:'indusind.com', hsbc:'hsbc.co.in', amex:'americanexpress.com',
-    rbl:'rblbank.com', yes:'yesbank.in', au:'aubank.in'
+    rbl:'rblbank.com', yes:'yesbank.in', au:'aubank.in', federal:'federalbank.co.in', bob:'bobcard.co.in', kiwi:'gokiwi.in', sbm:'sbm.bank.in'
   };
   var STORE_DOMAIN = {
     amazon:'amazon.in', flipkart:'flipkart.com', myntra:'myntra.com', ajio:'ajio.com', nykaa:'nykaa.com',
@@ -387,7 +391,36 @@
     pharmeasy:'pharmeasy.in', lenskart:'lenskart.com', boat:'boat-lifestyle.com', policybazaar:'policybazaar.com',
     urbancompany:'urbancompany.com', decathlon:'decathlon.in'
   };
-  BANKS.forEach(function (b) { b.domain = BANK_DOMAIN[b.id]; });
+  /* Where each bank lists its credit cards and takes applications. A single card can override this with card.applyUrl. */
+  var BANK_APPLY = {
+    hdfc:'https://www.hdfc.bank.in/credit-cards', sbi:'https://www.sbicard.com/en/personal/credit-cards.html',
+    icici:'https://www.icici.bank.in/personal-banking/cards/credit-card', axis:'https://www.axis.bank.in/cards/credit-card',
+    idfc:'https://www.idfcfirst.bank.in/credit-card', kotak:'https://www.kotak.bank.in/en/personal-banking/cards/credit-cards.html',
+    indusind:'https://www.indusind.bank.in/in/en/personal/cards/credit-card.html', hsbc:'https://www.hsbc.bank.in/credit-cards/',
+    amex:'https://www.americanexpress.com/in/credit-cards/', rbl:'https://www.rblbank.com/credit-cards',
+    yes:'https://www.yes.bank.in/personal-banking/yes-individual/cards/credit-cards', au:'https://www.aubank.in/personal-banking/credit-cards',
+    federal:'https://www.federalbank.co.in/credit-card', bob:'https://www.bobcard.co.in/', kiwi:'https://gokiwi.in/', sbm:'https://www.sbm.bank.in/'
+  };
+  BANKS.forEach(function (b) { b.domain = BANK_DOMAIN[b.id]; b.applyUrl = BANK_APPLY[b.id]; });
+
+  /* ---------------- partner cards: apply through Card Crest and earn a reward ----------------
+     `reward` is what the applicant receives in rupees once the bank approves the application: 60% of the payout, rounded to the nearest ₹50
+     Card Crest receives in the 0-20 cards-a-month segment. Only the reward is kept here (this file is public), not
+     Card Crest's own payout. Change the amounts when your payout sheet changes. */
+  var PARTNER_CARDS = [
+    ['axis-bank', 'Axis Bank Credit Card', 'axis', 1290], ['axis-lic', 'Axis LIC Credit Card', 'axis', 600],
+    ['sbi-credit', 'SBI Credit Card', 'sbi', 1290], ['indusind-bajaj-tiger', 'IndusInd Bajaj Tiger Credit Card', 'indusind', 420],
+    ['indusind-credit', 'IndusInd Bank Credit Card', 'indusind', 780], ['hdfc-bank', 'HDFC Bank Credit Card', 'hdfc', 1290],
+    ['hsbc-credit', 'HSBC Credit Card', 'hsbc', 2280], ['au-bank', 'AU Bank Credit Card', 'au', 990],
+    ['idfc-bank', 'IDFC FIRST Bank Credit Card', 'idfc', 780], ['icici-platinum', 'ICICI Bank Platinum Card', 'icici', 240],
+    ['icici-coral', 'ICICI Bank Coral Card', 'icici', 780], ['rbl-bank', 'RBL Bank Credit Card', 'rbl', 720],
+    ['federal-bank', 'Federal Bank Credit Card', 'federal', 420], ['rio-yes', 'RIO YES Bank Credit Card', 'yes', 840],
+    ['yes-pop-plus', 'YES POP Plus Credit Card', 'yes', 1020], ['kiwi-credit', 'Kiwi Credit Card', 'kiwi', 960],
+    ['bob-credit', 'Bank of Baroda Credit Card', 'bob', 240], ['au-nomo-fd', 'AU NOMO FD Card', 'au', 300],
+    ['idfc-first-earn-fd', 'IDFC FIRST EARN (FD Card)', 'idfc', 210], ['sbm-magnet', 'SBM Magnet Credit Card', 'sbm', 420]
+  ].map(function (p) {
+    return { id: p[0], name: p[1], bank: p[2], reward: Math.round(p[3] / 50) * 50, partner: true, art: 'shopping', type: ['partner'] };
+  });
   STORES.forEach(function (s) { s.domain = STORE_DOMAIN[s.id]; });
 
   /* ---------------- offers ---------------- */
@@ -557,7 +590,7 @@
 
   w.CC = w.CC || {};
   w.CC.DATA = {
-    bankDomains: BANK_DOMAIN, storeDomains: STORE_DOMAIN,
+    bankDomains: BANK_DOMAIN, bankApply: BANK_APPLY, partnerCards: PARTNER_CARDS, storeDomains: STORE_DOMAIN,
     banks: BANKS, cards: CARDS, stores: STORES, offers: OFFERS, users: USERS,
     txnSeed: TXN_SEED, appSeed: APP_SEED, refSeed: REF_SEED, notifSeed: NOTIF_SEED,
     faqs: FAQS, daysAgo: daysAgo,

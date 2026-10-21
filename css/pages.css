@@ -287,3 +287,16 @@ a.mk-tile:hover{border-color:var(--crest); transform:translateY(-3px); box-shado
   .adm-nav{position:static; max-height:none; display:grid; grid-template-columns:repeat(2,1fr); overflow:visible}
 }
 @media (max-width:560px){ .adm-nav{grid-template-columns:1fr} }
+.shop-go__store .bank-logo{width:56px; height:56px; border-radius:14px; padding:8px; box-shadow:none}
+
+/* Apply & Earn */
+.ae-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr)); gap:16px; margin-top:6px}
+.ae-tile{display:flex; flex-direction:column; gap:16px; transition:transform .16s ease, border-color .16s ease, box-shadow .16s ease}
+.ae-tile:hover{transform:translateY(-3px); border-color:var(--crest); box-shadow:var(--sh-2)}
+.ae-tile[hidden]{display:none}
+.ae-tile__r{display:flex; flex-direction:column; gap:2px; padding:12px 14px; border-radius:var(--r); background:var(--mist)}
+.ae-tile__r b{font-size:1.7rem; font-weight:800; letter-spacing:-.03em; color:var(--crest); font-variant-numeric:tabular-nums; white-space:nowrap}
+.bank-logo--md{width:42px; height:42px; border-radius:11px; padding:6px}
+.apply-banner{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding:16px 20px; margin-bottom:22px; border-radius:var(--r-lg); color:#fff; background:linear-gradient(135deg,var(--crest),var(--leaf))}
+.apply-banner strong{font-size:1.05rem}
+.apply-banner span{display:block; opacity:.85; font-size:.88rem}
