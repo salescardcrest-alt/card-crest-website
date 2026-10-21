@@ -214,23 +214,23 @@
     var UI = w.CC.UI;
     UI.modal({
       title: 'Set a new password',
-      body: '<p class="muted" style="margin-bottom:14px">Choose a new password for your Card Crest account. Use at least 8 characters.</p>' +
-        '<div class="field"><label for="np1">New password</label><input id="np1" type="password" autocomplete="new-password" minlength="8"></div>' +
+      body: '<p class="muted" style="margin-bottom:14px">Choose a new password for your Card Crest account. Use a mix of upper and lower case letters, numbers and symbols, like a Google password.</p>' +
+        '<div class="field"><label for="np1">New password</label><input id="np1" type="password" autocomplete="new-password">' + UI.pwMeterHtml() + '</div>' +
         '<div class="field" style="margin-top:10px"><label for="np2">Confirm new password</label><input id="np2" type="password" autocomplete="new-password"></div>' +
         '<div class="small" id="npErr" style="color:var(--danger,#b42318); margin-top:8px" hidden></div>',
       foot: '<button class="btn btn--primary" data-save-np>Save new password</button>',
       onMount: function (m) {
-        var err = m.querySelector('#npErr');
+        var err = m.querySelector('#npErr'); UI.pwBind(m.querySelector('#np1'), m);
         function show(t) { err.textContent = t; err.hidden = !t; }
         m.querySelector('[data-save-np]').onclick = function () {
           var a = m.querySelector('#np1').value, b = m.querySelector('#np2').value;
-          if (a.length < 8) return show('Use at least 8 characters.');
+          if (!UI.pwOk(a)) return show('Password needs: ' + UI.pwIssues(a).join(', ').toLowerCase() + '.');
           if (a !== b) return show('The two passwords do not match.');
           show('');
           w.CC.Auth.setNewPassword(a).then(function (res) {
             if (!res.ok) return show(res.error);
             UI.closeModal(); UI.toast('Password updated. You are signed in.'); App.paintAuth();
-            w.location.hash = '#/account';
+            w.location.hash = '#/dashboard';
           });
         };
       }

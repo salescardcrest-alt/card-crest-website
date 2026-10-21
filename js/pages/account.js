@@ -135,7 +135,7 @@
         '<div class="field" style="margin-bottom:14px"><label for="s-mobile">Mobile number</label><input id="s-mobile" type="tel" inputmode="numeric" maxlength="10" autocomplete="tel-national" placeholder="10 digits"><span class="err">Enter a 10-digit mobile number.</span></div>' +
         '<div class="field" style="margin-bottom:14px"><label for="s-pw">Password</label>' +
         '<div class="pw-wrap"><input id="s-pw" type="password" autocomplete="new-password"><button type="button" class="pw-toggle" data-pw="s-pw">Show</button></div>' +
-        '<span class="hint">At least 8 characters.</span><span class="err">Use at least 8 characters.</span></div>' +
+        '' + UI.pwMeterHtml() + '<span class="err">Use 8+ characters with upper and lower case letters, a number and a symbol.</span></div>' +
         '<div class="field" style="margin-bottom:18px"><label for="s-pw2">Confirm password</label><input id="s-pw2" type="password" autocomplete="new-password"><span class="err">Both passwords need to match.</span></div>' +
         '<label class="check" style="margin-bottom:20px"><input type="checkbox" id="s-terms"> I agree to the <a href="#/legal/terms" style="color:var(--crest)">terms</a> and <a href="#/legal/privacy" style="color:var(--crest)">privacy policy</a>.</label>' +
         '<button class="btn btn--primary btn--block" type="submit">Create account</button>' +
@@ -148,6 +148,7 @@
           i.type = i.type === 'password' ? 'text' : 'password';
           this.textContent = i.type === 'password' ? 'Show' : 'Hide';
         };
+        UI.pwBind(root.querySelector('#s-pw'), root);
         root.querySelector('#s-mobile').addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 10); });
         root.querySelector('#signupForm').addEventListener('submit', function (e) {
           e.preventDefault();
@@ -159,8 +160,8 @@
             [f.name, f.name.value.trim().length > 1],
             [f.email, /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email.value.trim())],
             [f.mobile, /^\d{10}$/.test(f.mobile.value.replace(/\D/g, ''))],
-            [f.pw, f.pw.value.length >= 8],
-            [f.pw2, f.pw2.value === f.pw.value && f.pw2.value.length >= 8]
+            [f.pw, UI.pwOk(f.pw.value)],
+            [f.pw2, f.pw2.value === f.pw.value && UI.pwOk(f.pw2.value)]
           ];
           var bad = false;
           checks.forEach(function (c) {
@@ -286,7 +287,7 @@
 
     var inner = '<div class="spread section__head"><div><h1 class="h1">My cards</h1>' +
       '<p class="lede">Cards you have saved, with what each is worth over a year at an average spending pattern.</p></div>' +
-      '<a class="btn btn--primary btn--sm" href="#/cards">Add a card</a></div>' +
+      '<button class="btn btn--primary btn--sm" data-add-card>Add a card</button></div>' +
       (saved.length ? '<div class="stack">' + saved.map(function (s) {
         var card = C.byId(s.cardId);
         if (!card) return '';
@@ -315,12 +316,65 @@
       }).join('') + '</div>'
         : UI.empty('No saved cards yet',
           'Save a card and it lands here with its renewal date and what it is worth to you over a year.',
-          'Browse credit cards', '#/cards'));
+          'Browse credit cards', '#/cards') + '<div style="text-align:center; margin-top:14px"><button class="btn btn--ghost" data-add-card>Add a card I already have</button></div>');
 
     return {
       title: 'My cards | Card Crest',
       html: shell('/dashboard/cards', 'My cards', inner),
       mount: function (root) {
+        /* Add a card: pick the company, the card type, then the card itself. */
+        function openAddCard() {
+          var typeNames = { cashback: 'Cashback', travel: 'Travel', rewards: 'Rewards', premium: 'Premium', shopping: 'Shopping', fuel: 'Fuel', dining: 'Dining', lifetime: 'Lifetime free', entry: 'Entry level', business: 'Business', partner: 'Other' };
+          function cardsOf(bank) {
+            var seen = {}, out = [];
+            C.all().concat(C.partners()).forEach(function (c) { if (c.bank === bank && !seen[c.id]) { seen[c.id] = 1; out.push(c); } });
+            return out;
+          }
+          function typesOf(list) {
+            var t = [];
+            list.forEach(function (c) { (c.type || []).forEach(function (x) { if (x !== 'partner' && t.indexOf(x) < 0) t.push(x); }); });
+            return t;
+          }
+          var banks = C.banks().filter(function (b) { return cardsOf(b.id).length; });
+          UI.modal({
+            title: 'Add a card',
+            body: '<p class="muted" style="margin-bottom:14px">Choose the company, the type of card and the card you hold. It is added to My cards.</p>' +
+              '<div class="field"><label for="ac-bank">Card company</label><select id="ac-bank"><option value="">Select company</option>' +
+              banks.map(function (b) { return '<option value="' + b.id + '">' + UI.esc(b.name) + '</option>'; }).join('') + '</select></div>' +
+              '<div class="field" style="margin-top:12px"><label for="ac-type">Card type</label><select id="ac-type" disabled><option value="">Select company first</option></select></div>' +
+              '<div class="field" style="margin-top:12px"><label for="ac-card">Card</label><select id="ac-card" disabled><option value="">Select company first</option></select></div>' +
+              '<div class="small muted" id="ac-note" style="margin-top:10px"></div>',
+            foot: '<button class="btn btn--primary" data-ac-save disabled>Add card</button>',
+            onMount: function (m) {
+              var bankEl = m.querySelector('#ac-bank'), typeEl = m.querySelector('#ac-type'), cardEl = m.querySelector('#ac-card'),
+                  note = m.querySelector('#ac-note'), save = m.querySelector('[data-ac-save]');
+              function fillCards() {
+                var list = cardsOf(bankEl.value), t = typeEl.value;
+                if (t) list = list.filter(function (c) { return (c.type || []).indexOf(t) > -1; });
+                cardEl.innerHTML = '<option value="">' + (list.length ? 'Select card' : 'No card of this type') + '</option>' +
+                  list.map(function (c) { return '<option value="' + c.id + '">' + UI.esc(c.name) + '</option>'; }).join('');
+                cardEl.disabled = !list.length; save.disabled = true;
+              }
+              bankEl.onchange = function () {
+                var list = cardsOf(bankEl.value), ts = typesOf(list);
+                typeEl.disabled = !bankEl.value;
+                typeEl.innerHTML = '<option value="">All types</option>' + ts.map(function (x) { return '<option value="' + x + '">' + (typeNames[x] || x) + '</option>'; }).join('');
+                note.textContent = ''; fillCards();
+              };
+              typeEl.onchange = fillCards;
+              cardEl.onchange = function () {
+                save.disabled = !cardEl.value;
+                note.textContent = cardEl.value && C.isSaved(u.id, cardEl.value) ? 'You have already added this card.' : '';
+              };
+              save.onclick = function () {
+                var id = cardEl.value; if (!id) return;
+                if (!C.save(u.id, id)) { note.textContent = 'You have already added this card.'; return; }
+                UI.closeModal(); UI.toast('Card added to My cards'); w.CC.Router.refresh();
+              };
+            }
+          });
+        }
+        root.querySelectorAll('[data-add-card]').forEach(function (b) { b.onclick = openAddCard; });
         root.querySelectorAll('[data-primary]').forEach(function (b) {
           b.onclick = function () {
             C.setPrimary(u.id, b.dataset.primary);
@@ -689,7 +743,7 @@
       '<div class="panel" style="margin-bottom:20px"><h2 class="h3" style="margin-bottom:18px">Security</h2>' +
       '<div class="form-grid">' +
       '<div class="field"><label for="p-old">Current password</label><input id="p-old" type="password"></div>' +
-      '<div class="field"><label for="p-new">New password</label><input id="p-new" type="password"><span class="hint">At least 8 characters.</span></div>' +
+      '<div class="field"><label for="p-new">New password</label><input id="p-new" type="password" autocomplete="new-password">' + UI.pwMeterHtml() + '</div>' +
       '</div><button class="btn btn--primary btn--sm" style="margin-top:18px" data-save-pw>Update password</button></div>' +
 
       '<div class="panel"><h2 class="h3" style="margin-bottom:8px">Demo data</h2>' +
@@ -877,9 +931,10 @@
           });
           UI.toast('Financial profile updated');
         };
+        UI.pwBind(root.querySelector('#p-new'), root);
         root.querySelector('[data-save-pw]').onclick = function () {
           var oldPw = root.querySelector('#p-old').value, newPw = root.querySelector('#p-new').value;
-          if (newPw.length < 8) return UI.toast('Use at least 8 characters', 'error');
+          if (!UI.pwOk(newPw)) return UI.toast('Password needs: ' + UI.pwIssues(newPw).join(', ').toLowerCase(), 'error');
           Auth.changePassword(oldPw, newPw).then(function (res) {
             if (!res.ok) return UI.toast(res.error, 'error');
             root.querySelector('#p-old').value = ''; root.querySelector('#p-new').value = '';

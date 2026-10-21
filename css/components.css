@@ -344,3 +344,24 @@ table.tbl{width:100%; border-collapse:collapse; font-size:.89rem}
 .ctile__top .gauge, .ctile__top .gauge > *{min-width:0}
 .ctile__top .gauge__t, .ctile__top .gauge__l{white-space:normal}
 .ctile__top .cvs__lbl{min-width:0; overflow-wrap:anywhere}
+
+/* password strength meter */
+.pwm{margin-top:10px}
+.pwm__top{display:flex; align-items:center; gap:10px}
+.pwm__bar{flex:1; height:6px; border-radius:6px; background:var(--line-soft); overflow:hidden}
+.pwm__bar i{display:block; height:100%; width:0; border-radius:6px; background:#c0392b; transition:width .25s, background .25s}
+.pwm[data-lvl="1"] .pwm__bar i{width:33%; background:#c0392b}
+.pwm[data-lvl="2"] .pwm__bar i{width:66%; background:#d4a017}
+.pwm[data-lvl="3"] .pwm__bar i{width:100%; background:var(--leaf)}
+.pwm__lbl{font-size:.78rem; min-width:92px; text-align:right; color:var(--ink-2)}
+.pwm__list{list-style:none; margin:8px 0 0; padding:0; display:grid; grid-template-columns:1fr 1fr; gap:4px 12px; font-size:.8rem; color:var(--muted)}
+.pwm__list li::before{content:"○ "; color:var(--muted)}
+.pwm__list li.is-ok{color:var(--crest)}
+.pwm__list li.is-ok::before{content:"✓ "; color:var(--leaf); font-weight:700}
+@media (max-width:420px){.pwm__list{grid-template-columns:1fr}}
+.pwm__ttl{margin-top:12px; font-size:.82rem; font-weight:600; color:var(--ink-2)}
+.pwm__list{grid-template-columns:1fr !important; gap:6px !important; margin-top:6px !important; font-size:.88rem !important}
+.pwm__list li{display:flex; align-items:center; gap:8px; transition:color .2s}
+.pwm__list li::before{content:"" !important; width:18px; height:18px; border-radius:50%; border:2px solid var(--line); flex:none; display:inline-block; transition:all .2s}
+.pwm__list li.is-ok{color:#12804f !important; font-weight:600}
+.pwm__list li.is-ok::before{content:"✓" !important; background:#1fa971; border-color:#1fa971; color:#fff; font-size:.7rem; line-height:14px; text-align:center; font-weight:800}

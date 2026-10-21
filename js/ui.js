@@ -281,6 +281,35 @@
     }
   };
 
+
+  /* ---------- password strength (Google-style: length + upper + lower + number + symbol) ---------- */
+  var PW_RULES = [
+    ['len', '8 or more characters', function (p) { return p.length >= 8; }],
+    ['low', 'A lowercase letter', function (p) { return /[a-z]/.test(p); }],
+    ['up', 'An uppercase letter', function (p) { return /[A-Z]/.test(p); }],
+    ['num', 'A number', function (p) { return /\d/.test(p); }],
+    ['sym', 'A symbol, such as @ # $ !', function (p) { return /[^A-Za-z0-9]/.test(p); }]
+  ];
+  UI.pwIssues = function (p) {
+    p = String(p || '');
+    return PW_RULES.filter(function (r) { return !r[2](p); }).map(function (r) { return r[1]; });
+  };
+  UI.pwOk = function (p) { return UI.pwIssues(p).length === 0; };
+  UI.pwMeterHtml = function () {
+    return '<div class="pwm" data-pwm><div class="pwm__top"><div class="pwm__bar"><i></i></div><b class="pwm__lbl">Too weak</b></div><div class="pwm__ttl">Your password must have:</div><ul class="pwm__list">' +
+      PW_RULES.map(function (r) { return '<li data-r="' + r[0] + '">' + r[1] + '</li>'; }).join('') + '</ul></div>';
+  };
+  UI.pwBind = function (input, scope) {
+    var m = (scope || d).querySelector('[data-pwm]'); if (!input || !m) return;
+    function paint() {
+      var p = input.value, n = 0;
+      PW_RULES.forEach(function (r) { var ok = r[2](p); if (ok) n++; m.querySelector('[data-r="' + r[0] + '"]').classList.toggle('is-ok', ok); });
+      var lvl = !p ? 0 : n <= 2 ? 1 : n < 5 ? 2 : 3;
+      m.dataset.lvl = lvl;
+      m.querySelector('.pwm__lbl').textContent = ['Enter a password', 'Too weak', 'Almost there', 'Strong'][lvl];
+    }
+    input.addEventListener('input', paint); paint();
+  };
   /* ---------- scroll reveal ---------- */
   UI.reveal = function (scope) {
     var els = (scope || d).querySelectorAll('.reveal:not(.is-in)');
