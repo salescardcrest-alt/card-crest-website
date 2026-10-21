@@ -868,21 +868,42 @@
     if (!w.Notification) return Promise.resolve('unsupported');
     return Promise.resolve(Notification.requestPermission());
   };
+  /* A phone-style ring that lasts 3 seconds: five 0.4s double-tone bursts with 0.2s gaps.
+     Browsers only allow sound after the person has clicked or typed on the page once, so the audio is unlocked on
+     the first interaction and reused. */
+  var audio = null;
+  function unlockAudio() {
+    try {
+      var Ctx = w.AudioContext || w.webkitAudioContext; if (!Ctx) return;
+      if (!audio) audio = new Ctx();
+      if (audio.state === 'suspended') audio.resume();
+    } catch (e) {}
+  }
+  ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) { w.addEventListener(ev, unlockAudio, { passive: true }); });
   function beep() {
     if (!Market.soundOn()) return;
     try {
-      var Ctx = w.AudioContext || w.webkitAudioContext; if (!Ctx) return;
-      var c = new Ctx(), o = c.createOscillator(), g = c.createGain();
-      o.type = 'sine'; o.frequency.value = 880; g.gain.value = 0.05; o.connect(g); g.connect(c.destination); o.start();
-      setTimeout(function () { o.frequency.value = 1175; }, 120);
-      setTimeout(function () { o.stop(); c.close(); }, 260);
+      unlockAudio(); if (!audio || audio.state !== 'running') return;
+      var t0 = audio.currentTime + 0.05;
+      for (var i = 0; i < 5; i++) {
+        var t = t0 + i * 0.6, g = audio.createGain();
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.18, t + 0.03);
+        g.gain.setValueAtTime(0.18, t + 0.37); g.gain.linearRampToValueAtTime(0, t + 0.4);
+        g.connect(audio.destination);
+        [880, 1175].forEach(function (f) {
+          var o = audio.createOscillator(); o.type = 'sine'; o.frequency.value = f; o.connect(g); o.start(t); o.stop(t + 0.42);
+        });
+      }
     } catch (e) {}
   }
+  Market.ring = beep;
   /* toast + sound + desktop alert for a new "request you can fulfil" */
   function announce(n) {
-    if (!n || String(n.type).indexOf('market:open:') !== 0) return;
+    if (!n) return;
+    var fresh = !n.createdAt || (Date.now() - new Date(n.createdAt).getTime()) < 120000;   // never ring for old alerts
+    if (fresh) beep();
+    if (String(n.type).indexOf('market:open:') !== 0) return;
     w.CC.UI.toast(n.title + ': ' + String(n.body).split('.')[0]);
-    beep();
     try { if (w.Notification && Notification.permission === 'granted') new Notification(n.title, { body: n.body, tag: n.type }); } catch (e) {}
   }
 
