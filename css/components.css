@@ -304,3 +304,18 @@ table.tbl{width:100%; border-collapse:collapse; font-size:.89rem}
 .crop__ring{position:absolute; inset:0; border-radius:50%; pointer-events:none; box-shadow:0 0 0 400px rgba(8,20,14,.58), inset 0 0 0 2px rgba(255,255,255,.95)}
 .crop__zoom{display:flex; align-items:center; gap:12px; max-width:280px; margin:0 auto 10px; font-weight:800; color:var(--muted)}
 .crop__zoom input{flex:1; accent-color:var(--crest); height:auto; padding:0; border:0; box-shadow:none}
+
+/* pager */
+.pg-hide{display:none !important}
+.pager{display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; padding:12px 16px; border-top:1px solid var(--line-soft); background:var(--paper)}
+.pager[hidden]{display:none !important}
+.pager__info{display:flex; align-items:center; gap:16px; flex-wrap:wrap; font-size:.84rem; color:var(--muted)}
+.pager__info strong{color:var(--ink)}
+.pager__size{display:inline-flex; align-items:center; gap:8px}
+.pager__size select{width:auto; height:32px; padding:0 30px 0 10px; font-size:.82rem; border-radius:var(--r-sm)}
+.pager__nav{display:flex; align-items:center; gap:4px; flex-wrap:wrap}
+.pager__nav button{min-width:34px; height:34px; padding:0 11px; border:1px solid var(--line); background:#fff; border-radius:var(--r-sm); font-size:.84rem; font-weight:600; color:var(--ink-2); cursor:pointer; transition:background .15s, border-color .15s, color .15s}
+.pager__nav button:hover:not(:disabled){border-color:var(--crest); color:var(--crest)}
+.pager__nav button.is-on{background:var(--crest); border-color:var(--crest); color:#fff}
+.pager__nav button:disabled{opacity:.45; cursor:not-allowed}
+.pager__gap{padding:0 4px; color:var(--muted)}

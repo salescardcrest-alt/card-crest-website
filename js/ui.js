@@ -208,6 +208,79 @@
     return out;
   };
 
+  /* ---------- pager: long tables show a page at a time ---------- */
+  /* Works on every table.tbl inside `root`. Rows hidden by a search or filter (style.display = none) are skipped,
+     so the pages always count only what is currently listed. */
+  var pageMemo = {};
+  UI.paginate = function (root, opts) {
+    opts = opts || {};
+    var sizes = [10, 25, 50, 100], size = 10;
+    try { size = Number(localStorage.getItem('cc.pagesize')) || 10; } catch (e) {}
+    if (sizes.indexOf(size) < 0) size = 10;
+
+    [].slice.call(root.querySelectorAll('table.tbl')).forEach(function (tbl, idx) {
+      var body = tbl.tBodies[0];
+      if (!body) return;
+      var rows = [].slice.call(body.rows);
+      if (rows.length < 2 && rows[0] && rows[0].cells.length === 1) return;     // an empty-state row
+      if (rows.length <= 10) return;                                            // nothing to page
+      var wrap = tbl.closest('.panel') || tbl.parentNode, key = location.hash.split('?')[0] + '#' + idx;
+      var bar = wrap.querySelector(':scope > .pager');
+      if (!bar) { bar = d.createElement('div'); bar.className = 'pager'; wrap.appendChild(bar); }
+      var page = pageMemo[key] || 1;
+
+      function shown() { return rows.filter(function (r) { return r.style.display !== 'none'; }); }
+      function nums(pages) {
+        var out = [], add = function (n) { if (out.indexOf(n) < 0) out.push(n); };
+        add(1); add(pages); for (var i = page - 1; i <= page + 1; i++) if (i > 1 && i < pages) add(i);
+        out.sort(function (a, b) { return a - b; });
+        var res = []; out.forEach(function (n, i) { if (i && n - out[i - 1] > 1) res.push('\u2026'); res.push(n); });
+        return res;
+      }
+      function draw() {
+        var list = shown(), pages = Math.max(1, Math.ceil(list.length / size));
+        if (page > pages) page = pages;
+        pageMemo[key] = page;
+        rows.forEach(function (r) { r.classList.add('pg-hide'); });
+        list.slice((page - 1) * size, page * size).forEach(function (r) { r.classList.remove('pg-hide'); });
+        var from = list.length ? (page - 1) * size + 1 : 0, to = Math.min(page * size, list.length);
+        bar.hidden = list.length <= 10 && !opts.always;
+        bar.innerHTML =
+          '<div class="pager__info"><span>Showing <strong>' + from + '\u2013' + to + '</strong> of <strong>' + list.length + '</strong></span>' +
+          '<label class="pager__size">Rows <select aria-label="Rows per page">' + sizes.map(function (s) { return '<option' + (s === size ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select></label></div>' +
+          (pages > 1 ? '<div class="pager__nav"><button type="button" data-pg="prev"' + (page === 1 ? ' disabled' : '') + '>Previous</button>' +
+            nums(pages).map(function (n) { return n === '\u2026' ? '<span class="pager__gap">\u2026</span>' : '<button type="button" data-pg="' + n + '" class="' + (n === page ? 'is-on' : '') + '"' + (n === page ? ' aria-current="page"' : '') + '>' + n + '</button>'; }).join('') +
+            '<button type="button" data-pg="next"' + (page === pages ? ' disabled' : '') + '>Next</button></div>' : '');
+      }
+      bar.onclick = function (e) {
+        var b = e.target.closest('[data-pg]'); if (!b || b.disabled) return;
+        var pages = Math.max(1, Math.ceil(shown().length / size));
+        page = b.dataset.pg === 'prev' ? Math.max(1, page - 1) : b.dataset.pg === 'next' ? Math.min(pages, page + 1) : Number(b.dataset.pg);
+        draw();
+        var top = wrap.getBoundingClientRect().top;
+        if (top < 70) w.scrollTo({ top: w.scrollY + top - 90, behavior: 'smooth' });   // back to the top of the table
+      };
+      bar.onchange = function (e) {
+        if (e.target.tagName !== 'SELECT') return;
+        size = Number(e.target.value); page = 1;
+        try { localStorage.setItem('cc.pagesize', String(size)); } catch (x) {}
+        root.querySelectorAll('.pager').forEach(function (b) { if (b !== bar && b._redraw) { b._redraw(); } });
+        draw();
+      };
+      bar._redraw = function () { size = Number((function () { try { return localStorage.getItem('cc.pagesize'); } catch (e) { return 10; } })()) || 10; draw(); };
+      tbl._repage = function () { page = 1; draw(); };
+      draw();
+    });
+
+    /* a search box or filter changed what is listed: go back to page 1 of each table */
+    if (!root._pgBound) {
+      root._pgBound = true;
+      var again = UI.debounce(function () { root.querySelectorAll('table.tbl').forEach(function (t) { if (t._repage) t._repage(); }); }, 260);
+      root.addEventListener('input', function (e) { if (e.target.matches('[data-filter], #admSearch, input[type=search]')) again(); });
+      root.addEventListener('click', function (e) { if (e.target.closest('[data-chip]')) setTimeout(again, 30); });
+    }
+  };
+
   /* ---------- scroll reveal ---------- */
   UI.reveal = function (scope) {
     var els = (scope || d).querySelectorAll('.reveal:not(.is-in)');

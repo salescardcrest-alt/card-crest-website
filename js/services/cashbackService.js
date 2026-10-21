@@ -13,6 +13,21 @@
   var Cashback = {
     FLOW: FLOW,
 
+    find: function (id) { return S.find('transactions', id); },
+
+    /* The link the shopper is sent to. If an affiliate link for this store is set in js/config.js
+       (AFFILIATE_LINKS: { flipkart: 'https://...{click}...' }) it is used, with {click} replaced by the tracking
+       reference, which is how the affiliate network reports the order back. Otherwise the store's own site opens
+       with the reference attached, so the session still carries a click id. */
+    trackedUrl: function (txn) {
+      var store = w.CC.Offers.store(txn.storeId), cfg = (w.CC_CONFIG && w.CC_CONFIG.AFFILIATE_LINKS) || {};
+      if (cfg[txn.storeId]) return String(cfg[txn.storeId]).replace(/\{click\}/g, encodeURIComponent(txn.id));
+      var domain = store && (store.domain || w.CC.DATA.storeDomains[store.id]);
+      var base = txn.retailerUrl || (domain ? 'https://www.' + String(domain).replace(/^www\./, '') + '/' : '');
+      if (!base) return '';
+      return base + (base.indexOf('?') > -1 ? '&' : '?') + 'cc_click=' + encodeURIComponent(txn.id);
+    },
+
     forUser: function (userId, filter) {
       var list = S.where('transactions', function (t) { return t.userId === userId; });
       if (filter && filter.status && filter.status !== 'all') {

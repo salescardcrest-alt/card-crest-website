@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Marketplace UI smoke test</title>
+<style>body{font:13px/1.5 ui-monospace,Consolas,monospace;padding:12px} iframe{width:1280px;height:900px;border:1px solid #ccc} .ok{color:#0a7a3d}.bad{color:#c0261b;font-weight:700}</style></head>
+<body>
+<p>Drives the real marketplace screens in demo mode (offline). Serve the repo root, then open <code>/tests/ui-smoke.html</code>.</p>
+<pre id="out"></pre>
+<iframe id="f"></iframe>
+<script>
+(function () {
+  localStorage.removeItem('cardcrest.v1'); localStorage.removeItem('cc.mk.offset');
+  var out = document.getElementById('out'), f = document.getElementById('f'), pass = 0, bad = 0, errs = [];
+  function log(c, m) { var s = document.createElement('span'); s.className = c; s.textContent = m + '\n'; out.appendChild(s); }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function ok(c, m) { if (c) { pass++; log('ok', 'PASS  ' + m); } else { bad++; log('bad', 'FAIL  ' + m); } }
+  var cw, D;
+  function q(sel) { return D.querySelector(sel); }
+  function txt() { return D.getElementById('view').innerText; }
+  async function go(hash) { cw.location.hash = hash; await sleep(350); }
+  async function until(fn, ms) { var t = Date.now(); while (Date.now() - t < (ms || 3000)) { try { if (fn()) return true; } catch (e) {} await sleep(60); } return false; }
+  function set(sel, v) { var el = q(sel); el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }
+  function click(sel) { var el = typeof sel === 'string' ? q(sel) : sel; el.click(); }
+  function local(h) { var t = new Date(Date.now() + h * 3600000); t.setMinutes(t.getMinutes() - t.getTimezoneOffset()); return t.toISOString().slice(0, 16); }
+
+  f.onload = async function () {
+    try {
+      cw = f.contentWindow; D = cw.document;
+      cw.addEventListener('error', function (e) { errs.push(e.message); });
+      var ce = cw.console.error; cw.console.error = function () { errs.push([].slice.call(arguments).join(' ')); ce.apply(cw.console, arguments); };
+      await until(function () { return cw.CC && cw.CC.Router && cw.CC.Pages && cw.CC.Pages.marketRequest; }, 5000);
+      ok(!!cw.CC.Pages.marketRequest, 'marketplace pages are registered');
+      ok(cw.CC.Market.mode() === 'local', 'demo mode runs against the local engine');
+      cw.CC.Store.set('session', 'u-001'); cw.CC.App.paintAuth();
+
+      /* every marketplace route renders */
+      var routes = ['#/market', '#/market/new/lounge', '#/market/new/movie', '#/market/new/order', '#/market/new/pay', '#/market/requests', '#/market/earn', '#/market/cards', '#/market/wallet', '#/market/r/none'];
+      for (var i = 0; i < routes.length; i++) { await go(routes[i]); ok(txt().length > 40 && !/could not load/i.test(txt()), 'route renders: ' + routes[i]); }
+      await go('#/'); ok(q('.hdr__nav a[href="#/market"]') !== null, 'header has a Share & Earn link');
+      await go('#/market/earn'); ok(!!q('#soundBtn') && /Live alerts are on/.test(txt()), 'Earn page shows the live alerts bar with a sound switch');
+      /* pages that were replaced must stop listening, or they pile up and make the screen jitter */
+      for (var k = 0; k < 6; k++) { await go('#/market/earn'); await go('#/market/requests'); }
+      var calls = 0, realOpen = cw.CC.Market.openFor;
+      cw.CC.Market.openFor = function () { calls++; return realOpen.apply(this, arguments); };
+      cw.dispatchEvent(new cw.CustomEvent('cc:market'));
+      cw.CC.Market.openFor = realOpen;
+      ok(calls <= 2, 'only the page on screen reacts to a market event (' + calls + ' reactions after 12 page changes)');
+      /* offers: activating opens the store in a Card Crest shopping window, or hands the tab over if the browser blocks it */
+      var opens = [];
+      cw.open = function (url, name, feat) { opens.push([url, name, feat]); return opens.length === 1 ? null : { focus: function () {} }; };
+      await go('#/stores/flipkart');
+      click('[data-activate-store]');
+      ok(await until(function () { return q('.modal [data-go]'); }), 'activating a store offer asks to continue to the store');
+      click('.modal [data-go]');
+      ok(await until(function () { return /\/shop\/.*go=1/.test(cw.location.hash) && q('#shopGo'); }), 'if the window is blocked, a "Taking you to Flipkart" screen takes over');
+      ok(/Taking you to Flipkart/.test(txt()) && !!q('#goNow') && !!q('#goTab') && !!q('#goStay'), 'it offers go now, new tab, or stay');
+      var tx = cw.CC.Store.get('transactions')[0], tu = cw.CC.Cashback.trackedUrl(tx);
+      ok(/flipkart\.com/.test(tu) && tu.indexOf('cc_click=' + tx.id) > -1 && opens[0][0] === tu, 'the store link carries the tracking reference: ' + tu);
+      click('#goStay'); await sleep(200);
+      ok(!q('#shopGo') && /Shop at Flipkart/.test(txt()) && /Cashback tracking is on/.test(txt()), 'staying shows the shopping session page');
+      await go('#/stores/flipkart'); click('[data-activate-store]'); await until(function () { return q('.modal [data-go]'); }); click('.modal [data-go]');
+      ok(await until(function () { return /#\/shop\/[^?]+$/.test(cw.location.hash); }) && !q('#shopGo'), 'when the window opens, Card Crest stays on the shopping session instead');
+      ok(/popup=yes/.test(opens[1][2]) && opens[1][1] === 'cardcrest-store', 'the store opens in a named Card Crest shopping window');
+      await sleep(13000); ok(/tracked|Tracked/.test(q('#shopStatus').innerText), 'the session follows the order live as its status moves on');
+
+      /* lounge booking through the real form */
+      await go('#/market/new/lounge');
+      set('#f-airport', 'DEL'); set('#f-terminal', 'T3');
+      ok(D.querySelectorAll('#f-type .chip').length === 2, 'T3 offers domestic and international');
+      var domN = D.querySelectorAll('#f-airport option').length;
+      ok(!!q('#f-airport option[value="PAT"]') && !q('#f-airport option[value="DXB"]'), 'domestic list is Indian airports only (Patna yes, Dubai no)');
+      click('#f-type [data-t="INTERNATIONAL"]');
+      ok(D.querySelectorAll('#f-airport option').length >= 250 && !q('#f-airport option[value="DEL"]') && !!q('#f-airport option[value="LHR"]') && !!q('#f-airport option[value="DXB"]'), 'choosing International lists every airport outside India');
+      ok(D.querySelectorAll('#f-airport optgroup').length > 40, 'international airports are grouped by country');
+      ok(q('#f-terminal').hidden && !q('#f-terminalx').hidden, 'abroad the terminal is typed in');
+      click('#f-type [data-t="DOMESTIC"]'); set('#f-airport', 'DEL');
+      ok(!q('#f-terminal').hidden && q('#f-terminalx').hidden && D.querySelectorAll('#f-terminal option').length === 3, 'switching back to Domestic lists the Indian terminals');
+      set('#f-terminal', 'T3');
+      set('#f-airport', 'DEL'); set('#f-terminal', 'T3');
+      set('#f-date', local(48)); set('#f-flight', 'AI 101'); set('#f-guest', 'Ayush Kumar');
+      ok(/₹500/.test(q('#mkQuote').innerText), 'domestic price shows ₹500');
+      click('#f-type [data-t="INTERNATIONAL"]');
+      ok(/₹1,000/.test(q('#mkQuote').innerText), 'international price shows ₹1,000');
+      click('#f-type [data-t="DOMESTIC"]');
+      click('#mkGo');
+      ok(await until(function () { return q('.modal [data-ok]'); }), 'payment modal opens after creating the request');
+      click('.modal [data-ok]');
+      ok(await until(function () { return /\/market\/r\//.test(cw.location.hash); }), 'paying opens the request page');
+      var reqHash = cw.location.hash;
+      ok(/Open for cardholders/.test(txt()), 'request is open for cardholders after payment');
+
+      /* test cardholder accepts and uploads proof, buyer confirms */
+      click('[data-help="accept"]'); await sleep(300);
+      ok(/Accepted/.test(txt()), 'test cardholder accepted');
+      click('[data-help="proof"]'); await sleep(400);
+      ok(/Proof uploaded/.test(txt()) && q('[data-act="confirm"]'), 'proof uploaded, buyer sees Confirm');
+      ok(q('#proofs img') !== null, 'proof image is shown');
+      /* chat masks contact details */
+      set('#chatIn', 'call 98765 43210'); q('#chatForm').dispatchEvent(new Event('submit', { cancelable: true })); await sleep(250);
+      ok(/number hidden/.test(q('#chatLog').innerText) && !/98765/.test(q('#chatLog').innerText), 'chat hides phone numbers');
+      click('[data-act="confirm"]'); await sleep(400);
+      ok(/Completed/.test(txt()), 'confirming completes the request');
+      ok(/All done/.test(txt()) && q('[data-star="5"]'), 'rating buttons appear');
+      click('[data-star="5"]'); await sleep(300);
+      ok(/rated this 5/.test(txt()), 'rating is saved');
+
+      /* money boxes cannot go above the limit */
+      await go('#/market/new/order');
+      set('#f-list', '99999999'); ok(q('#f-list').value === '200000', 'listed price box stops at 2,00,000');
+      set('#f-exp', '1234567'); ok(q('#f-exp').value === '200000', 'offer price box stops at 2,00,000');
+      set('#f-exp', '12.345'); ok(q('#f-exp').value === '12.34', 'decimals are limited to 2 places');
+      set('#f-list', '1000'); set('#f-exp', '1000'); ok(/less than the listed price/.test(q('#mkQuote').innerText), 'equal prices show the "must be less" message');
+
+      /* movie with a higher final price: top-up flow */
+      await go('#/market/new/movie');
+      set('#f-offer', 'FLAT_500_OFF_2_SEATS'); set('#f-movie', 'Test Movie'); set('#f-theatre', 'PVR Orion'); set('#f-city', 'Bengaluru');
+      set('#f-show', local(30)); set('#f-seats', 'G7, G8'); set('#f-count', '2'); set('#f-total', '1200');
+      var qt = q('#mkQuote').innerText;
+      ok(/₹1,000/.test(qt) && /save ₹200/i.test(qt.replace(/\s+/g, ' ')), 'movie breakdown shows pay ₹1,000 and save ₹200');
+      set('#f-count', '3'); ok(/exactly 2 seats/.test(q('#mkQuote').innerText), 'three seats are refused');
+      set('#f-count', '2'); click('#mkGo');
+      await until(function () { return q('.modal [data-ok]'); }); click('.modal [data-ok]');
+      await until(function () { return /\/market\/r\//.test(cw.location.hash); });
+      click('[data-help="accept"]'); await sleep(300);
+      click('[data-help="proof-high"]'); await sleep(400);
+      ok(/top-up is due/i.test(txt()) && q('[data-act="topup"]') && !q('[data-act="confirm"]'), 'higher price asks for a top-up and blocks confirm');
+      click('[data-act="topup"]');
+      ok(await until(function () { return q('.modal [data-ok]'); }), 'top-up modal opens'); click('.modal [data-ok]');
+      ok(await until(function () { return q('[data-act="confirm"]'); }), 'after top-up the buyer can confirm');
+      click('[data-act="confirm"]'); await sleep(400);
+      ok(/released at/i.test(txt()) || /Confirmed/.test(txt()), 'movie waits for the show before release');
+      click('[data-help="t72"]'); await sleep(500);
+      ok(/Completed/.test(txt()), 'moving the clock past the show settles it');
+
+      /* cardholder side: add a card, see wallet */
+      await go('#/market/cards'); click('#addCard'); await sleep(200);
+      set('#c-bank', 'hdfc'); set('#c-var', 'Regalia');
+      D.querySelector('.mk-ben[data-kind="LOUNGE_DOM"] [data-on]').click();
+      click('.modal [data-save]'); await sleep(300);
+      ok(/Regalia/.test(txt()), 'a benefit card can be added');
+      await go('#/market/wallet'); ok(/Wallet and payouts/.test(txt()) && /KYC/.test(txt()), 'wallet page shows KYC and payouts');
+
+      /* admin sections */
+      cw.CC.Store.set('session', 'u-000'); cw.CC.App.paintAuth();
+      var adm = ['market', 'mk-disputes', 'mk-kyc', 'mk-fees', 'mk-payouts', 'mk-reports'];
+      for (var j = 0; j < adm.length; j++) { await go('#/admin/' + adm[j]); ok(txt().length > 60 && !/could not load/i.test(txt()), 'admin section renders: ' + adm[j]); }
+      await go('#/admin/mk-reports'); ok(/Balanced/.test(txt()) && /Escrow matches/.test(txt()), 'ledger health is balanced and escrow matches');
+      ok(/Requests by status/.test(txt()) && /Top cardholders/.test(txt()) && /Top buyers/.test(txt()) && /Latest ledger entries/.test(txt()) && /Lounge · Domestic/.test(txt()), 'the Revenue page fills out with status, revenue, top people and the latest ledger entries');
+      await go('#/admin/mk-fees'); ok(/Domestic lounge/.test(txt()) && /Buy one get one/.test(txt()), 'fee config lists every option');
+      /* staff tools: attention queue, reward approvals, transactions, announcements, activity log */
+      await go('#/admin');
+      ok(!!q('.adm-queue') && /Cashback to confirm/.test(txt()) && /Redemption requests/.test(txt()), 'admin overview shows the attention queue');
+      ok(/Reward approvals/.test(q('.adm-nav').innerText) && /Announcements/.test(q('.adm-nav').innerText) && /Activity log/.test(q('.adm-nav').innerText), 'admin menu has Reward approvals, Announcements and Activity log');
+      await go('#/admin/approvals');
+      var before = cw.CC.Store.get('transactions').filter(function (t) { return ['clicked', 'tracked', 'pending'].indexOf(t.status) > -1; });
+      ok(before.length > 0 && !!q('[data-cb="confirmed"]'), 'reward approvals lists cashback waiting for confirmation');
+      var first = q('[data-cb="confirmed"]'), firstId = first.dataset.id, owner = cw.CC.Store.find('transactions', firstId).userId;
+      click(first); await sleep(300);
+      ok(cw.CC.Store.find('transactions', firstId).status === 'confirmed', 'confirming a cashback marks it confirmed');
+      ok(cw.CC.Store.get('notifications').some(function (n) { return n.userId === owner && n.title === 'Cashback confirmed'; }), 'the member is told their cashback was confirmed');
+      await go('#/admin/approvals');
+      if (q('#pickAll')) { click('#pickAll'); click('#confirmPicked'); await until(function () { return q('.modal [data-yes]'); }); click('.modal [data-yes]'); await sleep(300); }
+      ok(cw.CC.Store.get('transactions').every(function (t) { return ['clicked', 'tracked', 'pending'].indexOf(t.status) < 0; }), 'bulk confirm clears the whole queue');
+      await go('#/admin/transactions');
+      ok(!!q('[data-chip="confirmed"]') && !!q('[data-export="transactions"]') && /total transactions/i.test(txt()), 'transactions show totals, status filters and an export button');
+      click('[data-chip="confirmed"]'); await sleep(100);
+      ok([].slice.call(D.querySelectorAll('tbody tr')).every(function (tr) { var s = tr.querySelector('select[data-txn]'); return !s || tr.style.display === 'none' || s.value === 'confirmed'; }), 'the Confirmed filter hides every other status');
+      await go('#/admin/announce');
+      set('#an-title', 'Share & Earn is live'); set('#an-body', 'Earn from your cards or get benefits you do not have.');
+      click('#an-send'); ok(await until(function () { return q('.modal [data-yes]'); }), 'sending an announcement asks to confirm'); click('.modal [data-yes]'); await sleep(300);
+      ok(cw.CC.Store.get('notifications').some(function (n) { return n.userId === 'u-001' && n.title === 'Share & Earn is live'; }), 'the announcement lands in members\u2019 notifications');
+      await go('#/admin/activity');
+      ok(/Announcement/.test(txt()) && /Cashback/.test(txt()), 'the activity log records what staff did');
+      /* long tables show one page at a time */
+      localStorage.removeItem('cc.pagesize');
+      await go('#/admin/stores');
+      var nStores = cw.CC.Store.get('stores').length;
+      function vis() { return D.querySelectorAll('table.tbl tbody tr:not(.pg-hide)').length; }
+      ok(nStores > 10 && vis() === 10, 'the stores list shows 10 rows, not all ' + nStores);
+      ok(new RegExp('Showing\\s*1\\u201310\\s*of\\s*' + nStores).test(q('.pager').innerText),'the pager says which rows are showing: ' + q('.pager').innerText.replace(/s+/g, ' '));
+      var firstName = q('table.tbl tbody tr:not(.pg-hide) td').innerText;
+      click('[data-pg="next"]'); await sleep(100);
+      ok(vis() === 10 && q('table.tbl tbody tr:not(.pg-hide) td').innerText !== firstName && /11\u201320/.test(q('.pager').innerText), 'Next shows the following 10');
+      click('.pager [data-pg="3"]'); await sleep(100);
+      ok(vis() === nStores - 20 && new RegExp('21\\u2013' + nStores).test(q('.pager').innerText), 'the last page shows what is left');
+      var sel = q('.pager select'); sel.value = '25'; sel.dispatchEvent(new Event('change', { bubbles: true })); await sleep(100);
+      ok(vis() === nStores && !q('[data-pg="next"]'), 'choosing 25 rows per page shows them all');
+      sel = q('.pager select'); sel.value = '10'; sel.dispatchEvent(new Event('change', { bubbles: true })); await sleep(100);
+      set('[data-filter]', 'ama'); await sleep(700);
+      ok(vis() === 1 && q('.pager').hidden, 'a search narrows the list and the pager steps aside');
+      localStorage.removeItem('cc.pagesize');
+
+      ok(errs.length === 0, 'no console or script errors' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
+    } catch (e) { bad++; log('bad', 'FAIL  harness crashed: ' + e.message + '\n' + (e.stack || '')); }
+    log(bad ? 'bad' : 'ok', '\n' + pass + ' passed, ' + bad + ' failed');
+    document.title = 'DONE ' + pass + ' passed ' + bad + ' failed';
+  };
+  f.src = '../index.html?demo=1#/market';
+})();
+</script></body></html>

@@ -63,12 +63,14 @@
     }
     if (out === false) return; // page handled its own redirect
 
+    w.CC.Router.gen = (w.CC.Router.gen || 0) + 1;   // lets a page know when it has been replaced
     root.innerHTML = out.html;
     w.CC.UI.setMeta(out.title || 'Card Crest', out.desc || 'Discover, compare and maximise the value of your credit cards.');
     if (out.mount) {
       try { out.mount(root); }
       catch (err) { console.error('[Card Crest] mount failed', err); }
     }
+    try { w.CC.UI.paginate(root); } catch (err) { console.error('[Card Crest] pager failed', err); }
 
     w.CC.UI.reveal(root);
     markActive(loc.path);
@@ -120,6 +122,14 @@
       on('/legal/:doc', P.legal);
       on('/admin', P.admin);
       on('/admin/:section', P.admin);
+      on('/shop/:id', P.shop);
+      on('/market', P.market);
+      on('/market/new/:module', P.marketNew);
+      on('/market/requests', P.marketRequests);
+      on('/market/earn', P.marketEarn);
+      on('/market/cards', P.marketCards);
+      on('/market/wallet', P.marketWallet);
+      on('/market/r/:id', P.marketRequest);
 
       w.addEventListener('hashchange', render);
       render();

@@ -95,6 +95,7 @@
     commit: save,
     uid: uid,
     reset: function () { localStorage.removeItem(KEY); state = null; load(); },
+    reload: function () { state = null; load(); },   // pick up changes made by another tab
 
     insert: function (col, row) {
       var s = load();

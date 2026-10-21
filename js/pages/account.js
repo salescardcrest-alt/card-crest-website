@@ -50,7 +50,7 @@
       title: 'Sign in | Card Crest',
       desc: 'Sign in to your Card Crest account.',
       html: '<div class="auth-wrap"><div class="auth-card">' +
-        '<h1 class="h1">Welcome back</h1><p class="muted" style="margin-bottom:24px">Sign in to see your cashback, rewards and applications.</p>' +
+        '<h1 class="h1">Welcome back</h1><p class="muted" style="margin-bottom:24px">Sign in to see your cashback, rewards and applications. Card Crest staff sign in here too and go straight to the admin panel.</p>' +
         '<form id="loginForm" novalidate>' +
         '<div class="field" style="margin-bottom:16px"><label for="l-email">Email address</label>' +
         '<input id="l-email" type="email" autocomplete="email" placeholder="you@example.com"><span class="err">Enter the email you signed up with.</span></div>' +

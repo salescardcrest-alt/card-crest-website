@@ -18,10 +18,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600;1,700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
 
-<link rel="stylesheet" href="css/global.css?v=20261064" />
-<link rel="stylesheet" href="css/components.css?v=20261064" />
-<link rel="stylesheet" href="css/pages.css?v=20261064" />
-<link rel="stylesheet" href="css/responsive.css?v=20261064" />
+<link rel="stylesheet" href="css/global.css?v=20261103" />
+<link rel="stylesheet" href="css/components.css?v=20261103" />
+<link rel="stylesheet" href="css/pages.css?v=20261103" />
+<link rel="stylesheet" href="css/responsive.css?v=20261103" />
 </head>
 <body>
 
@@ -41,6 +41,7 @@
     </a>
 
     <nav class="hdr__nav" aria-label="Main">
+      <a class="nav-main" href="#/market"><span class="nav-main__dot" aria-hidden="true"></span>Share &amp; Earn</a>
       <a href="#/cards">Credit cards</a>
       <a href="#/compare">Compare</a>
       <a href="#/offers">Offers</a>
@@ -73,6 +74,7 @@
       <button class="icon-btn" id="sheetClose" aria-label="Close menu">&times;</button>
     </div>
     <nav class="sheet__nav" aria-label="Mobile">
+      <a class="nav-main" href="#/market"><span class="nav-main__dot" aria-hidden="true"></span>Share &amp; Earn <small>Our main product</small></a>
       <a href="#/cards">Credit cards</a>
       <a href="#/compare">Compare cards</a>
       <a href="#/offers">Cashback offers</a>
@@ -111,6 +113,7 @@
       <h4>Rewards</h4>
       <a href="#/offers">Cashback offers</a>
       <a href="#/stores">Stores</a>
+      <a href="#/market">Share &amp; Earn</a>
       <a href="#/rewards">Rewards wallet</a>
       <a href="#/refer">Refer &amp; earn</a>
     </div>
@@ -139,8 +142,8 @@
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg><span>Home</span></a>
   <a href="#/cards" data-tab="/cards">
     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18" stroke="#fff" stroke-width="1.6"/></svg><span>Cards</span></a>
-  <a href="#/offers" data-tab="/offers">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3h7a3 3 0 0 1 3 3v7L11 23 1 13z"/><circle cx="16.5" cy="7.5" r="1.6" fill="#fff"/></svg><span>Offers</span></a>
+  <a href="#/market" data-tab="/market" class="tab-main">
+    <span class="tab-main__i"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h11l-3-3"/><path d="M17 17H6l3 3"/></svg></span><span>Share &amp; Earn</span></a>
   <a href="#/rewards" data-tab="/rewards">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 15 9l7 .6-5.3 4.6L18.2 21 12 17.3 5.8 21l1.5-6.8L2 9.6 9 9z"/></svg><span>Rewards</span></a>
   <a href="#/dashboard" data-tab="/dashboard">
@@ -150,30 +153,36 @@
 <div id="toasts" class="toasts" aria-live="polite" aria-atomic="false"></div>
 <div id="modalRoot"></div>
 
-<script src="js/data.js?v=20261064"></script>
-<script src="js/store.js?v=20261064"></script>
-<script src="js/ui.js?v=20261064"></script>
+<script src="js/data.js?v=20261103"></script>
+<script src="js/store.js?v=20261103"></script>
+<script src="js/ui.js?v=20261103"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/config.js?v=20261064"></script>
-<script src="js/sync.js?v=20261064"></script>
-<script src="js/services/authService.js?v=20261064"></script>
-<script src="js/services/cardService.js?v=20261064"></script>
-<script src="js/services/offerService.js?v=20261064"></script>
-<script src="js/services/cashbackService.js?v=20261064"></script>
-<script src="js/services/rewardService.js?v=20261064"></script>
-<script src="js/services/referralService.js?v=20261064"></script>
-<script src="js/services/applicationService.js?v=20261064"></script>
-<script src="js/services/notificationService.js?v=20261064"></script>
-<script src="js/services/supportService.js?v=20261064"></script>
-<script src="js/services/searchService.js?v=20261064"></script>
-<script src="js/hero.js?v=20261064"></script>
-<script src="js/pages/home.js?v=20261064"></script>
-<script src="js/pages/cards.js?v=20261064"></script>
-<script src="js/pages/offers.js?v=20261064"></script>
-<script src="js/pages/account.js?v=20261064"></script>
-<script src="js/pages/admin.js?v=20261064"></script>
-<script src="js/pages/misc.js?v=20261064"></script>
-<script src="js/router.js?v=20261064"></script>
-<script src="js/app.js?v=20261064"></script>
+<script src="js/config.js?v=20261103"></script>
+<script src="js/sync.js?v=20261103"></script>
+<script src="js/services/marketCore.js?v=20261103"></script>
+<script src="js/services/marketService.js?v=20261103"></script>
+<script src="js/services/authService.js?v=20261103"></script>
+<script src="js/services/cardService.js?v=20261103"></script>
+<script src="js/services/offerService.js?v=20261103"></script>
+<script src="js/services/cashbackService.js?v=20261103"></script>
+<script src="js/services/rewardService.js?v=20261103"></script>
+<script src="js/services/referralService.js?v=20261103"></script>
+<script src="js/services/applicationService.js?v=20261103"></script>
+<script src="js/services/notificationService.js?v=20261103"></script>
+<script src="js/services/supportService.js?v=20261103"></script>
+<script src="js/services/searchService.js?v=20261103"></script>
+<script src="js/hero.js?v=20261103"></script>
+<script src="js/pages/home.js?v=20261103"></script>
+<script src="js/pages/cards.js?v=20261103"></script>
+<script src="js/pages/offers.js?v=20261103"></script>
+<script src="js/pages/account.js?v=20261103"></script>
+<script src="js/pages/admin.js?v=20261103"></script>
+<script src="js/pages/misc.js?v=20261103"></script>
+<script src="js/pages/shop.js?v=20261103"></script>
+<script src="js/pages/market.js?v=20261103"></script>
+<script src="js/pages/marketAdmin.js?v=20261103"></script>
+<script src="js/pages/adminPlus.js?v=20261103"></script>
+<script src="js/router.js?v=20261103"></script>
+<script src="js/app.js?v=20261103"></script>
 </body>
 </html>

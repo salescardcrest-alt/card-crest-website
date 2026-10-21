@@ -53,29 +53,22 @@
 
     UI.modal({
       title: 'Activate cashback at ' + store.name,
-      body: '<p>You are about to start a tracked session. Complete your purchase in the same session and we will match the order back to your account.</p>' +
+      body: '<p>Card Crest takes you to ' + UI.esc(store.name) + ' through your tracked link. Finish your shopping there, in this same browser, and we match the order back to your account.</p>' +
         '<div class="note" style="margin:16px 0"><strong>Three things that break tracking:</strong> ad-blockers, coupon browser extensions, and opening the retailer in a different browser or app after activating.</div>' +
         '<div class="spread" style="padding:14px 0; border-top:1px solid var(--line-soft)">' +
         '<span class="muted small">Cashback rate</span><strong>' + UI.pct(offer.cashback) + '</strong></div>' +
         '<div class="spread" style="padding:14px 0; border-top:1px solid var(--line-soft)">' +
         '<span class="muted small">Confirms in</span><strong>30 to 90 days</strong></div>' +
-        '<p class="small muted" style="margin-top:16px">Demo mode — no retailer session is opened and no real cashback is earned. The status will move through the lifecycle on a timer so you can see how it works.</p>',
+        '<p class="small muted" style="margin-top:16px">Cashback is confirmed by the store after the return window. In this demo the status moves through the lifecycle on a timer so you can see how it works.</p>',
       foot: '<button class="btn btn--ghost" data-x>Cancel</button>' +
             '<button class="btn btn--primary" data-go>Continue to ' + UI.esc(store.name) + '</button>',
       onMount: function (m) {
         m.querySelector('[data-go]').onclick = function () {
           var txn = CB.activate(Auth.current().id, offer);
           UI.closeModal();
-          UI.modal({
-            title: 'Cashback activated',
-            body: '<div class="note" style="margin-bottom:18px">Your purchase at ' + UI.esc(store.name) + ' is now eligible for cashback tracking.</div>' +
-              '<div class="spread" style="padding:12px 0"><span class="muted small">Tracking reference</span><code class="mono">' + txn.id + '</code></div>' +
-              '<div class="spread" style="padding:12px 0; border-top:1px solid var(--line-soft)"><span class="muted small">Simulated order value</span><strong>' + UI.money(txn.amount) + '</strong></div>' +
-              '<div class="spread" style="padding:12px 0; border-top:1px solid var(--line-soft)"><span class="muted small">Estimated cashback</span><strong style="color:var(--crest)">' + UI.money(txn.cashback) + '</strong></div>' +
-              '<p class="small muted" style="margin-top:14px">Cashback is estimated and subject to the merchant confirming the order. Returned or cancelled orders do not earn cashback.</p>',
-            foot: '<button class="btn btn--ghost" data-x>Keep browsing</button>' +
-                  '<a class="btn btn--primary" href="#/dashboard/transactions" data-x>See my transactions</a>'
-          });
+          // open the store in a Card Crest shopping window; if the browser blocks it, the hand-over screen takes this tab to the store
+          var opened = w.CC.Render.openStore(txn);
+          w.CC.Router.go('#/shop/' + txn.id + (opened ? '' : '?go=1'));
         };
       }
     });

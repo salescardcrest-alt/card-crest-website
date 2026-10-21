@@ -38,15 +38,15 @@
   --sh-1:0 1px 2px rgba(10,31,22,.05);
   --sh-2:0 4px 18px rgba(10,31,22,.07);
   --sh-3:0 18px 48px rgba(10,31,22,.12);
-  --wrap:1200px;
+  --wrap:2240px;                      /* content width cap; the page uses the screen up to this */
   --hdr-h:70px;
 }
 
 *,*::before,*::after{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%; font-size:106.25%}   /* base text size; larger screens step up in responsive.css */
 body{
   margin:0; background:var(--paper); color:var(--ink);
-  font-family:var(--body); font-size:16px; line-height:1.55;
+  font-family:var(--body); font-size:1rem; line-height:1.55;
   -webkit-font-smoothing:antialiased; overflow-x:hidden;
 }
 body.no-scroll{overflow:hidden}
@@ -89,9 +89,9 @@ ul{margin:0; padding:0; list-style:none}
 .eyebrow::after{content:""; flex:1; height:1px; background:var(--line); max-width:80px}
 
 /* ---------- layout ---------- */
-.wrap{width:100%; max-width:var(--wrap); margin-inline:auto; padding-inline:24px}
-.section{padding:72px 0}
-.section--tight{padding:48px 0}
+.wrap{width:100%; max-width:var(--wrap); margin-inline:auto; padding-inline:clamp(18px, 3.4vw, 72px)}
+.section{padding-block:72px}
+.section--tight{padding-block:48px}
 .section--mist{background:var(--mist)}
 .section__head{margin-bottom:28px}
 .section__head .lede{margin-top:10px}
@@ -206,3 +206,23 @@ ul{margin:0; padding:0; list-style:none}
 .tabbar a{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:9px 4px 8px; color:var(--muted); font-size:.66rem; font-weight:600; min-height:56px; justify-content:center}
 .tabbar a svg{width:22px; height:22px; fill:currentColor}
 .tabbar a.is-active{color:var(--crest)}
+
+/* Share & Earn is the flagship product: it gets its own treatment in the header and the mobile menu */
+.hdr__nav a.nav-main{display:inline-flex; align-items:center; gap:8px; margin-right:6px; padding:8px 16px; font-weight:700; color:#fff;
+  background:linear-gradient(135deg,var(--crest) 0%,var(--leaf) 100%); box-shadow:0 4px 14px rgba(14,92,60,.28)}
+.hdr__nav a.nav-main:hover{background:linear-gradient(135deg,var(--crest-d) 0%,var(--crest) 100%); color:#fff; transform:translateY(-1px)}
+.hdr__nav a.nav-main.is-active{color:#fff; box-shadow:0 0 0 3px var(--leaf-soft), 0 4px 14px rgba(14,92,60,.28)}
+.nav-main__dot{width:8px; height:8px; border-radius:50%; background:#fff; box-shadow:0 0 0 0 rgba(255,255,255,.7); animation:navPulse 2s infinite; flex-shrink:0}
+@keyframes navPulse{70%{box-shadow:0 0 0 7px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+.sheet__nav a.nav-main{display:flex; align-items:center; gap:10px; margin:2px 0 10px; padding:14px 16px; border:0; border-radius:var(--r);
+  color:#fff; font-weight:700; background:linear-gradient(135deg,var(--crest) 0%,var(--leaf) 100%)}
+.sheet__nav a.nav-main small{margin-left:auto; font-size:.7rem; font-weight:600; letter-spacing:.05em; text-transform:uppercase; opacity:.85}
+@media (prefers-reduced-motion:reduce){.nav-main__dot{animation:none}}
+
+/* Share & Earn is the main product: it sits in the middle of the phone tab bar as a raised, highlighted button */
+.tabbar a.tab-main{position:relative; color:var(--crest); font-weight:800}
+.tab-main__i{display:grid; place-items:center; width:50px; height:50px; margin-top:-24px; border-radius:50%; color:#fff;
+  background:linear-gradient(135deg,var(--crest),var(--leaf)); box-shadow:0 6px 16px rgba(14,92,60,.38), 0 0 0 4px #fff}
+.tabbar a.tab-main svg{width:24px; height:24px; fill:none}
+.tabbar a.tab-main.is-active .tab-main__i{box-shadow:0 6px 16px rgba(14,92,60,.38), 0 0 0 4px var(--leaf-soft)}
+.tabbar a.tab-main span:last-child{white-space:nowrap}

@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Marketplace tests</title>
+<style>body{font:14px/1.5 ui-monospace,Consolas,monospace;padding:20px} .ok{color:#0a7a3d} .bad{color:#c0261b;font-weight:700}</style>
+</head><body>
+<h1>Card Crest marketplace tests</h1>
+<p>Open this page from a local server (for example <code>py -m http.server 3000</code>, then <code>/tests/market.test.html</code>). It resets only the browser's demo data.</p>
+<pre id="out"></pre>
+<script>window.CC = {};</script>
+<script src="../js/data.js"></script>
+<script src="../js/store.js"></script>
+<script src="../js/services/notificationService.js"></script>
+<script src="../js/services/marketCore.js"></script>
+<script src="../js/services/marketService.js"></script>
+<script>
+(function () {
+  var out = document.getElementById('out'), pass = 0, failN = 0, queue = [];
+  var Core = CC.MarketCore, M = CC.Market, S = CC.Store;
+  var BUYER = 'u-001', HOLDER2 = 'u-002', ADMIN = 'u-000', HOLDER = M.DEMO_HOLDER;
+  CC.Auth = { current: function () { return S.get('users').filter(function (u) { return u.id === BUYER; })[0]; } };
+
+  function log(cls, msg) { var s = document.createElement('span'); s.className = cls; s.textContent = msg + '\n'; out.appendChild(s); }
+  function eq(a, b, msg) { if (JSON.stringify(a) !== JSON.stringify(b)) throw new Error((msg || 'values differ') + ': got ' + JSON.stringify(a) + ', expected ' + JSON.stringify(b)); }
+  function ok(c, msg) { if (!c) throw new Error(msg || 'expected true'); }
+  function test(name, fn) { queue.push([name, fn]); }
+
+  var H = 3600 * 1000, T0 = Date.parse('2027-03-01T08:00:00Z'), T = T0;
+  function resetWorld() {
+    localStorage.removeItem('cardcrest.v1'); S.reset();
+    M.setClock(function () { return T; }); T = T0;
+    M.init(null);
+    // a second cardholder with a card
+    S.get('mkCards').push({ id: 'mkc-neha', ownerId: HOLDER2, bank: 'icici', variant: 'Amazon Pay', active: true,
+      benefits: [{ kind: 'LOUNGE_DOM', program: 'Visa', quota: 1, airports: ['ANY'] }, { kind: 'MOVIE_BOGO', program: 'Bank' }] });
+    S.commit();
+  }
+  function iso(ms) { return new Date(ms).toISOString(); }
+  var ABROAD = { type: 'INTERNATIONAL', airport: 'DXB', terminal: 'T3' };
+  function loungeD(extra) { return Object.assign({ type: 'DOMESTIC', airport: 'DEL', terminal: 'T3', dateTime: iso(T + 48 * H), flight: 'AI 101', guestName: 'Ayush Kumar' }, extra || {}); }
+  function movieD(extra) { return Object.assign({ offer: 'FLAT_500_OFF_2_SEATS', movie: 'Test Movie', theatre: 'PVR Orion', city: 'Bengaluru', showTime: iso(T + 24 * H), seats: 'G7, G8', seatCount: 2, ticketTotal: 1200, platform: 'BookMyShow', bank: 'any' }, extra || {}); }
+  function orderD(extra) { return Object.assign({ url: 'https://www.amazon.in/dp/B0TEST', platform: 'Amazon', listPrice: 1000, expectedPrice: 900, offerWanted: '10% instant discount on HDFC cards', bank: 'any', address: { name: 'Ayush Kumar', line: '12 MG Road, Indiranagar', city: 'Bengaluru', pin: '560038' } }, extra || {}); }
+  function C(action, params, who) { return M.do(action, params, who || BUYER); }
+  async function created(module, details) { var r = await C('create', { module: module, details: details }); ok(r.ok, r.error); return r.request; }
+  async function paid(module, details) { var rq = await created(module, details); var p = await M.pay(rq.id); ok(p.ok, p.error); return M.request(rq.id); }
+  async function accepted(module, details, holder, cardId) {
+    var rq = await paid(module, details);
+    var a = await C('accept', { id: rq.id, cardId: cardId || 'mkc-demo' }, holder || HOLDER); ok(a.ok, a.error);
+    return M.request(rq.id);
+  }
+  function proofs() { return [{ name: 'p.jpg', dataUrl: 'data:image/jpeg;base64,AAAA' }]; }
+  async function fulfilled(module, details, extra) {
+    var rq = await accepted(module, details);
+    var f = await C('fulfil', Object.assign({ id: rq.id, ref: 'REF12345', proofs: proofs(), actual: module === 'LOUNGE' ? undefined : rq.feeSnapshot.reimbursement }, extra || {}), HOLDER);
+    ok(f.ok, f.error);
+    return M.request(rq.id);
+  }
+  function ledgerBalanced() {
+    var byTxn = {}; M.ledgerAll().forEach(function (e) { byTxn[e.txnId] = (byTxn[e.txnId] || 0) + e.debit - e.credit; });
+    Object.keys(byTxn).forEach(function (t) { ok(Math.abs(byTxn[t]) < 0.005, 'ledger txn ' + t + ' is out of balance by ' + byTxn[t]); });
+  }
+  function bal(a) { return M.balance(a); }
+
+  /* ---------------- crypto ---------------- */
+  test('sha256 matches the standard test vectors', function () {
+    eq(M.sha256hex('abc'), 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+    eq(M.sha256hex(''), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
+    eq(M.sha256hex('abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq'), '248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1');
+  });
+  test('HMAC-SHA256 matches RFC 4231', function () {
+    eq(M.hmac('Jefe', 'what do ya want for nothing?'), '5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843');
+  });
+
+  /* ---------------- fee math ---------------- */
+  var F = Core.DEFAULT_FEES;
+  function cfg(m, s) { return Core.feeFor(F, m, s); }
+  test('lounge DOMESTIC: usual 1500, buyer pays 500, platform 250, cardholder 250', function () {
+    var q = Core.quote('LOUNGE', cfg('LOUNGE', 'DOMESTIC'), {}).q;
+    eq([q.total, q.platform, q.holderFee, q.holderReceives], [500, 250, 250, 250]);
+  });
+  test('lounge INTERNATIONAL: usual 2500, buyer pays 1000, platform 500, cardholder 500', function () {
+    var q = Core.quote('LOUNGE', cfg('LOUNGE', 'INTERNATIONAL'), {}).q;
+    eq([q.total, q.platform, q.holderFee, q.holderReceives], [1000, 500, 500, 500]);
+  });
+  test('movie FLAT_500_OFF_2_SEATS: pays (total - 500) + 300, holder gets reimbursement + 200', function () {
+    var q = Core.quote('MOVIE', cfg('MOVIE', 'FLAT_500_OFF_2_SEATS'), { seatCount: 2, ticketTotal: 1200 }).q;
+    eq([q.original, q.discount, q.reimbursement, q.fee, q.total, q.platform, q.holderFee, q.holderReceives, q.saved], [1200, 500, 700, 300, 1000, 100, 200, 900, 200]);
+  });
+  test('movie FLAT offer needs exactly 2 seats and a total above 500', function () {
+    var c = cfg('MOVIE', 'FLAT_500_OFF_2_SEATS');
+    ok(!Core.quote('MOVIE', c, { seatCount: 1, ticketTotal: 1200 }).ok, '1 seat must fail');
+    ok(!Core.quote('MOVIE', c, { seatCount: 3, ticketTotal: 1200 }).ok, '3 seats must fail');
+    ok(!Core.quote('MOVIE', c, { seatCount: 2, ticketTotal: 500 }).ok, 'total of 500 must fail');
+    ok(!Core.quote('MOVIE', c, { seatCount: 2, ticketTotal: 400 }).ok, 'total below 500 must fail');
+    ok(Core.quote('MOVIE', c, { seatCount: 2, ticketTotal: 501 }).ok, '501 total is allowed');
+  });
+  test('movie BOGO: half off, fee on top, saving shown', function () {
+    var q = Core.quote('MOVIE', cfg('MOVIE', 'BOGO'), { seatCount: 2, ticketTotal: 800 }).q;
+    eq([q.discount, q.reimbursement, q.total, q.saved, q.holderReceives], [400, 400, 700, 100, 600]);
+  });
+  test('movie BOGO respects a discount cap', function () {
+    var c = Object.assign({}, cfg('MOVIE', 'BOGO'), { cap: 350 });
+    var q = Core.quote('MOVIE', c, { seatCount: 2, ticketTotal: 800 }).q;
+    eq([q.discount, q.reimbursement, q.saved], [350, 450, 50]);
+  });
+  test('ORDER: the discount is split 40% buyer, 30% cardholder, 30% platform', function () {
+    var q = Core.quote('ORDER', cfg('ORDER', 'DEFAULT'), { listPrice: 1000, expectedPrice: 900 }).q;
+    eq([q.reimbursement, q.fee, q.platform, q.holderFee, q.total, q.saved], [900, 60, 30, 30, 960, 40]);
+    var small = Core.quote('ORDER', cfg('ORDER', 'DEFAULT'), { listPrice: 500, expectedPrice: 450 }).q;
+    eq([small.fee, small.platform, small.holderFee, small.total, small.saved], [30, 15, 15, 480, 20]);
+  });
+  test('Order & Earn: max 2 lakh, and the offer price must be below the listed price', function () {
+    var c = cfg('ORDER', 'DEFAULT');
+    ok(Core.quote('ORDER', c, { listPrice: 200000, expectedPrice: 150000 }).ok, '2 lakh is allowed');
+    ok(!Core.quote('ORDER', c, { listPrice: 200001, expectedPrice: 150000 }).ok, 'above 2 lakh is refused');
+    ok(!Core.quote('ORDER', c, { listPrice: 1000, expectedPrice: 1000 }).ok, 'equal prices are refused');
+    ok(!Core.quote('ORDER', c, { listPrice: 1000, expectedPrice: 1200 }).ok, 'higher offer price is refused');
+    ok(!Core.quote('PAY', cfg('PAY', 'DEFAULT'), { listPrice: 300000, expectedPrice: 250000 }).ok, 'Pay & Earn has the same limit');
+  });
+  test('a deal that saves nothing after the fee is refused', function () {
+    var r = Core.quote('ORDER', cfg('ORDER', 'DEFAULT'), { listPrice: 1000, expectedPrice: 999.99 });
+    ok(!r.ok);
+  });
+  test('price difference: lower price refunds, higher price needs a top-up', function () {
+    var snap = Core.snapshot(cfg('MOVIE', 'FLAT_500_OFF_2_SEATS'), Core.quote('MOVIE', cfg('MOVIE', 'FLAT_500_OFF_2_SEATS'), { seatCount: 2, ticketTotal: 1200 }).q);
+    eq(Core.adjust(snap, 650), { diff: -50, refund: 50, topup: 0 });
+    eq(Core.adjust(snap, 760), { diff: 60, refund: 0, topup: 60 });
+    eq(Core.adjust(snap, 700), { diff: 0, refund: 0, topup: 0 });
+    var lo = Core.settleLegs(snap, 650), hi = Core.settleLegs(snap, 760);
+    eq(lo.reimbursement + lo.holderFee + lo.platform + lo.refund, lo.held, 'lower price legs add up to the escrow');
+    eq(hi.reimbursement + hi.holderFee + hi.platform + hi.refund, hi.held, 'higher price legs add up to escrow + top-up');
+  });
+  test('fee config validation', function () {
+    ok(Core.validateFee(Object.assign({}, cfg('LOUNGE', 'DOMESTIC'), { platformAmt: 600 })) !== '', 'platform above fee');
+    ok(Core.validateFee(Object.assign({}, cfg('LOUNGE', 'DOMESTIC'), { listValue: 400 })) !== '', 'usual price below what the buyer pays');
+    ok(Core.validateFee(Object.assign({}, cfg('ORDER', 'DEFAULT'), { buyerPct: 50 })) !== '', 'shares that add up to 110% are refused');
+    ok(Core.validateFee(cfg('LOUNGE', 'DOMESTIC')) === '', 'defaults valid');
+    ok(Core.validateFee(Object.assign({}, cfg('ORDER', 'DEFAULT'), { buyerPct: 120 })) !== '', 'share above 100%');
+  });
+
+  /* ---------------- state machine ---------------- */
+  test('state machine allows the happy path and blocks shortcuts', function () {
+    ['CREATED>PAID', 'PAID>ACCEPTED', 'ACCEPTED>FULFILLED', 'FULFILLED>CONFIRMED', 'CONFIRMED>SETTLED', 'PAID>EXPIRED', 'EXPIRED>REFUNDED', 'FULFILLED>DISPUTED', 'DISPUTED>REFUNDED'].forEach(function (p) {
+      var a = p.split('>'); ok(Core.canTransition(a[0], a[1]), p + ' should be allowed');
+    });
+    ['CREATED>SETTLED', 'PAID>FULFILLED', 'SETTLED>REFUNDED', 'REFUNDED>PAID', 'CONFIRMED>REFUNDED', 'ACCEPTED>CONFIRMED'].forEach(function (p) {
+      var a = p.split('>'); ok(!Core.canTransition(a[0], a[1]), p + ' should be blocked');
+    });
+  });
+
+  /* ---------------- request lifecycle ---------------- */
+  test('lounge end to end: escrow, accept, proof, confirm, split 250/250', async function () {
+    resetWorld();
+    var rq = await created('LOUNGE', loungeD());
+    eq(rq.status, 'CREATED'); eq(rq.feeSnapshot.total, 500);
+    var p = await M.pay(rq.id); ok(p.ok, p.error);
+    eq(M.request(rq.id).status, 'PAID'); eq(bal('escrow'), 500);
+    var a = await C('accept', { id: rq.id, cardId: 'mkc-demo' }, HOLDER); ok(a.ok, a.error);
+    eq(M.request(rq.id).status, 'ACCEPTED');
+    var f = await C('fulfil', { id: rq.id, ref: 'PP-998877', proofs: proofs() }, HOLDER); ok(f.ok, f.error);
+    eq(M.request(rq.id).status, 'FULFILLED');
+    var c = await C('confirm', { id: rq.id }); ok(c.ok, c.error);
+    eq(M.request(rq.id).status, 'SETTLED');
+    eq([bal('escrow'), bal('platform'), bal('holder:' + HOLDER)], [0, 250, 250]);
+    ledgerBalanced();
+  });
+  test('international lounge splits 500/500', async function () {
+    resetWorld();
+    var rq = await accepted('LOUNGE', loungeD(ABROAD));
+    await C('fulfil', { id: rq.id, ref: 'PP-1234', proofs: proofs() }, HOLDER);
+    await C('confirm', { id: rq.id });
+    eq([bal('escrow'), bal('platform'), bal('holder:' + HOLDER)], [0, 500, 500]);
+  });
+  test('only one cardholder can accept (first wins)', async function () {
+    resetWorld();
+    var rq = await paid('LOUNGE', loungeD());
+    var a = await C('accept', { id: rq.id, cardId: 'mkc-demo' }, HOLDER); ok(a.ok);
+    var b = await C('accept', { id: rq.id, cardId: 'mkc-neha' }, HOLDER2); ok(!b.ok, 'second accept must fail');
+    eq(M.request(rq.id).cardholderId, HOLDER);
+  });
+  test('you cannot accept your own request and the card must fit', async function () {
+    resetWorld();
+    var rq = await paid('LOUNGE', loungeD(ABROAD));
+    ok(!(await C('accept', { id: rq.id, cardId: 'mkc-neha' }, BUYER)).ok, 'own request');
+    var r2 = await C('accept', { id: rq.id, cardId: 'mkc-neha' }, HOLDER2);
+    ok(!r2.ok, 'neha card has no international lounge: ' + r2.error);
+  });
+  test('quarterly lounge quota is tracked and returned when a cardholder steps back', async function () {
+    resetWorld();
+    var r1 = await paid('LOUNGE', loungeD());
+    ok((await C('accept', { id: r1.id, cardId: 'mkc-neha' }, HOLDER2)).ok);
+    var r2 = await paid('LOUNGE', loungeD());
+    var open = M.openFor(HOLDER2).filter(function (o) { return o.request.id === r2.id; })[0];
+    ok(open && !open.eligible, 'quota of 1 is used, second request should not be eligible: ' + JSON.stringify(open && open.why));
+    ok(!(await C('accept', { id: r2.id, cardId: 'mkc-neha' }, HOLDER2)).ok, 'second accept in same quarter must fail');
+    ok((await C('release', { id: r1.id }, HOLDER2)).ok);
+    ok((await C('accept', { id: r2.id, cardId: 'mkc-neha' }, HOLDER2)).ok, 'quota is back after stepping back');
+  });
+  test('domestic and international quotas are separate', async function () {
+    resetWorld();
+    // demo card: DOM 8 and INTL 6, use one of each
+    await accepted('LOUNGE', loungeD());
+    await accepted('LOUNGE', loungeD(ABROAD));
+    var card = M.card('mkc-demo'), q = Core.quarterOf(iso(T + 48 * H));
+    eq([M.quotaUsed('mkc-demo', 'LOUNGE_DOM', q), M.quotaUsed('mkc-demo', 'LOUNGE_INTL', q)], [1, 1]);
+  });
+  test('auto-expire: nobody accepts, full refund', async function () {
+    resetWorld();
+    var rq = await paid('LOUNGE', loungeD());
+    T += 13 * H; await M.sweep();
+    var r = M.request(rq.id);
+    eq(r.status, 'REFUNDED'); eq(bal('escrow'), 0); eq(bal('external:buyer:' + BUYER), 0);
+    ledgerBalanced();
+  });
+  test('buyer cancel before acceptance refunds in full', async function () {
+    resetWorld();
+    var rq = await paid('MOVIE', movieD());
+    ok((await C('cancel', { id: rq.id })).ok);
+    eq(M.request(rq.id).status, 'REFUNDED'); eq(bal('escrow'), 0);
+  });
+  test('entry denied: full refund and cardholder penalty', async function () {
+    resetWorld();
+    var rq = await fulfilled('LOUNGE', loungeD());
+    ok((await C('denied', { id: rq.id, note: 'Staff said no guests' })).ok);
+    eq(M.request(rq.id).status, 'REFUNDED');
+    eq([bal('escrow'), bal('holder:' + HOLDER), bal('platform')], [0, -100, 100]);
+    eq(bal('external:buyer:' + BUYER), 0, 'buyer net is zero after refund');
+    ledgerBalanced();
+  });
+  test('cardholder no-show: refund + penalty and quota returned', async function () {
+    resetWorld();
+    var rq = await accepted('LOUNGE', loungeD());
+    T += 48 * H; await M.sweep();
+    eq(M.request(rq.id).status, 'REFUNDED');
+    eq(bal('holder:' + HOLDER), -100);
+    eq(M.quotaUsed('mkc-demo', 'LOUNGE_DOM', Core.quarterOf(iso(T0 + 48 * H))), 0);
+  });
+  test('auto-confirm after the window if there is no dispute', async function () {
+    resetWorld();
+    var rq = await fulfilled('LOUNGE', loungeD());
+    T += 48 * H + 7 * H; await M.sweep();
+    eq(M.request(rq.id).status, 'SETTLED'); eq(bal('holder:' + HOLDER), 250);
+  });
+
+  /* ---------------- movie and price adjustment ---------------- */
+  test('movie flat offer: money is released only after the show', async function () {
+    resetWorld();
+    var rq = await fulfilled('MOVIE', movieD());
+    ok((await C('confirm', { id: rq.id })).ok);
+    eq(M.request(rq.id).status, 'CONFIRMED', 'held until after the show');
+    T += 25 * H; await M.sweep();
+    eq(M.request(rq.id).status, 'SETTLED');
+    eq([bal('escrow'), bal('platform'), bal('holder:' + HOLDER)], [0, 100, 900]);
+    ledgerBalanced();
+  });
+  test('movie actual price lower: difference is refunded to the buyer', async function () {
+    resetWorld();
+    var rq = await fulfilled('MOVIE', movieD(), { actual: 650 });
+    await C('confirm', { id: rq.id }); T += 25 * H; await M.sweep();
+    eq(M.request(rq.id).status, 'SETTLED');
+    eq([bal('escrow'), bal('platform'), bal('holder:' + HOLDER), bal('external:buyer:' + BUYER)], [0, 100, 850, -950]);
+    ledgerBalanced();
+  });
+  test('movie actual price higher: confirm is blocked until the buyer tops up', async function () {
+    resetWorld();
+    var rq = await fulfilled('MOVIE', movieD(), { actual: 760 });
+    eq(M.request(rq.id).topupDue, 60);
+    ok(!(await C('confirm', { id: rq.id })).ok, 'confirm must wait for the top-up');
+    var p = await M.pay(rq.id, 'success', 'TOPUP'); ok(p.ok, p.error);
+    eq(M.request(rq.id).topupDue, 0); eq(bal('escrow'), 1060);
+    ok((await C('confirm', { id: rq.id })).ok);
+    T += 25 * H; await M.sweep();
+    eq(M.request(rq.id).status, 'SETTLED');
+    eq([bal('escrow'), bal('platform'), bal('holder:' + HOLDER)], [0, 100, 960]);
+    ledgerBalanced();
+  });
+  test('order & earn: fee is percent based and settles to the right accounts', async function () {
+    resetWorld();
+    var rq = await fulfilled('ORDER', orderD());
+    await C('confirm', { id: rq.id });
+    eq(M.request(rq.id).status, 'SETTLED');
+    eq([bal('escrow'), bal('platform'), bal('holder:' + HOLDER)], [0, 30, 930]);
+  });
+  test('pay & earn works the same way without an address', async function () {
+    resetWorld();
+    var d = orderD(); delete d.address; d.cartUrl = 'https://www.flipkart.com/cart';
+    var rq = await fulfilled('PAY', d);
+    await C('confirm', { id: rq.id });
+    eq(M.request(rq.id).status, 'SETTLED');
+    ok(bal('platform') > 0);
+  });
+  test('open requests hide the address and guest name from other cardholders', async function () {
+    resetWorld();
+    var rq = await paid('ORDER', orderD());
+    var o = M.openFor(HOLDER)[0];
+    ok(o && !('address' in o.request.details), 'address must be hidden before acceptance');
+  });
+
+  /* ---------------- price snapshot ---------------- */
+  test('changing fees later does not touch an existing booking', async function () {
+    resetWorld();
+    var rq = await paid('LOUNGE', loungeD());
+    var r = await C('saveFee', { id: 'fee-lounge-dom', patch: { fee: 700, platformAmt: 350 } }, ADMIN); ok(r.ok, r.error);
+    await C('accept', { id: rq.id, cardId: 'mkc-demo' }, HOLDER);
+    await C('fulfil', { id: rq.id, ref: 'PP-0001', proofs: proofs() }, HOLDER);
+    await C('confirm', { id: rq.id });
+    eq([bal('platform'), bal('holder:' + HOLDER)], [250, 250], 'old booking keeps the old split');
+    var rq2 = await created('LOUNGE', loungeD()); eq(rq2.feeSnapshot.total, 700, 'new booking uses the new fee');
+  });
+  test('non-admins cannot change fees', async function () {
+    resetWorld();
+    ok(!(await C('saveFee', { id: 'fee-lounge-dom', patch: { fee: 1 } }, BUYER)).ok);
+  });
+
+  /* ---------------- webhooks ---------------- */
+  test('webhook rejects a bad signature', async function () {
+    resetWorld();
+    var rq = await created('LOUNGE', loungeD());
+    var o = (await C('startPayment', { id: rq.id })).order;
+    var ev = M.buildTestEvent(o, 'success');
+    var r = await M.webhook(ev.body, 'deadbeef'); ok(!r.ok);
+    eq(M.request(rq.id).status, 'CREATED');
+  });
+  test('webhook is idempotent: replaying the same event adds one ledger entry', async function () {
+    resetWorld();
+    var rq = await created('LOUNGE', loungeD());
+    var o = (await C('startPayment', { id: rq.id })).order;
+    var ev = M.buildTestEvent(o, 'success');
+    ok((await M.webhook(ev.body, ev.signature)).ok);
+    var again = await M.webhook(ev.body, ev.signature);
+    ok(again.ok && again.duplicate, 'replay is acknowledged as a duplicate');
+    eq(M.ledgerAll().filter(function (e) { return e.kind === 'ESCROW_IN'; }).length, 2, 'two lines (debit + credit) for one payment');
+    eq(bal('escrow'), 500);
+  });
+  test('webhook with a second event for an already paid request is refused', async function () {
+    resetWorld();
+    var rq = await paid('LOUNGE', loungeD());
+    var o = { orderId: M.request(rq.id).gatewayOrderId, amount: 500 };
+    var ev = M.buildTestEvent(o, 'success');
+    ok(!(await M.webhook(ev.body, ev.signature)).ok);
+    eq(bal('escrow'), 500, 'escrow unchanged');
+  });
+  test('webhook with the wrong amount is refused', async function () {
+    resetWorld();
+    var rq = await created('LOUNGE', loungeD());
+    var o = (await C('startPayment', { id: rq.id })).order; o.amount = 5;
+    var ev = M.buildTestEvent(o, 'success');
+    ok(!(await M.webhook(ev.body, ev.signature)).ok);
+    eq(M.request(rq.id).status, 'CREATED');
+  });
+  test('failed payment leaves the request unpaid', async function () {
+    resetWorld();
+    var rq = await created('LOUNGE', loungeD());
+    var p = await M.pay(rq.id, 'fail'); ok(p.ok);
+    eq(M.request(rq.id).status, 'CREATED'); eq(bal('escrow'), 0);
+  });
+
+  /* ---------------- disputes ---------------- */
+  test('dispute then partial refund splits the escrow and balances', async function () {
+    resetWorld();
+    var rq = await fulfilled('LOUNGE', loungeD());
+    var d = await C('dispute', { id: rq.id, reason: 'WRONG_PROOF', note: 'The pass does not match my flight' }); ok(d.ok, d.error);
+    eq(M.request(rq.id).status, 'DISPUTED');
+    ok(!(await C('resolveDispute', { id: d.dispute.id, outcome: 'REFUND' }, BUYER)).ok, 'buyer cannot resolve');
+    var r = await C('resolveDispute', { id: d.dispute.id, outcome: 'PARTIAL', buyerAmount: 200 }, ADMIN); ok(r.ok, r.error);
+    eq(M.request(rq.id).status, 'SETTLED');
+    eq([bal('escrow'), bal('platform'), bal('holder:' + HOLDER)], [0, 250, 50]);
+    ledgerBalanced();
+  });
+  test('dispute: admin refund with penalty, and admin release', async function () {
+    resetWorld();
+    var a = await fulfilled('LOUNGE', loungeD());
+    var d = await C('dispute', { id: a.id, reason: 'FAKE_PROOF', note: 'This proof is clearly edited' });
+    ok((await C('resolveDispute', { id: d.dispute.id, outcome: 'REFUND', penalise: true }, ADMIN)).ok);
+    eq(M.request(a.id).status, 'REFUNDED'); eq(bal('holder:' + HOLDER), -100);
+    var b = await fulfilled('LOUNGE', loungeD());
+    var d2 = await C('dispute', { id: b.id, reason: 'OTHER', note: 'Not sure the guest pass worked' });
+    ok((await C('resolveDispute', { id: d2.dispute.id, outcome: 'RELEASE' }, ADMIN)).ok);
+    eq(M.request(b.id).status, 'SETTLED');
+    ledgerBalanced();
+  });
+  test('only the buyer can raise a dispute, and not before acceptance', async function () {
+    resetWorld();
+    var rq = await paid('LOUNGE', loungeD());
+    ok(!(await C('dispute', { id: rq.id, reason: 'OTHER', note: 'too early to dispute' })).ok);
+  });
+
+  /* ---------------- wallet and payouts ---------------- */
+  test('payout needs KYC, respects balance, and posts to the ledger', async function () {
+    resetWorld();
+    var rq = await fulfilled('LOUNGE', loungeD());
+    await C('confirm', { id: rq.id });
+    // a real cardholder with earnings: reassign by running a second flow as HOLDER2
+    var rq2 = await paid('LOUNGE', loungeD());
+    await C('accept', { id: rq2.id, cardId: 'mkc-neha' }, HOLDER2);
+    await C('fulfil', { id: rq2.id, ref: 'VISA-5555', proofs: proofs() }, HOLDER2);
+    await C('confirm', { id: rq2.id });
+    eq(M.wallet(HOLDER2).available, 250);
+    ok(!(await C('requestPayout', { amount: 200 }, HOLDER2)).ok, 'no KYC yet');
+    ok(!(await C('submitKyc', { legalName: 'Neha Kumari', pan: 'BADPAN', upi: 'neha@okaxis' }, HOLDER2)).ok, 'bad PAN');
+    ok((await C('submitKyc', { legalName: 'Neha Kumari', pan: 'ABCDE1234F', upi: 'neha@okaxis' }, HOLDER2)).ok);
+    ok(!(await C('requestPayout', { amount: 200 }, HOLDER2)).ok, 'KYC pending');
+    ok((await C('reviewKyc', { id: M.kyc(HOLDER2).id, status: 'APPROVED' }, ADMIN)).ok);
+    ok(!(await C('requestPayout', { amount: 500 }, HOLDER2)).ok, 'above balance');
+    var pr = await C('requestPayout', { amount: 200 }, HOLDER2); ok(pr.ok, pr.error);
+    eq(M.wallet(HOLDER2).available, 50);
+    ok((await C('processPayout', { id: pr.payout.id }, ADMIN)).ok);
+    eq(bal('holder:' + HOLDER2), 50);
+    ledgerBalanced();
+  });
+
+  /* ---------------- chat, ratings, trust, limits ---------------- */
+  test('live alerts: only cardholders whose card fits are told when a request is paid', async function () {
+    resetWorld();
+    var before = S.get('notifications').length;
+    var rq = await paid('LOUNGE', loungeD());           // domestic lounge: Neha's card has it, the test cardholder is skipped, the buyer is not told
+    var open = S.get('notifications').filter(function (n) { return String(n.type).indexOf('market:open:') === 0; });
+    eq(open.length, 1, 'exactly one cardholder is alerted');
+    eq(open[0].userId, HOLDER2); ok(open[0].type.indexOf(rq.id) > -1 && /lounge at DEL/.test(open[0].body), 'the alert names the request: ' + open[0].body);
+    ok(/₹250/.test(open[0].body), 'the alert shows what they would earn: ' + open[0].body);
+    // a request nobody's card fits alerts nobody
+    var n0 = S.get('notifications').length;
+    await paid('LOUNGE', loungeD(ABROAD));                // international: Neha has no international benefit
+    eq(S.get('notifications').filter(function (n) { return String(n.type).indexOf('market:open:') === 0; }).length, 1, 'no new alert when no card fits');
+  });
+  test('live alerts: a cardholder who steps back re-alerts the others but not themselves', async function () {
+    resetWorld();
+    S.get('mkCards').push({ id: 'mkc-r3', ownerId: 'u-003', bank: 'axis', variant: 'Magnus', active: true, benefits: [{ kind: 'LOUNGE_DOM', program: 'Visa', quota: 4, airports: ['ANY'] }] });
+    var rq = await paid('LOUNGE', loungeD());
+    var first = S.get('notifications').filter(function (n) { return String(n.type).indexOf('market:open:') === 0; }).length;
+    eq(first, 2, 'both fitting cardholders alerted');
+    ok((await C('accept', { id: rq.id, cardId: 'mkc-neha' }, HOLDER2)).ok);
+    ok((await C('release', { id: rq.id }, HOLDER2)).ok);
+    var after = S.get('notifications').filter(function (n) { return String(n.type).indexOf('market:open:') === 0; });
+    eq(after.length, 3, 'only the other cardholder is alerted again'); eq(after[0].userId, 'u-003');
+  });
+  test('chat masks phone numbers and emails', async function () {
+    resetWorld();
+    var rq = await accepted('LOUNGE', loungeD());
+    ok((await C('sendMessage', { id: rq.id, body: 'Call me on +91 98765 43210 or mail a.b@gmail.com' })).ok);
+    var m = M.messages(rq.id)[0].body;
+    ok(m.indexOf('98765') < 0 && m.indexOf('gmail') < 0, m);
+    eq(Core.maskContact('flight AI 101 at 10'), 'flight AI 101 at 10');
+  });
+  test('chat is closed before acceptance and for outsiders', async function () {
+    resetWorld();
+    var rq = await paid('LOUNGE', loungeD());
+    ok(!(await C('sendMessage', { id: rq.id, body: 'hi' })).ok, 'no cardholder yet');
+    await C('accept', { id: rq.id, cardId: 'mkc-demo' }, HOLDER);
+    ok(!(await C('sendMessage', { id: rq.id, body: 'hi' }, HOLDER2)).ok, 'outsider');
+  });
+  test('ratings move the trust score, once per side', async function () {
+    resetWorld();
+    var rq = await fulfilled('LOUNGE', loungeD());
+    await C('confirm', { id: rq.id });
+    ok((await C('rate', { id: rq.id, stars: 5 })).ok);
+    ok(!(await C('rate', { id: rq.id, stars: 1 })).ok, 'second rating refused');
+    eq(M.rating(HOLDER).avg, 5);
+  });
+  test('request creation is rate limited', async function () {
+    resetWorld();
+    for (var i = 0; i < 10; i++) await created('LOUNGE', loungeD());
+    ok(!(await C('create', { module: 'LOUNGE', details: loungeD() })).ok, 'the 11th request in an hour is refused');
+  });
+  test('validation: lounge needs lead time, a real terminal and a flight number', async function () {
+    resetWorld();
+    ok(!(await C('create', { module: 'LOUNGE', details: loungeD({ dateTime: iso(T + 3600000) }) })).ok, 'under 2 hours');
+    ok(!(await C('create', { module: 'LOUNGE', details: loungeD({ terminal: 'T9' }) })).ok, 'unknown terminal');
+    ok((await C('create', { module: 'LOUNGE', details: loungeD(ABROAD) })).ok, 'an international lounge at Dubai T3 can be booked');
+    ok(!(await C('create', { module: 'LOUNGE', details: loungeD({ type: 'INTERNATIONAL' }) })).ok, 'international lounges are not at Indian airports');
+    ok(!(await C('create', { module: 'LOUNGE', details: loungeD({ airport: 'DXB', terminal: 'T3' }) })).ok, 'domestic lounges are not abroad');
+    ok(!(await C('create', { module: 'LOUNGE', details: loungeD({ type: 'INTERNATIONAL', airport: 'DXB', terminal: '' }) })).ok, 'abroad needs a terminal');
+    ok(!(await C('create', { module: 'LOUNGE', details: loungeD({ type: 'FIRST_CLASS' }) })).ok, 'unknown lounge type refused');
+    ok(!(await C('create', { module: 'LOUNGE', details: loungeD({ flight: 'x' }) })).ok, 'bad flight number');
+    eq(Core.terminalsFor('DEL', 'INTERNATIONAL'), []);
+    eq(Core.terminalsFor('DEL', 'DOMESTIC'), ['T1', 'T2', 'T3']);
+    var intl = Core.airportsFor('INTERNATIONAL').map(function (a) { return a.code; }), dom = Core.airportsFor('DOMESTIC').map(function (a) { return a.code; });
+    ok(intl.indexOf('DXB') > -1 && intl.indexOf('LHR') > -1 && intl.indexOf('JFK') > -1 && intl.indexOf('DEL') < 0 && intl.length >= 250, 'international list is every airport outside India');
+    ok(Core.airport('SIN').country === 'Singapore' && Core.airport('DEL').country === 'India', 'airports know their country');
+    ok(dom.indexOf('PAT') > -1 && dom.indexOf('DXB') < 0, 'domestic list is Indian airports only');
+    eq(Core.terminalsFor('MAA', 'DOMESTIC'), ['T1', 'T4']);
+  });
+  test('a banned account cannot create requests', async function () {
+    resetWorld();
+    ok((await C('banUser', { userId: BUYER, ban: true }, ADMIN)).ok);
+    ok(!(await C('create', { module: 'LOUNGE', details: loungeD() })).ok);
+  });
+  test('reports add up platform revenue by module', async function () {
+    resetWorld();
+    var rq = await fulfilled('LOUNGE', loungeD()); await C('confirm', { id: rq.id });
+    var rep = M.report().filter(function (r) { return r.key === 'LOUNGE / DOMESTIC'; })[0];
+    eq([rep.settled, rep.platform, rep.holders], [1, 250, 250]);
+  });
+
+  /* ---------------- runner ---------------- */
+  (async function run() {
+    for (var i = 0; i < queue.length; i++) {
+      try { await queue[i][1](); pass++; log('ok', 'PASS  ' + queue[i][0]); }
+      catch (e) { failN++; log('bad', 'FAIL  ' + queue[i][0] + '  --> ' + e.message); }
+    }
+    log(failN ? 'bad' : 'ok', '\n' + pass + ' passed, ' + failN + ' failed');
+    document.title = 'DONE ' + pass + ' passed ' + failN + ' failed';
+  })();
+})();
+</script>
+</body></html>

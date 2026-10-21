@@ -21,9 +21,14 @@
   }
 
   w.CC.Sync.init(sb);
+  if (w.CC.Market) w.CC.Market.init(sb);
 
   /* Load this user's server-side rows into the local store. */
-  function hydrate(u) { return w.CC.Sync.hydrate(u).then(function () { return u; }); }
+  function hydrate(u) {
+    var jobs = [w.CC.Sync.hydrate(u)];
+    if (w.CC.Market) jobs.push(w.CC.Market.load(u));
+    return Promise.all(jobs).then(function () { return u; });
+  }
 
   function fail(msg) { return { ok: false, error: msg }; }
 
@@ -150,7 +155,7 @@
 
     logout: function () {
       S.set('session', null);
-      if (sb) { sb.auth.signOut(); w.CC.Sync.clear(); }
+      if (sb) { sb.auth.signOut(); w.CC.Sync.clear(); if (w.CC.Market) w.CC.Market.clear(); }
     },
 
     resetPassword: function (email) {

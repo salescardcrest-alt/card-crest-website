@@ -392,8 +392,57 @@
   }
 
   /* ---------------- page ---------------- */
+  /* The admin menu: boxes of related tools, each with an icon and a count of what is waiting. */
+  var GROUPS = [
+    ['Daily work', ['overview', 'approvals', 'transactions', 'rewards', 'applications', 'referrals', 'support']],
+    ['Members and messages', ['users', 'announce']],
+    ['Catalogue', ['cards', 'stores', 'offers']],
+    ['Share & Earn', ['market', 'mk-disputes', 'mk-kyc', 'mk-fees', 'mk-payouts', 'mk-reports']],
+    ['Staff', ['activity']]
+  ];
+  var ICON = { overview: '\u25A6', approvals: '\u2713', transactions: '\u21C4', rewards: '\u2605', applications: '\u25A4', referrals: '\u2726', support: '?',
+    users: '\u263A', announce: '\u2709', cards: '\u25AD', stores: '\u25A3', offers: '%', market: '\u21CC', 'mk-disputes': '!', 'mk-kyc': '\u25C9',
+    'mk-fees': '\u20B9', 'mk-payouts': '\u2197', 'mk-reports': '\u2191', activity: '\u2630' };
+  function adminNav(active) {
+    var AX = w.CC.AdminPlus, c = AX && AX.counts ? AX.counts() : null, n = {};
+    if (c) {
+      n.approvals = c.cashback.length + c.redemptions.length + c.referrals.length; n.applications = c.apps.length; n.support = c.tickets.length;
+      n['mk-disputes'] = c.disputes.length; n['mk-kyc'] = c.kyc.length; n['mk-payouts'] = c.payouts.length;
+    }
+    var label = {}; SECTIONS.forEach(function (s) { label[s[0]] = s[1]; });
+    var placed = {}, boxes = GROUPS.map(function (g) {
+      var items = g[1].filter(function (k) { return label[k]; });
+      items.forEach(function (k) { placed[k] = 1; });
+      return [g[0], items];
+    });
+    var rest = SECTIONS.map(function (s) { return s[0]; }).filter(function (k) { return !placed[k]; });
+    if (rest.length) boxes.push(['More', rest]);
+    return '<nav class="adm-nav" aria-label="Admin">' + boxes.filter(function (b) { return b[1].length; }).map(function (b) {
+      return '<section class="adm-box"><h3 class="adm-box__h">' + b[0] + '</h3>' + b[1].map(function (k) {
+        return '<a class="adm-tile' + (k === active ? ' is-active' : '') + '" href="#/admin/' + k + '"><span class="adm-tile__i" aria-hidden="true">' + (ICON[k] || '\u2022') + '</span>' +
+          '<span class="adm-tile__t">' + label[k] + '</span>' + (n[k] ? '<span class="adm-tile__n">' + n[k] + '</span>' : '') + '</a>';
+      }).join('') + '</section>';
+    }).join('') + '</nav>';
+  }
+
+  var merged = false;
   w.CC.Pages.admin = function (params) {
     if (!Auth.require(true)) return false;
+    /* extra staff tools plug in here: Reward approvals, announcements, activity log, then the Share & Earn sections */
+    if (!merged) {
+      merged = true;
+      [w.CC.AdminPlus, w.CC.MarketAdmin].filter(Boolean).forEach(function (ext) {
+        var at = 1;
+        ext.sections.forEach(function (s) {
+          if (SECTIONS.some(function (x) { return x[0] === s[0]; })) return;
+          if (ext.first) SECTIONS.splice(at++, 0, s); else SECTIONS.push(s);
+        });
+        Object.keys(ext.views).forEach(function (k) {
+          var prev = views[k], fn = ext.views[k];
+          views[k] = prev && fn.length ? function () { return fn(prev); } : fn;      // a view that takes an argument wraps the one it replaces
+        });
+      });
+    }
     var section = params.section || 'overview';
     if (!views[section]) section = 'overview';
     var label = (SECTIONS.filter(function (s) { return s[0] === section; })[0] || SECTIONS[0])[1];
@@ -402,10 +451,7 @@
       '<div class="admin-hd"><div><h1 class="h2">Card Crest operations</h1>' +
       '<p>Everything users see is managed from here. Changes take effect immediately.</p></div>' +
       '<a class="btn btn--soft btn--sm" href="#/dashboard">Back to the app</a></div>' +
-      '<div class="admin"><nav class="side-nav" aria-label="Admin">' +
-      SECTIONS.map(function (s) {
-        return '<a href="#/admin/' + s[0] + '" class="' + (s[0] === section ? 'is-active' : '') + '">' + s[1] + '</a>';
-      }).join('') + '</nav>' +
+      '<div class="admin">' + adminNav(section) +
       '<div><h2 class="h2" style="margin-bottom:18px">' + label + '</h2><div id="admBody">' + views[section]() + '</div></div>' +
       '</div></div>';
 
@@ -423,6 +469,8 @@
             });
           }, 180));
         }
+
+        [w.CC.AdminPlus, w.CC.MarketAdmin].forEach(function (ext) { if (ext) ext.bind(root); });
 
         /* status selects */
         root.querySelectorAll('[data-txn]').forEach(function (sel) {

@@ -8,7 +8,7 @@
   .search{width:180px}
 }
 
-@media (max-width:1120px){
+@media (max-width:1260px){
   .hdr__nav{display:none}
   .hdr__burger{display:flex}
   .search{width:150px}
@@ -16,11 +16,12 @@
 }
 
 @media (max-width:1024px){
-  .section{padding:56px 0}
-  .hero__in{grid-template-columns:minmax(0,1fr); padding:48px 0 60px}
+  .section{padding-block:56px}
+  .hero__in{grid-template-columns:minmax(0,1fr); padding-block:48px 60px}
   .stage{min-height:440px; order:-1}
   .detail{grid-template-columns:1fr; gap:28px}
   .detail__side{position:static}
+  .market-detail .detail__side{order:-1}
   .calc{grid-template-columns:1fr}
   .calc__out{position:static}
   .dash{grid-template-columns:1fr}
@@ -51,7 +52,7 @@
   .tabbar{display:flex}
   .search{display:none}
   .wrap{padding-inline:18px}
-  .section{padding:44px 0}
+  .section{padding-block:44px}
   .g-3,.g-2{grid-template-columns:1fr}
   .mkt__grid{grid-template-columns:1fr}
   .form-grid{grid-template-columns:1fr}
@@ -85,4 +86,48 @@
   .g-4,.intent,.quick,.flow{grid-template-columns:1fr}
   .ctile__facts{grid-template-columns:1fr}
   .tabbar a span{font-size:.6rem}
+}
+
+/* ---------- wide screens: use the room, like a full-width app ---------- */
+@media (min-width:1500px){
+  html{font-size:118.75%}
+  :root{--hdr-h:76px}
+  .hero__in{gap:84px; padding-block:88px 100px}
+  .stage{--R:350px; --cw:216px; min-height:600px}
+  .mkt{grid-template-columns:292px 1fr; gap:40px}
+  .detail{grid-template-columns:1fr 420px}
+  .dash{grid-template-columns:260px 1fr}
+  .admin{grid-template-columns:272px 1fr}
+  .section{padding-block:84px}
+}
+@media (min-width:1900px){
+  html{font-size:125%}
+  :root{--hdr-h:80px}
+  .stage{--R:400px; --cw:250px; min-height:680px}
+  .hero__in{gap:110px}
+}
+
+/* readable text: laptops and up get a larger base size than phones and tablets */
+@media (min-width:1024px) and (max-width:1499px){
+  html{font-size:112.5%}
+}
+
+/* laptop widths: keep the whole header on screen with the larger text */
+@media (min-width:1261px) and (max-width:1499px){
+  .hdr__in{gap:12px}
+  .hdr__nav a{padding:8px 8px; font-size:.8rem}
+  .hdr__nav a.nav-main{padding:8px 13px; margin-right:2px}
+  .hdr__nav a[href="#/how-it-works"]{display:none}   /* still in the footer and the mobile menu */
+  .search{width:132px}
+}
+
+/* phones: keep logo, buttons and the menu button on one line with the larger text */
+@media (max-width:560px){
+  .hdr__in{gap:8px}
+  .hdr__act{gap:6px}
+  .hdr__act .btn--sm{height:34px; padding:0 11px; font-size:.78rem}
+  .brand{gap:7px}
+  .brand__mark{width:32px; height:32px}
+  .brand__word{font-size:1.12rem}
+  .hdr__burger{flex-shrink:0}
 }

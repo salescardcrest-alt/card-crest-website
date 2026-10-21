@@ -47,6 +47,7 @@
           '<a href="#/dashboard/transactions">Transactions</a>' +
           '<a href="#/dashboard/applications">Applications</a>' +
           '<a href="#/refer">Referrals</a>' +
+          '<a href="#/market">Share &amp; Earn</a>' +
           '<a href="#/profile">Profile and settings</a>' +
           (u.role === 'admin' ? '<div class="dropdown__sep"></div><a href="#/admin">Admin panel</a>' : '') +
           '<div class="dropdown__sep"></div>' +
@@ -66,7 +67,8 @@
     d.querySelectorAll('#bellMenu [data-n]').forEach(function (el) {
       el.onclick = function () {
         NT.markRead(el.dataset.n);
-        w.CC.Router.go('#/dashboard/notifications');
+        var n = w.CC.Store.find('notifications', el.dataset.n);
+        w.CC.Router.go(n && String(n.type).indexOf('market:open:') === 0 ? '#/market/earn' : '#/dashboard/notifications');
         closeAll();
         App.paintAuth();
       };
