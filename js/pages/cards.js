@@ -37,13 +37,13 @@
             '<div><span class="fact__k">Top cashback</span><span class="fact__v">' +
               (card.cashback ? UI.pct(card.cashback) : '—') + '</span></div>' +
           '</div>' +
-          (C.rewardFor(card) ? '<div class="ctile__reward"><span>Apply through Card Crest</span><b>Earn ' + UI.money(C.rewardFor(card)) + ' when approved</b></div>' : '') +
           '<ul class="ctile__perks">' + card.perks.map(function (p) {
             return '<li class="badge badge--grey">' + UI.esc(p) + '</li>';
           }).join('') + '</ul>' +
           (elig ? '<div class="small muted">Your fit: <strong style="color:var(--' +
             (elig.level === 'strong' ? 'crest' : elig.level === 'fair' ? 'warn' : 'muted') + ')">' +
             elig.label + '</strong> &middot; estimated</div>' : '') +
+          (C.rewardFor(card) ? '<div class="ctile__reward"><span>Apply through Card Crest</span><b>Earn ' + UI.money(C.rewardFor(card)) + ' when approved</b></div>' : '') +
           '<div class="ctile__foot">' +
             '<a class="btn btn--primary btn--sm" href="#/cards/' + card.id + '">View details</a>' +
             '<a class="btn btn--ghost btn--sm" href="#/eligibility?card=' + card.id + '">Check eligibility</a>' +

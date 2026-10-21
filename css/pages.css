@@ -300,3 +300,7 @@ a.mk-tile:hover{border-color:var(--crest); transform:translateY(-3px); box-shado
 .apply-banner{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding:16px 20px; margin-bottom:22px; border-radius:var(--r-lg); color:#fff; background:linear-gradient(135deg,var(--crest),var(--leaf))}
 .apply-banner strong{font-size:1.05rem}
 .apply-banner span{display:block; opacity:.85; font-size:.88rem}
+
+/* How it works: use the full page width, two columns on wide screens */
+.hiw-grid { display: grid; grid-template-columns: 1fr; gap: 0 clamp(24px, 3vw, 56px); align-items: start; }
+@media (min-width: 1000px) { .hiw-grid { grid-template-columns: 1fr 1fr; } }

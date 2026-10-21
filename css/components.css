@@ -55,7 +55,7 @@
 .badge--ok{background:var(--leaf-soft); color:#0b7a4f}
 
 .chip{
-  display:inline-flex; align-items:center; gap:7px; height:38px; padding:0 16px; border-radius:var(--r-pill);
+  display:inline-flex; align-items:center; gap:7px; height:38px; white-space:nowrap; flex:none; padding:0 16px; border-radius:var(--r-pill);
   border:1px solid var(--line); background:#fff; font-size:.86rem; font-weight:500; cursor:pointer; color:var(--ink-2);
   transition:all .16s;
 }
@@ -134,7 +134,7 @@
 .ctile__facts{display:grid; grid-template-columns:1fr 1fr; gap:12px 10px; padding:13px 0; border-block:1px solid var(--line-soft)}
 .fact__k{font-size:.7rem; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:2px}
 .fact__v{font-size:.94rem; font-weight:600; font-variant-numeric:tabular-nums}
-.ctile__perks{display:flex; flex-wrap:wrap; gap:6px}
+.ctile__perks{display:flex; flex-wrap:wrap; gap:6px; align-content:flex-start; flex:1}
 .ctile__foot{display:flex; gap:8px; margin-top:auto; align-items:center}
 .ctile__foot .btn{flex:1}
 
@@ -235,8 +235,8 @@ table.tbl{width:100%; border-collapse:collapse; font-size:.89rem}
 @keyframes pop{from{opacity:0; transform:translateY(14px) scale(.98)}to{opacity:1; transform:none}}
 .modal__head{padding:22px 24px 0; display:flex; justify-content:space-between; align-items:flex-start; gap:16px}
 .modal__body{padding:16px 24px 24px}
-.modal__foot{padding:0 24px 24px; display:flex; gap:10px; justify-content:flex-end}
-.modal__foot .btn{min-width:110px}
+.modal__foot{padding:0 24px 24px; display:flex; flex-wrap:wrap; gap:10px; justify-content:flex-end}
+.modal__foot .btn{min-width:110px; flex:0 0 auto; max-width:100%}
 
 /* ---------- toast ---------- */
 .toasts{position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:200; display:flex; flex-direction:column; gap:10px; align-items:center; pointer-events:none}
@@ -332,3 +332,15 @@ table.tbl{width:100%; border-collapse:collapse; font-size:.89rem}
 .reward-box span{font-size:.8rem; opacity:.85}
 .reward-box b{font-size:1.9rem; font-weight:800; letter-spacing:-.03em; line-height:1.15; font-variant-numeric:tabular-nums; white-space:nowrap}
 .reward-box small{font-size:.76rem; opacity:.85}
+
+/* card tiles: the name, bank and rating rows keep a fixed height so the divider and everything below line up across a row */
+.ctile__name{min-height:2.4em; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.ctile__bank{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.ctile__top .row{min-height:26px}
+.ctile__top{grid-template-columns:150px minmax(0,1fr)}
+.ctile__top > div{min-width:0}
+.ctile__bank{white-space:normal; overflow-wrap:anywhere; text-overflow:clip}
+.ctile__name{overflow-wrap:anywhere; hyphens:auto}
+.ctile__top .gauge, .ctile__top .gauge > *{min-width:0}
+.ctile__top .gauge__t, .ctile__top .gauge__l{white-space:normal}
+.ctile__top .cvs__lbl{min-width:0; overflow-wrap:anywhere}

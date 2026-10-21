@@ -18,8 +18,9 @@
   ];
 
   w.CC.Pages.home = function () {
-    var top = C.topByScore(4);
-    var popular = C.popular(4);
+    /* Amex Platinum Travel is listed under See all cards, not on the home page */
+    var top = C.topByScore(8).filter(function (c) { return c.id !== 'amex-plat-travel'; }).slice(0, 3);
+    var popular = C.popular(3);
     var offers = O.query({ section: 'top' }).slice(0, 6);
     var bestCard = top[0];
     var bestScore = C.score(bestCard);

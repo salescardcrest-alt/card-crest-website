@@ -73,7 +73,7 @@
 @media (max-width:560px){
   .g-4,.intent,.quick,.flow,.spec{grid-template-columns:1fr 1fr}
   .ftr__in{grid-template-columns:1fr 1fr}
-  .ctile__top{grid-template-columns:118px 1fr; gap:13px}
+  .ctile__top{grid-template-columns:118px minmax(0,1fr); gap:13px}
   .h-display{font-size:2.25rem}
   .btn{height:44px}
   .hero__cta .btn{flex:1; min-width:140px}

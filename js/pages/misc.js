@@ -117,7 +117,7 @@
     return {
       title: 'How Card Crest works | Card Crest',
       desc: 'How card discovery, the Card Value Score, cashback tracking and rewards redemption work on Card Crest.',
-      html: '<div class="wrap section--tight" style="max-width:860px">' +
+      html: '<div class="wrap section--tight">' +
         '<div class="section__head"><h1 class="h1">How Card Crest <em>works</em></h1>' +
         '<p class="lede">Two things happen here. We help you pick a card that suits how you spend, and we pay you back a share of what merchants pay us when you shop.</p></div>' +
 
@@ -129,7 +129,7 @@
           '<div class="flow__i"><h3 class="h3">You compare and decide</h3><p>Up to four cards side by side on every line that matters.</p></div>' +
         '</div>' +
 
-        '<h2 class="h2" style="margin-bottom:16px">How cashback reaches you</h2>' +
+        '<div class="hiw-grid"><div><h2 class="h2" style="margin-bottom:16px">How cashback reaches you</h2>' +
         '<div class="panel" style="margin-bottom:40px"><div class="tl">' +
           [['You activate an offer', 'We open a tracked session with the retailer.'],
            ['You buy as normal', 'Complete the purchase in that same session. Ad-blockers and coupon extensions break tracking.'],
@@ -140,9 +140,9 @@
           ].map(function (s, i) {
             return '<div class="tl__i' + (i < 3 ? ' is-done' : i === 3 ? ' is-now' : '') + '">' +
               '<div class="tl__t">' + s[0] + '</div><div class="tl__d">' + UI.esc(s[1]) + '</div></div>';
-          }).join('') + '</div></div>' +
+          }).join('') + '</div></div></div>' +
 
-        '<h2 class="h2" style="margin-bottom:16px">What the Card Value Score measures</h2>' +
+        '<div><h2 class="h2" style="margin-bottom:16px">What the Card Value Score measures</h2>' +
         '<div class="panel" style="margin-bottom:40px">' +
           '<p class="muted" style="margin-bottom:20px">A single number out of 100, built from six weighted parts. It is an estimate of value, not a prediction of what you will earn.</p>' +
           [['Net return on spend', 40, 'Rewards and benefits earned, minus the annual fee, as a percentage of what you spend.'],
@@ -158,7 +158,7 @@
               '<p class="muted small">' + UI.esc(p[2]) + '</p></div>';
           }).join('') +
           '<div class="note">Scores are calculated against a reference profile of ₹40,000 a month. Change the profile in the <a href="#/calculator">calculator</a> and every number moves with it.</div>' +
-        '</div>' +
+        '</div></div></div>' +
 
         '<h2 class="h2" style="margin-bottom:16px">How we make money</h2>' +
         '<p class="muted" style="margin-bottom:32px">Banks pay us a commission when an application we referred is approved. Merchants pay us a commission on tracked orders. We keep part of it and pass the rest back to you as rewards. Card Crest is free to use, and the commission does not change how cards are ranked — the score is calculated from published fees and benefits, not from what a bank pays.</p>' +

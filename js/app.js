@@ -206,6 +206,36 @@
     };
   }
 
+
+  /* Password-reset link: ask for the new password straight away. */
+  App.askNewPassword = function () {
+    if (!w.CC.Auth.isRecovering()) return;
+    var UI = w.CC.UI;
+    UI.modal({
+      title: 'Set a new password',
+      body: '<p class="muted" style="margin-bottom:14px">Choose a new password for your Card Crest account. Use at least 8 characters.</p>' +
+        '<div class="field"><label for="np1">New password</label><input id="np1" type="password" autocomplete="new-password" minlength="8"></div>' +
+        '<div class="field" style="margin-top:10px"><label for="np2">Confirm new password</label><input id="np2" type="password" autocomplete="new-password"></div>' +
+        '<div class="small" id="npErr" style="color:var(--danger,#b42318); margin-top:8px" hidden></div>',
+      foot: '<button class="btn btn--primary" data-save-np>Save new password</button>',
+      onMount: function (m) {
+        var err = m.querySelector('#npErr');
+        function show(t) { err.textContent = t; err.hidden = !t; }
+        m.querySelector('[data-save-np]').onclick = function () {
+          var a = m.querySelector('#np1').value, b = m.querySelector('#np2').value;
+          if (a.length < 8) return show('Use at least 8 characters.');
+          if (a !== b) return show('The two passwords do not match.');
+          show('');
+          w.CC.Auth.setNewPassword(a).then(function (res) {
+            if (!res.ok) return show(res.error);
+            UI.closeModal(); UI.toast('Password updated. You are signed in.'); App.paintAuth();
+            w.location.hash = '#/account';
+          });
+        };
+      }
+    });
+  };
+  w.addEventListener('cc:recovery', function () { setTimeout(App.askNewPassword, 400); });
   /* ---------------- boot ---------------- */
   App.start = function () {
     d.getElementById('yr').textContent = new Date().getFullYear();
@@ -214,11 +244,13 @@
     initSheet();
     initSearch();
     w.addEventListener('cc:notify', App.paintAuth);
-    // Restore any saved Supabase session before the first route renders.
-    Auth.init().then(function () {
-      App.paintAuth();
-      w.CC.Router.start();
-    });
+    // Restore any saved Supabase session before the first route renders. Never wait on the network for long:
+    // if it is slow or blocked, show the page after 2.5s and repaint the account bits when the session arrives.
+    var started = false;
+    function go() { if (started) return; started = true; App.paintAuth(); w.CC.Router.start(); setTimeout(App.askNewPassword, 400); }
+    var timer = setTimeout(go, 2500);
+    Auth.init().then(function () { clearTimeout(timer); if (started) App.paintAuth(); go(); },
+                     function () { clearTimeout(timer); go(); });
     console.log('%cCard Crest', 'color:#0e5c3c;font-weight:700',
       '— demo mode. Sign in with demo@cardcrest.in / demo1234, or admin@cardcrest.in / admin1234.');
   };

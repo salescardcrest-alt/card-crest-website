@@ -20,6 +20,13 @@
     });
   }
 
+
+  /* A password-reset link signs the person in and fires PASSWORD_RECOVERY. Remember it (the page may not be
+     ready yet) and tell the app so it can ask for the new password instead of just landing on the home page. */
+  var recovering = false;
+  if (sb) sb.auth.onAuthStateChange(function (event) {
+    if (event === 'PASSWORD_RECOVERY') { recovering = true; w.dispatchEvent(new CustomEvent('cc:recovery')); }
+  });
   w.CC.Sync.init(sb);
   if (w.CC.Market) w.CC.Market.init(sb);
 
@@ -263,6 +270,16 @@
       }
       S.update('users', u.id, { avatar: '' });
       return Promise.resolve({ ok: true });
+    },
+
+    /* Reset-link landing: set the new password (the link already signed the person in). */
+    isRecovering: function () { return recovering; },
+    setNewPassword: function (newPw) {
+      if (!sb) return Promise.resolve(fail('Password reset is not available in demo mode.'));
+      return sb.auth.updateUser({ password: newPw }).then(function (r) {
+        if (r.error) return fail(friendly(r.error));
+        recovering = false; return { ok: true };
+      }).catch(function (e) { return fail(friendly(e)); });
     },
 
     changePassword: function (oldPw, newPw) {

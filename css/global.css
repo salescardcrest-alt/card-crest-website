@@ -226,3 +226,91 @@ ul{margin:0; padding:0; list-style:none}
 .tabbar a.tab-main svg{width:24px; height:24px; fill:none}
 .tabbar a.tab-main.is-active .tab-main__i{box-shadow:0 6px 16px rgba(14,92,60,.38), 0 0 0 4px var(--leaf-soft)}
 .tabbar a.tab-main span:last-child{white-space:nowrap}
+
+/* keep the page body's height while the first view loads, so the footer never jumps up */
+#view { min-height: 80vh; }
+.boot { display: grid; place-items: center; min-height: 60vh; }
+.boot__dot { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--line, #dfe6e2); border-top-color: var(--crest, #0e5c3c); animation: bootspin .8s linear infinite; }
+@keyframes bootspin { to { transform: rotate(360deg); } }
+
+/* first-load transition: three cards fan out around the logo, then settle */
+.boot { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; min-height: 60vh; }
+.boot__fan { position: relative; width: 128px; height: 96px; display: grid; place-items: center; }
+.boot__fan i { position: absolute; width: 92px; height: 58px; border-radius: 11px; border: 1px solid rgba(14,92,60,.18);
+  background: linear-gradient(135deg, #0e5c3c, #17a06a); box-shadow: 0 10px 24px -10px rgba(14,92,60,.5);
+  transform-origin: 50% 130%; opacity: 0; animation: bootFan 2.4s cubic-bezier(.3,.7,.2,1) infinite; }
+.boot__fan i:nth-child(2) { background: linear-gradient(135deg, #b98b2e, #e3c06a); animation-delay: .15s; }
+.boot__fan i:nth-child(3) { background: linear-gradient(135deg, #093d28, #0e5c3c); animation-delay: .3s; }
+.boot__fan img { position: relative; z-index: 2; border-radius: 12px; background: #fff; padding: 6px; box-shadow: 0 8px 20px -8px rgba(0,0,0,.3); animation: bootPulse 2.4s ease-in-out infinite; }
+@keyframes bootFan {
+  0%   { opacity: 0; transform: rotate(0) translateY(10px) scale(.85); }
+  25%  { opacity: 1; transform: rotate(var(--r, -24deg)) translateY(0) scale(1); }
+  70%  { opacity: 1; transform: rotate(var(--r, -24deg)) translateY(0) scale(1); }
+  100% { opacity: 0; transform: rotate(0) translateY(-6px) scale(.9); }
+}
+.boot__fan i:nth-child(1) { --r: -26deg; }
+.boot__fan i:nth-child(2) { --r: 0deg; }
+.boot__fan i:nth-child(3) { --r: 26deg; }
+@keyframes bootPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+.boot__word { font-family: var(--display, inherit); font-weight: 800; font-size: 1.25rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink, #0f1d17); }
+.boot__word em { font-style: normal; color: var(--leaf, #17a06a); }
+.boot__bar { width: 150px; height: 3px; border-radius: 3px; background: var(--line-soft, #e6ece9); overflow: hidden; position: relative; }
+.boot__bar::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 40%; border-radius: 3px; background: linear-gradient(90deg, var(--crest, #0e5c3c), var(--gold, #b98b2e)); animation: bootBar 1.3s ease-in-out infinite; }
+@keyframes bootBar { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
+@media (prefers-reduced-motion: reduce) { .boot__fan i, .boot__fan img, .boot__bar::after { animation: none; } .boot__fan i { opacity: .9; } }
+
+/* second take: one card flips, the back shows cashback ticking up */
+@property --n { syntax: "<integer>"; initial-value: 0; inherits: false; }
+.boot { gap: 26px; }
+.boot__scene { position: relative; width: 170px; height: 150px; perspective: 700px; display: grid; place-items: center; }
+.boot__card { position: relative; width: 150px; height: 94px; transform-style: preserve-3d; animation: bootFlip 3s cubic-bezier(.6,.05,.25,1) infinite, bootBob 3s ease-in-out infinite; }
+.boot__face { position: absolute; inset: 0; border-radius: 13px; backface-visibility: hidden; overflow: hidden; box-shadow: 0 18px 30px -16px rgba(9,61,40,.6); }
+.boot__front { background: linear-gradient(135deg, #093d28 0%, #0e5c3c 55%, #17a06a 100%); }
+.boot__back { transform: rotateY(180deg); background: linear-gradient(135deg, #8a6618, #b98b2e 60%, #e3c06a); }
+.boot__chip { position: absolute; left: 16px; top: 28px; width: 26px; height: 20px; border-radius: 5px; background: linear-gradient(135deg, #e8cf8a, #b98b2e); }
+.boot__front img { position: absolute; right: 12px; top: 12px; border-radius: 7px; background: #fff; padding: 3px; }
+.boot__shine { position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.35) 50%, transparent 65%); transform: translateX(-120%); animation: bootShine 3s ease-in-out infinite; }
+.boot__strip { position: absolute; left: 0; right: 0; top: 16px; height: 22px; background: rgba(9,61,40,.85); }
+.boot__cb { position: absolute; left: 14px; bottom: 12px; color: #fff; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; }
+.boot__cb b { display: block; font-size: 1.35rem; letter-spacing: 0; text-transform: none; font-weight: 800; }
+.boot__count { animation: bootTick 3s linear infinite; counter-reset: n var(--n); }
+.boot__count::before { content: "+\20B9" counter(n); }
+.boot__shadow { position: absolute; bottom: 4px; width: 110px; height: 12px; border-radius: 50%; background: radial-gradient(closest-side, rgba(9,61,40,.28), transparent); animation: bootShadow 3s ease-in-out infinite; }
+@keyframes bootFlip { 0%, 22% { transform: rotateY(0); } 50%, 78% { transform: rotateY(180deg); } 100% { transform: rotateY(360deg); } }
+@keyframes bootBob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -8px; } }
+@keyframes bootShine { 0%, 8% { transform: translateX(-120%); } 22% { transform: translateX(120%); } 100% { transform: translateX(120%); } }
+@keyframes bootShadow { 0%, 100% { transform: scale(1); opacity: .9; } 50% { transform: scale(.8); opacity: .6; } }
+@keyframes bootTick { 0%, 46% { --n: 0; } 68%, 100% { --n: 100; } }
+@media (prefers-reduced-motion: reduce) { .boot__card, .boot__shine, .boot__shadow, .boot__count { animation: none; } .boot__count { --n: 100; } }
+
+/* third take: the card completes like a successful payment: it morphs into a green circle, the tick draws, ripples burst */
+.pay { position: relative; width: 170px; height: 130px; display: grid; place-items: center; }
+.pay__card { position: relative; width: 150px; height: 94px; border-radius: 13px; overflow: hidden; display: grid; place-items: center;
+  background: linear-gradient(135deg, #093d28 0%, #0e5c3c 55%, #17a06a 100%); box-shadow: 0 18px 30px -16px rgba(9,61,40,.6);
+  animation: payMorph 3.2s cubic-bezier(.6,.05,.25,1) infinite; }
+.pay__chip { position: absolute; left: 16px; top: 34px; width: 26px; height: 20px; border-radius: 5px; background: linear-gradient(135deg, #e8cf8a, #b98b2e); animation: payFade 3.2s ease infinite; }
+.pay__card img { position: absolute; right: 12px; top: 12px; border-radius: 7px; background: #fff; padding: 3px; animation: payFade 3.2s ease infinite; }
+.pay__shine { position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.35) 50%, transparent 65%); transform: translateX(-120%); animation: payShine 3.2s ease-in-out infinite; }
+.pay__tick { position: absolute; width: 56px; height: 56px; }
+.pay__tick path { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 44; stroke-dashoffset: 44; animation: payTick 3.2s ease infinite; }
+.pay__ring { position: absolute; width: 84px; height: 84px; border-radius: 50%; border: 2px solid #17a06a; opacity: 0; animation: payRing 3.2s ease-out infinite; }
+.pay__ring--2 { animation-delay: .18s; border-color: #b98b2e; }
+.pay__d { position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; margin: -3.5px; border-radius: 50%; background: #17a06a; opacity: 0; animation: payDot 3.2s ease-out infinite; }
+.pay__d:nth-of-type(even) { background: #b98b2e; width: 5px; height: 5px; margin: -2.5px; }
+@keyframes payMorph {
+  0%   { transform: scale(.7) translateY(12px); opacity: 0; width: 150px; height: 94px; border-radius: 13px; }
+  12%  { transform: none; opacity: 1; width: 150px; height: 94px; border-radius: 13px; }
+  30%  { width: 150px; height: 94px; border-radius: 13px; transform: none; }
+  46%  { width: 84px; height: 84px; border-radius: 50%; transform: none; background: linear-gradient(135deg, #0e5c3c, #17a06a); }
+  52%  { transform: scale(1.12); }
+  60%, 84% { width: 84px; height: 84px; border-radius: 50%; transform: none; opacity: 1; }
+  100% { width: 84px; height: 84px; border-radius: 50%; transform: scale(.7); opacity: 0; }
+}
+@keyframes payFade { 0%, 32% { opacity: 1; } 42%, 100% { opacity: 0; } }
+@keyframes payShine { 0%, 14% { transform: translateX(-120%); } 30%, 100% { transform: translateX(120%); } }
+@keyframes payTick { 0%, 48% { stroke-dashoffset: 44; } 60%, 100% { stroke-dashoffset: 0; } }
+@keyframes payRing { 0%, 48% { opacity: 0; transform: scale(1); } 52% { opacity: .9; } 80%, 100% { opacity: 0; transform: scale(2.3); } }
+@keyframes payDot { 0%, 50% { opacity: 0; transform: rotate(var(--a)) translateY(0); } 54% { opacity: 1; } 78%, 100% { opacity: 0; transform: rotate(var(--a)) translateY(-62px); } }
+@media (prefers-reduced-motion: reduce) { .pay__card, .pay__chip, .pay__card img, .pay__shine, .pay__tick path, .pay__ring, .pay__d { animation: none; } .pay__tick path { stroke-dashoffset: 0; } }
+.boot { gap: 8px; }
+.pay { height: 100px; }
