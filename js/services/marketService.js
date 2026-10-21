@@ -886,21 +886,34 @@
     try { if (w.Notification && Notification.permission === 'granted') new Notification(n.title, { body: n.body, tag: n.type }); } catch (e) {}
   }
 
-  /* Supabase: a Realtime subscription on this user's notification rows. */
+  /* Supabase: a Realtime subscription on this user's notification rows, plus a 15s check as a backup
+     (Realtime can be off in the project, blocked by a browser extension, or asleep in a background tab). */
+  var poll = null;
+  function takeNotification(n) {
+    if (!n || !n.id || col('notifications').some(function (x) { return x.id === n.id; })) return;
+    S.get('notifications').unshift(n); S.commit();            // direct push: S.insert would write it back to Supabase
+    w.dispatchEvent(new CustomEvent('cc:notify'));
+    if (String(n.type).indexOf('market') === 0) Market.load().then(function () { w.dispatchEvent(new CustomEvent('cc:market')); });
+    announce(n);
+  }
   function startLive(u) {
     if (!sb || !sb.channel || (live && liveUser === u.id)) return;
     stopLive(); liveUser = u.id;
     live = sb.channel('cc-notify-' + u.id).on('postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + u.id }, function (p) {
-        var n = camel(p.new || {});
-        if (!n.id || col('notifications').some(function (x) { return x.id === n.id; })) return;
-        S.get('notifications').unshift(n); S.commit();            // direct push: S.insert would write it back to Supabase
-        w.dispatchEvent(new CustomEvent('cc:notify'));
-        if (String(n.type).indexOf('market') === 0) Market.load().then(function () { w.dispatchEvent(new CustomEvent('cc:market')); });
-        announce(n);
-      }).subscribe();
+      { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + u.id },
+      function (p) { takeNotification(camel(p.new || {})); }).subscribe();
+    poll = setInterval(function () {
+      if (w.document.hidden || liveUser !== u.id) return;
+      sb.from('notifications').select('*').eq('user_id', u.id).order('created_at', { ascending: false }).limit(10).then(function (r) {
+        if (r.error || !r.data) return;
+        r.data.slice().reverse().forEach(function (row) { takeNotification(camel(row)); });
+      }, function () {});
+    }, 15000);
   }
-  function stopLive() { if (live && sb) { try { sb.removeChannel(live); } catch (e) {} } live = null; liveUser = null; }
+  function stopLive() {
+    if (live && sb) { try { sb.removeChannel(live); } catch (e) {} } live = null; liveUser = null;
+    if (poll) { clearInterval(poll); poll = null; }
+  }
 
   /* Local demo: another browser tab changed the saved data, so pick it up and announce anything new. */
   w.addEventListener('storage', function (e) {
