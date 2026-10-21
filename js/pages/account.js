@@ -291,7 +291,7 @@
       (saved.length ? '<div class="stack">' + saved.map(function (s) {
         var card = C.byId(s.cardId);
         if (!card) return '';
-        var sc = C.score(card);
+        var sc = card.partner ? null : C.score(card);
         var renew = new Date(s.savedAt); renew.setFullYear(renew.getFullYear() + 1);
         return '<div class="panel"><div class="row row--wrap" style="gap:20px; align-items:flex-start">' +
           '<div style="width:130px; flex-shrink:0">' + UI.plastic(card) + '</div>' +
@@ -300,16 +300,21 @@
           '<h3 class="h3" style="font-size:1.1rem">' + UI.esc(card.name) + '</h3>' +
           (s.primary ? '<span class="badge">Primary</span>' : '') + '</div>' +
           '<div class="small muted" style="margin-bottom:12px">' + UI.esc(C.bank(card.bank).name) + ' &middot; saved ' + UI.date(s.savedAt) + '</div>' +
-          '<div class="grid g-3" style="gap:14px">' +
+          (card.partner ?
+            '<div class="grid g-3" style="gap:14px"><div><span class="fact__k">Reward when approved</span><span class="fact__v" style="color:var(--crest)">' + UI.money(C.rewardFor(card)) + '</span></div>' +
+            '<div><span class="fact__k">Fees and benefits</span><span class="fact__v">Set by the bank</span></div>' +
+            '<div><span class="fact__k">Renews</span><span class="fact__v">' + UI.date(renew.toISOString()) + '</span></div></div></div>'
+          :
+            '<div class="grid g-3" style="gap:14px">' +
           '<div><span class="fact__k">Annual fee</span><span class="fact__v">' + (card.annualFee ? UI.money(card.annualFee) : 'None') + '</span></div>' +
           '<div><span class="fact__k">Est. yearly value</span><span class="fact__v" style="color:var(--crest)">' + UI.money(sc.value.net) + '</span></div>' +
           '<div><span class="fact__k">Renews</span><span class="fact__v">' + UI.date(renew.toISOString()) + '</span></div>' +
-          '</div></div>' +
-          '<div style="text-align:center">' + UI.gauge(sc.total, false) + '</div>' +
+            '</div></div>' +
+            '<div style="text-align:center">' + UI.gauge(sc.total, false) + '</div>') +
           '</div>' +
           '<div class="row row--wrap" style="margin-top:18px; gap:8px">' +
           '<a class="btn btn--ghost btn--sm" href="#/cards/' + card.id + '">Benefits</a>' +
-          '<a class="btn btn--ghost btn--sm" href="#/calculator?card=' + card.id + '">Model my spend</a>' +
+          (card.partner ? '' : '<a class="btn btn--ghost btn--sm" href="#/calculator?card=' + card.id + '">Model my spend</a>') +
           (s.primary ? '' : '<button class="btn btn--soft btn--sm" data-primary="' + s.id + '">Make primary</button>') +
           '<button class="btn btn--danger btn--sm" data-remove="' + card.id + '" style="margin-left:auto">Remove</button>' +
           '</div></div>';
@@ -338,13 +343,14 @@
           var banks = C.banks().filter(function (b) { return cardsOf(b.id).length; });
           UI.modal({
             title: 'Add a card',
-            body: '<p class="muted" style="margin-bottom:14px">Choose the company, the type of card and the card you hold. It is added to My cards.</p>' +
+            body: '<p class="muted" style="margin-bottom:14px">Choose the company, the type of card and the card you hold. You can add up to ' + C.MAX_SAVED + ' cards, so keep adding and press Done when finished.</p>' +
               '<div class="field"><label for="ac-bank">Card company</label><select id="ac-bank"><option value="">Select company</option>' +
               banks.map(function (b) { return '<option value="' + b.id + '">' + UI.esc(b.name) + '</option>'; }).join('') + '</select></div>' +
               '<div class="field" style="margin-top:12px"><label for="ac-type">Card type</label><select id="ac-type" disabled><option value="">Select company first</option></select></div>' +
               '<div class="field" style="margin-top:12px"><label for="ac-card">Card</label><select id="ac-card" disabled><option value="">Select company first</option></select></div>' +
-              '<div class="small muted" id="ac-note" style="margin-top:10px"></div>',
-            foot: '<button class="btn btn--primary" data-ac-save disabled>Add card</button>',
+              '<div class="small muted" id="ac-note" style="margin-top:10px"></div>' +
+              '<div class="small" id="ac-count" style="margin-top:6px; font-weight:600"></div>',
+            foot: '<button class="btn btn--ghost" data-x>Done</button><button class="btn btn--primary" data-ac-save disabled>Add card</button>',
             onMount: function (m) {
               var bankEl = m.querySelector('#ac-bank'), typeEl = m.querySelector('#ac-type'), cardEl = m.querySelector('#ac-card'),
                   note = m.querySelector('#ac-note'), save = m.querySelector('[data-ac-save]');
@@ -366,10 +372,22 @@
                 save.disabled = !cardEl.value;
                 note.textContent = cardEl.value && C.isSaved(u.id, cardEl.value) ? 'You have already added this card.' : '';
               };
+              function count() {
+                var n = C.saved(u.id).length;
+                m.querySelector('#ac-count').textContent = n + ' of ' + C.MAX_SAVED + ' cards added';
+                save.textContent = n >= C.MAX_SAVED ? 'Limit reached' : 'Add card';
+                return n;
+              }
+              count();
               save.onclick = function () {
                 var id = cardEl.value; if (!id) return;
+                if (count() >= C.MAX_SAVED) { note.textContent = 'You can add up to ' + C.MAX_SAVED + ' cards. Remove one to add another.'; save.disabled = true; return; }
                 if (!C.save(u.id, id)) { note.textContent = 'You have already added this card.'; return; }
-                UI.closeModal(); UI.toast('Card added to My cards'); w.CC.Router.refresh();
+                UI.toast('Card added to My cards');
+                w.CC.Router.refresh();
+                var left = count();
+                cardEl.value = ''; save.disabled = true;
+                note.textContent = left >= C.MAX_SAVED ? 'You have reached the limit of ' + C.MAX_SAVED + ' cards.' : 'Added. Pick another card, or press Done.';
               };
             }
           });

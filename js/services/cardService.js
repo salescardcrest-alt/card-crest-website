@@ -253,8 +253,10 @@
     isSaved: function (userId, cardId) {
       return Cards.saved(userId).some(function (s) { return s.cardId === cardId; });
     },
+    MAX_SAVED: 30,
     save: function (userId, cardId) {
       if (Cards.isSaved(userId, cardId)) return false;
+      if (Cards.saved(userId).length >= Cards.MAX_SAVED) return false;
       S.insert('savedCards', {
         id: S.uid('sv'), userId: userId, cardId: cardId,
         primary: Cards.saved(userId).length === 0, savedAt: new Date().toISOString()

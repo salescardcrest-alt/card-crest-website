@@ -219,6 +219,15 @@
       ok(!!q('.reward-box') && /₹1,300/.test(q('.reward-box').innerText) && /Apply & earn ₹1,300/.test(q('[data-apply]').innerText), 'the card page shows the reward and an Apply & earn button');
       await go('#/cards/kotak-811'); ok(!q('.reward-box') && /Apply for this card/.test(q('[data-apply]').innerText), 'a card with no reward keeps the plain Apply button');
       cw.CC.Store.set('session', 'u-000'); cw.CC.App.paintAuth();
+      /* a partner card (Apply & Earn) can be saved and opened without errors */
+      cw.CC.Store.set('session', 'u-001'); cw.CC.App.paintAuth();
+      cw.CC.Cards.save('u-001', 'axis-bank');
+      await go('#/dashboard/cards');
+      ok(/Axis Bank Credit Card/.test(txt()) && /Set by the bank/.test(txt()) && !/NaN/.test(txt()), 'My cards lists a saved partner card without a broken score');
+      await go('#/cards/axis-bank');
+      ok(!/could not load/.test(txt()) && /Earn ₹1,300 when approved/.test(txt()), 'a partner card has a working Benefits page');
+      cw.CC.Cards.unsave('u-001', 'axis-bank');
+      cw.CC.Store.set('session', 'u-000'); cw.CC.App.paintAuth();
       /* long tables show one page at a time */
       localStorage.removeItem('cc.pagesize');
       await go('#/admin/stores');

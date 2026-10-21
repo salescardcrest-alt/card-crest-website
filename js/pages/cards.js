@@ -239,6 +239,25 @@
   w.CC.Pages.cardDetail = function (params) {
     var card = C.byId(params.id);
     if (!card) return w.CC.Pages.notFound();
+    /* Apply & Earn partner cards carry only a reward, not fees or a score: show a simple page for them. */
+    if (card.partner) {
+      var pb = C.bank(card.bank), pr = C.rewardFor(card);
+      return {
+        title: card.name + ' | Card Crest', desc: 'Apply for the ' + card.name + ' through Card Crest and earn a reward when it is approved.',
+        html: '<div class="wrap section--tight"><nav class="small muted" style="margin-bottom:18px"><a href="#/apply-earn">Apply &amp; Earn</a> / ' + UI.esc(card.name) + '</nav>' +
+          '<div class="detail"><div><div class="ctile__bank">' + UI.esc(pb ? pb.name : '') + '</div>' +
+          '<h1 class="h1" style="margin:6px 0 12px">' + UI.esc(card.name) + '</h1>' +
+          '<p class="lede" style="margin-bottom:20px">Apply on the bank&rsquo;s own site through Card Crest and earn a cash reward in your wallet when the bank approves the card.</p>' +
+          (pr ? '<div class="reward-box"><span>Apply through Card Crest</span><b>Earn ' + UI.money(pr) + ' when approved</b></div>' : '') +
+          '<div class="note" style="margin-top:18px"><strong>Fees and benefits.</strong> They are set by ' + UI.esc(pb ? pb.name : 'the bank') + ' and can change, so check the bank&rsquo;s page before you apply.</div></div>' +
+          '<aside class="panel" style="align-self:start"><div style="margin-bottom:16px">' + UI.plastic(card) + '</div>' +
+          '<button class="btn btn--primary btn--block" data-apply>Apply &amp; earn ' + UI.money(pr) + '</button>' +
+          '<a class="btn btn--ghost btn--block" href="#/apply-earn" style="margin-top:10px">All Apply &amp; Earn cards</a></aside></div></div>',
+        mount: function (root) {
+          root.querySelector('[data-apply]').addEventListener('click', function () { w.CC.Render.applyForCard(card); });
+        }
+      };
+    }
     var bank = C.bank(card.bank);
     var sc = C.score(card);
     var user = Auth.current();
@@ -364,7 +383,7 @@
           if (C.isSaved(u.id, card.id)) {
             C.unsave(u.id, card.id); saveBtn.textContent = 'Save card'; UI.toast('Removed from your cards');
           } else {
-            C.save(u.id, card.id); saveBtn.textContent = 'Saved'; UI.toast('Saved to your cards');
+            if (!C.save(u.id, card.id)) return UI.toast('You can save up to ' + C.MAX_SAVED + ' cards. Remove one first.', 'error'); saveBtn.textContent = 'Saved'; UI.toast('Saved to your cards');
           }
         });
         Render.compareTray();
