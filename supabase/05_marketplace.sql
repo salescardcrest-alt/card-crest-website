@@ -924,22 +924,22 @@ begin
       'seatCount', (d->>'seatCount')::numeric, 'ticketTotal', (d->>'ticketTotal')::numeric,
       'platform', coalesce(nullif(trim(d->>'platform'), ''), 'BookMyShow'), 'bank', coalesce(nullif(trim(d->>'bank'), ''), 'any'));
   elsif m in ('ORDER', 'PAY') then
-    if coalesce(d->>'url', '') !~* '^https?://[^ ]+\.[^ ]+' then raise exception 'Paste the full product link (starting with https://).'; end if;
+    if m = 'ORDER' and coalesce(d->>'url', '') !~* '^https?://[^ ]+\.[^ ]+' then raise exception 'Paste the full product link (starting with https://).'; end if;
+    if m = 'PAY' and coalesce(d->>'payUrl', '') !~* '^https?://[^ ]+\.[^ ]+' then raise exception 'Paste the link of the final payment page (starting with https://).'; end if;
     if length(trim(coalesce(d->>'platform', ''))) < 2 then raise exception 'Choose the shopping site.'; end if;
     if length(trim(coalesce(d->>'offerWanted', ''))) < 3 then raise exception 'Describe the card offer you want.'; end if;
-    out := jsonb_build_object('url', trim(d->>'url'), 'platform', trim(d->>'platform'),
+    out := jsonb_build_object('url', case when m = 'ORDER' then trim(d->>'url') else '' end, 'platform', trim(d->>'platform'),
       'listPrice', (d->>'listPrice')::numeric, 'expectedPrice', (d->>'expectedPrice')::numeric,
       'offerWanted', trim(d->>'offerWanted'), 'bank', coalesce(nullif(trim(d->>'bank'), ''), 'any'));
-    if m = 'ORDER' then
+    if m = 'PAY' then
+      out := out || jsonb_build_object('payUrl', trim(d->>'payUrl'));
+    else
       a := coalesce(d->'address', '{}');
       if length(trim(coalesce(a->>'name', ''))) < 3 or length(trim(coalesce(a->>'line', ''))) < 8 or length(trim(coalesce(a->>'city', ''))) < 2 then
         raise exception 'Enter the full delivery address.'; end if;
       if coalesce(a->>'pin', '') !~ '^\d{6}$' then raise exception 'Enter a 6-digit PIN code.'; end if;
       out := out || jsonb_build_object('address', jsonb_build_object('name', trim(a->>'name'), 'line', trim(a->>'line'),
         'city', trim(a->>'city'), 'pin', a->>'pin'));
-    else
-      out := out || jsonb_build_object('cartUrl', trim(coalesce(d->>'cartUrl', '')));
-      if (out->>'cartUrl') <> '' and (out->>'cartUrl') !~* '^https?://[^ ]+\.[^ ]+' then raise exception 'The cart link must start with https://.'; end if;
     end if;
   else
     raise exception 'Unknown request type.';
@@ -1209,7 +1209,7 @@ create or replace function public.mk_open_requests()
 returns table (id uuid, module text, subtype text, buyer_id uuid, status text, details jsonb, fee_snapshot jsonb,
                accept_by timestamptz, created_at timestamptz, paid_at timestamptz)
 language sql stable security definer set search_path = public as $$
-  select r.id, r.module, r.subtype, r.buyer_id, r.status, r.details - 'address' - 'guestName' - 'cartUrl', r.fee_snapshot,
+  select r.id, r.module, r.subtype, r.buyer_id, r.status, r.details - 'address' - 'guestName' - 'cartUrl' - 'payUrl', r.fee_snapshot,
          r.accept_by, r.created_at, r.paid_at
   from public.mk_requests r
   where auth.uid() is not null and r.status = 'PAID' and r.buyer_id <> auth.uid() and r.accept_by > now()

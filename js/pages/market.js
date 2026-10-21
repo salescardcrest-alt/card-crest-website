@@ -15,7 +15,7 @@
     LOUNGE: { slug: 'lounge', title: 'Lounge access', short: 'Airport lounge', icon: '✈', blurb: 'Walk into an airport lounge using a cardholder’s guest access. Pay ₹500 for domestic or ₹1,000 for international, instead of the usual ₹1,500 or ₹2,500.' },
     MOVIE:  { slug: 'movie', title: 'Movie offers', short: 'Movie offer', icon: '▶', blurb: 'Get buy-one-get-one or ₹500 off on 2 seats using a card that carries the offer.' },
     ORDER:  { slug: 'order', title: 'Order & Earn', short: 'Order & Earn', icon: '▣', blurb: 'A cardholder places your order with their card offer. The discount is shared: 40% to you, 30% to the cardholder, 30% to Card Crest.' },
-    PAY:    { slug: 'pay', title: 'Pay & Earn', short: 'Pay & Earn', icon: '✓', blurb: 'You fill the cart, a cardholder only completes the payment at the offer price. The discount is shared 40% you, 30% cardholder, 30% Card Crest.' }
+    PAY:    { slug: 'pay', title: 'Pay & Earn', short: 'Pay & Earn', icon: '✓', blurb: 'You get to the final payment page and share its link. A cardholder opens it and pays with their own card at the offer price. That is all they do. The discount is shared 40% you, 30% cardholder, 30% Card Crest.' }
   };
   var SLUG = { lounge: 'LOUNGE', movie: 'MOVIE', order: 'ORDER', pay: 'PAY' };
 
@@ -258,17 +258,17 @@
         field('f-bank', 'Card the offer runs on', '<select id="f-bank">' + bankOptions() + '</select>', 'Pick a bank if the offer is tied to one.');
     },
     ORDER: function (pay) {
-      return '<div class="form-grid">' + field('f-url', pay ? 'Product or checkout link' : 'Product link', '<input id="f-url" type="url" placeholder="https://www.amazon.in/…">') +
-        field('f-plat', 'Shopping site', '<select id="f-plat"><option>Amazon</option><option>Flipkart</option><option>Myntra</option><option>Ajio</option><option>Croma</option><option>Other</option></select>') + '</div>' +
+      return '<div class="form-grid">' + (pay ? '' : field('f-url', 'Product link', '<input id="f-url" type="url" placeholder="https://www.amazon.in/…">')) +
+        field('f-plat', pay ? 'Shopping site or merchant' : 'Shopping site', '<select id="f-plat"><option>Amazon</option><option>Flipkart</option><option>Myntra</option><option>Ajio</option><option>Croma</option><option>Other</option></select>') + '</div>' +
+        (pay ? field('f-pay', 'Final payment page link', '<input id="f-pay" type="url" placeholder="https://…">',
+          'The page where the payment is made, after the offer is applied. The cardholder opens it and pays with their own card. Only they see this link, after accepting. It needs to open for someone who is not signed in as you, like a pay-by-link or invoice link.') : '') +
         '<div class="form-grid">' + field('f-list', 'Listed price (₹)', '<input id="f-list" type="number" min="1" max="200000" inputmode="decimal">', 'Up to ₹2,00,000.') +
-        field('f-exp', 'Price after the card offer (₹)', '<input id="f-exp" type="number" min="1" max="200000" inputmode="decimal">', 'Must be less than the listed price.') + '</div>' +
+        field('f-exp', pay ? 'Amount to pay on that page (₹)' : 'Price after the card offer (₹)', '<input id="f-exp" type="number" min="1" max="200000" inputmode="decimal">', 'Must be less than the listed price.') + '</div>' +
         field('f-offer', 'Card offer you want', '<input id="f-offer" placeholder="10% instant discount on HDFC credit cards">') +
         field('f-bank', 'Card', '<select id="f-bank">' + bankOptions() + '</select>') +
-        (pay
-          ? field('f-cart', 'Cart link (optional)', '<input id="f-cart" type="url" placeholder="Only the cardholder sees this after accepting">', 'Fill the cart in your own account. The cardholder completes the payment only.')
-          : '<h3 class="h3" style="margin:6px 0 10px">Delivery address</h3><div class="form-grid">' + field('f-an', 'Full name', '<input id="f-an" autocomplete="name">') + field('f-apin', 'PIN code', '<input id="f-apin" maxlength="6" inputmode="numeric" autocomplete="postal-code">') + '</div>' +
-            field('f-aline', 'Address', '<input id="f-aline" autocomplete="street-address" placeholder="House, street, area">') + field('f-acity', 'City', '<input id="f-acity" autocomplete="address-level2">') +
-            '<p class="muted small">Only the cardholder who accepts your request sees the address.</p>');
+        (pay ? '' : '<h3 class="h3" style="margin:6px 0 10px">Delivery address</h3><div class="form-grid">' + field('f-an', 'Full name', '<input id="f-an" autocomplete="name">') + field('f-apin', 'PIN code', '<input id="f-apin" maxlength="6" inputmode="numeric" autocomplete="postal-code">') + '</div>' +
+          field('f-aline', 'Address', '<input id="f-aline" autocomplete="street-address" placeholder="House, street, area">') + field('f-acity', 'City', '<input id="f-acity" autocomplete="address-level2">') +
+          '<p class="muted small">Only the cardholder who accepts your request sees the address.</p>');
     }
   };
 
@@ -300,9 +300,9 @@
             return { offer: $('f-offer').value, movie: $('f-movie').value, theatre: $('f-theatre').value, city: $('f-city').value, showTime: $('f-show').value,
               seats: $('f-seats').value, seatCount: Number($('f-count').value), ticketTotal: Number($('f-total').value), platform: $('f-plat').value, bank: $('f-bank').value };
           }
-          var o = { url: $('f-url').value, platform: $('f-plat').value, listPrice: Number($('f-list').value), expectedPrice: Number($('f-exp').value), offerWanted: $('f-offer').value, bank: $('f-bank').value };
+          var o = { url: module === 'ORDER' ? $('f-url').value : '', platform: $('f-plat').value, listPrice: Number($('f-list').value), expectedPrice: Number($('f-exp').value), offerWanted: $('f-offer').value, bank: $('f-bank').value };
           if (module === 'ORDER') o.address = { name: $('f-an').value, line: $('f-aline').value, city: $('f-acity').value, pin: $('f-apin').value };
-          else o.cartUrl = $('f-cart').value;
+          if (module === 'PAY') o.payUrl = $('f-pay').value;
           return o;
         }
 
@@ -654,7 +654,7 @@
   }
 
   function actionBox(r, u, root) {
-    var isBuyer = r.buyerId === u.id, isHolder = r.cardholderId === u.id, s = r.feeSnapshot, h = '';
+    var isBuyer = r.buyerId === u.id, isHolder = r.cardholderId === u.id, s = r.feeSnapshot, h = '', xd = r.details || {};
     if (isBuyer) {
       if (r.status === 'CREATED') h = '<p class="muted">Pay into escrow so cardholders can see your request.</p><button class="btn btn--primary btn--block" data-act="pay">Pay ' + money(s.total) + ' (test)</button><button class="btn btn--ghost btn--block" style="margin-top:8px" data-act="cancel">Cancel request</button>';
       else if (r.status === 'PAID') h = '<p class="muted">Waiting for a cardholder. Open for <strong>' + left(r.acceptBy) + '</strong>. If nobody accepts, you are refunded automatically.</p><button class="btn btn--ghost btn--block" data-act="cancel">Cancel and refund</button>';
@@ -670,12 +670,15 @@
     }
     if (isHolder) {
       if (r.status === 'ACCEPTED') {
-        h = '<p class="muted" style="margin-bottom:12px">Do it with your own card, then upload proof by <strong>' + dt(r.fulfilBy) + '</strong>.</p>' +
+        h = '<p class="muted" style="margin-bottom:12px">' + (r.module === 'ORDER' ? 'Place the whole order on the site with your own card offer and have it delivered to the buyer&rsquo;s address, then upload proof by ' : r.module === 'PAY' ? 'Open the payment page the buyer shared, check the amount matches the offer price, and pay it with your own card. Do not pay if the amount is different. Upload the payment confirmation by ' : 'Do it with your own card, then upload proof by ') + '<strong>' + dt(r.fulfilBy) + '</strong>.</p>' +
           field('u-files', 'Proof images', '<input id="u-files" type="file" accept="image/png,image/jpeg,image/webp" multiple>', r.module === 'LOUNGE' ? 'Pass or booking screenshot.' : r.module === 'MOVIE' ? 'Tickets and booking confirmation.' : r.module === 'ORDER' ? 'Order confirmation and invoice.' : 'Payment confirmation.') +
           field('u-ref', r.module === 'LOUNGE' ? 'Pass or booking reference' : r.module === 'MOVIE' ? 'Booking ID' : 'Order or payment ID', '<input id="u-ref" autocomplete="off">') +
           (r.module !== 'LOUNGE' ? field('u-act', 'Amount you actually paid (₹)', '<input id="u-act" type="number" min="1" inputmode="decimal" value="' + s.reimbursement + '">', 'Estimated ' + money(s.reimbursement) + '. A lower price is refunded to the buyer, a higher one needs their top-up.') : '') +
           '<p class="err" id="u-err" style="color:var(--danger); font-size:.86rem; display:none"></p>' +
           '<button class="btn btn--primary btn--block" data-act="fulfil">Upload proof</button><button class="btn btn--ghost btn--block" style="margin-top:8px" data-act="release">Step back from this request</button>';
+        if (r.module === 'PAY' && xd.payUrl) h = '<div class="note" style="margin-bottom:14px"><strong>Final payment page</strong><div class="small" style="margin:6px 0 10px">Pay exactly <strong>' + money(s.reimbursement) + '</strong> here with your own card. The link was added automatically when you accepted.</div>' +
+          '<a class="btn btn--primary btn--block" href="' + esc(xd.payUrl) + '" target="_blank" rel="noopener noreferrer">Open the final payment page</a>' +
+          '<button type="button" class="btn btn--ghost btn--block" style="margin-top:8px" data-copy-pay="' + esc(xd.payUrl) + '">Copy link</button></div>' + h;
       } else if (r.status === 'FULFILLED') h = '<p class="muted">Proof sent. Waiting for the buyer to confirm' + (r.topupDue > 0 ? ' (they need to top up ' + money(r.topupDue) + ' first)' : '') + '. It confirms by itself at <strong>' + dt(r.autoConfirmAt) + '</strong>.</p>';
       else if (r.status === 'CONFIRMED') h = '<p class="muted">Confirmed. Your payment is released at <strong>' + dt(r.settleAt) + '</strong>.</p>';
       else if (r.status === 'DISPUTED') h = '<p class="muted">The buyer raised a dispute. Reply in the chat and support will decide.</p>';
@@ -712,9 +715,9 @@
     var detailRows = '';
     if (r.module === 'LOUNGE') detailRows = row('Airport', esc(x.airport + ' ' + x.terminal)) + row('Lounge', esc(x.type === 'INTERNATIONAL' ? 'International' : 'Domestic')) + row('Flight', esc(x.flight)) + row('When', dt(x.dateTime)) + (x.guestName ? row('Guest name', esc(x.guestName)) : '');
     else if (r.module === 'MOVIE') detailRows = row('Movie', esc(x.movie)) + row('Theatre', esc(x.theatre + (x.city ? ', ' + x.city : ''))) + row('Showtime', dt(x.showTime)) + row('Seats', esc(x.seats + ' (' + x.seatCount + ')')) + row('Offer', x.offer === 'BOGO' ? 'Buy one get one' : '₹500 off on 2 seats') + row('Card', esc(bankName(x.bank))) + row('Booking site', esc(x.platform));
-    else detailRows = row('Site', esc(x.platform)) + row('Product', '<a href="' + esc(x.url) + '" target="_blank" rel="noopener noreferrer">Open link</a>') + row('Offer wanted', esc(x.offerWanted)) + row('Card', esc(bankName(x.bank))) +
+    else detailRows = row('Site', esc(x.platform)) + (x.url ? row('Product', '<a href="' + esc(x.url) + '" target="_blank" rel="noopener noreferrer">Open link</a>') : '') + row('Offer wanted', esc(x.offerWanted)) + row('Card', esc(bankName(x.bank))) +
       (x.address && (isBuyer || isHolder || admin) ? row('Deliver to', esc(x.address.name + ', ' + x.address.line + ', ' + x.address.city + ' ' + x.address.pin)) : '') +
-      (x.cartUrl && (isHolder || isBuyer || admin) ? row('Cart', '<a href="' + esc(x.cartUrl) + '" target="_blank" rel="noopener noreferrer">Open cart</a>') : '');
+      (x.payUrl && (isHolder || isBuyer || admin) ? row('Payment page', '<a href="' + esc(x.payUrl) + '" target="_blank" rel="noopener noreferrer">Open payment page</a>') : '');
     if (r.cardholderId) detailRows += row('Cardholder', esc(M.nameOf(r.cardholderId)) + ' · trust ' + M.trust(r.cardholderId)) + (r.cardId && M.card(r.cardId) ? row('Using', esc(bankName(M.card(r.cardId).bank) + ' ' + M.card(r.cardId).variant)) : '');
     if (!isBuyer) detailRows += row('Buyer', esc(M.nameOf(r.buyerId)) + ' · trust ' + M.trust(r.buyerId));
     if (r.ref) detailRows += row('Reference', esc(r.ref));
@@ -794,6 +797,13 @@
 
         /* actions */
         function act(name, fn) { var b = root.querySelector('[data-act="' + name + '"]'); if (b) b.onclick = function () { fn(b); }; }
+        var cp = root.querySelector('[data-copy-pay]');
+        if (cp) cp.onclick = function () {
+          var link = cp.getAttribute('data-copy-pay');
+          function done() { UI.toast('Payment page link copied'); }
+          if (w.navigator.clipboard && w.navigator.clipboard.writeText) w.navigator.clipboard.writeText(link).then(done, function () { w.prompt('Copy this link', link); });
+          else w.prompt('Copy this link', link);
+        };
         function run(btn, action, params, okMsg, label) {
           busy(btn, true, label || 'Working…');
           M.do(action, params).then(function (res) {

@@ -279,9 +279,18 @@
     eq(M.request(rq.id).status, 'SETTLED');
     eq([bal('escrow'), bal('platform'), bal('holder:' + HOLDER)], [0, 30, 930]);
   });
-  test('pay & earn works the same way without an address', async function () {
+  test('pay & earn needs only the final payment page link: no product link, no address', async function () {
     resetWorld();
-    var d = orderD(); delete d.address; d.cartUrl = 'https://www.flipkart.com/cart';
+    var bad = orderD(); delete bad.url; delete bad.address;
+    ok(!(await C('create', { module: 'PAY', details: bad })).ok, 'a Pay & Earn request without a payment page link is refused');
+    var good = orderD(); delete good.url; delete good.address; good.payUrl = 'https://pay.example.com/checkout/abc123';
+    ok((await C('create', { module: 'PAY', details: good })).ok, 'with a payment page link only, it is accepted');
+    var ord = orderD(); delete ord.url;
+    ok(!(await C('create', { module: 'ORDER', details: ord })).ok, 'an Order & Earn request still needs the product link');
+  });
+  test('pay & earn settles the same way as order & earn', async function () {
+    resetWorld();
+    var d = orderD(); delete d.url; delete d.address; d.payUrl = 'https://pay.example.com/checkout/abc123';
     var rq = await fulfilled('PAY', d);
     await C('confirm', { id: rq.id });
     eq(M.request(rq.id).status, 'SETTLED');
@@ -292,6 +301,11 @@
     var rq = await paid('ORDER', orderD());
     var o = M.openFor(HOLDER)[0];
     ok(o && !('address' in o.request.details), 'address must be hidden before acceptance');
+    resetWorld();
+    var pd = orderD(); delete pd.url; delete pd.address; pd.payUrl = 'https://pay.example.com/checkout/abc123';
+    await paid('PAY', pd);
+    var op = M.openFor(HOLDER)[0];
+    ok(op && !('payUrl' in op.request.details), 'the payment page link is hidden until a cardholder accepts');
   });
 
   /* ---------------- price snapshot ---------------- */

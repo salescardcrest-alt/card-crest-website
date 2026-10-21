@@ -213,7 +213,7 @@
   };
 
   /* ---------- privacy ---------- */
-  var SENSITIVE = ['address', 'guestName', 'cartUrl'];
+  var SENSITIVE = ['address', 'guestName', 'cartUrl', 'payUrl'];
   Core.publicDetails = function (details) {
     var out = {};
     Object.keys(details || {}).forEach(function (k) { if (SENSITIVE.indexOf(k) < 0) out[k] = details[k]; });
@@ -485,19 +485,18 @@
               seats: s(d.seats), seatCount: Number(d.seatCount), ticketTotal: Number(d.ticketTotal),
               platform: s(d.platform) || 'BookMyShow', bank: s(d.bank) || 'any' };
     } else if (module === 'ORDER' || module === 'PAY') {
-      if (!V.url(s(d.url))) return { error: 'Paste the full product link (starting with https://).' };
+      if (module === 'ORDER' && !V.url(s(d.url))) return { error: 'Paste the full product link (starting with https://).' };
+      if (module === 'PAY' && !V.url(s(d.payUrl))) return { error: 'Paste the link of the final payment page (starting with https://).' };
       if (s(d.platform).length < 2) return { error: 'Choose the shopping site.' };
       if (s(d.offerWanted).length < 3) return { error: 'Describe the card offer you want.' };
-      out = { url: s(d.url), platform: s(d.platform), listPrice: Number(d.listPrice), expectedPrice: Number(d.expectedPrice),
+      out = { url: module === 'ORDER' ? s(d.url) : '', platform: s(d.platform), listPrice: Number(d.listPrice), expectedPrice: Number(d.expectedPrice),
               offerWanted: s(d.offerWanted), bank: s(d.bank) || 'any' };
-      if (module === 'ORDER') {
+      if (module === 'PAY') out.payUrl = s(d.payUrl);
+      else {
         var a = d.address || {};
         if (s(a.name).length < 3 || s(a.line).length < 8 || s(a.city).length < 2) return { error: 'Enter the full delivery address.' };
         if (!V.pin(a.pin)) return { error: 'Enter a 6-digit PIN code.' };
         out.address = { name: s(a.name), line: s(a.line), city: s(a.city), pin: s(a.pin) };
-      } else {
-        out.cartUrl = s(d.cartUrl);
-        if (out.cartUrl && !V.url(out.cartUrl)) return { error: 'The cart link must start with https://.' };
       }
     } else return { error: 'Unknown request type.' };
     return { details: out };
