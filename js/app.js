@@ -209,6 +209,7 @@
 
   /* Password-reset link: ask for the new password straight away. */
   App.askNewPassword = function () {
+    if (w.CC.Auth.recoveryError) { w.CC.UI.toast(w.CC.Auth.recoveryError, "error"); w.CC.Auth.recoveryError = ""; return; }
     if (!w.CC.Auth.isRecovering()) return;
     var UI = w.CC.UI;
     UI.modal({

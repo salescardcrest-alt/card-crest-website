@@ -80,7 +80,18 @@
     /* Call once at boot: restores a saved Supabase session. */
     init: function () {
       if (!sb) return Promise.resolve();
-      return sb.auth.getSession().then(function (r) {
+      /* Reset link in the "token_hash" form (works from any browser or device, no stored code needed):
+         ?token_hash=...&type=recovery. Exchange it for a session, then the app asks for the new password. */
+      var pre = Promise.resolve();
+      var qs = new URLSearchParams(location.search), th = qs.get('token_hash');
+      if (th && qs.get('type') === 'recovery') {
+        pre = sb.auth.verifyOtp({ token_hash: th, type: 'recovery' }).then(function (r) {
+          history.replaceState(null, '', location.pathname + location.hash);
+          if (r.error) Auth.recoveryError = 'That reset link has expired or was already used. Request a new one from Sign in, then Forgot password.';
+          else recovering = true;
+        }).catch(function () { Auth.recoveryError = 'We could not check that reset link. Request a new one and try again.'; });
+      }
+      return pre.then(function () { return sb.auth.getSession(); }).then(function (r) {
         if (/[?&]code=/.test(location.search)) { // tidy the one-time code left by an email link
           history.replaceState(null, '', location.pathname + location.hash);
         }
