@@ -281,11 +281,11 @@
       await go('#/legal/disclaimer'); ok(/Your data is safe with us/.test(txt()) && /never asks for, or stores, your card number/.test(txt()), 'the disclaimer says the data is safe and how it is protected');
       await go('#/legal/privacy'); ok(/How we protect it/.test(txt()), 'the privacy policy explains how data is protected');
       cw.CC.Store.set('session', 'u-001'); cw.CC.App.paintAuth(); await go('#/market/earn'); await sleep(250);
-      ok(!!q('#emailBtn') && /Email me new requests/.test(q('#emailBtn').innerText), 'the Earn page has an "Email me new requests" button');
+      ok(!!q('#emailBtn') && /Email me alerts/.test(q('#emailBtn').innerText), 'the Earn page has an "Email me alerts" button');
       click('#emailBtn'); await sleep(300);
       ok(/Email alerts: on/.test(q('#emailBtn').innerText), 'pressing it switches email alerts on');
       click('#emailBtn'); await sleep(300);
-      ok(/Email me new requests/.test(q('#emailBtn').innerText), 'pressing it again switches them off');
+      ok(/Email me alerts/.test(q('#emailBtn').innerText), 'pressing it again switches them off');
       cw.CC.Store.set('session', 'u-000'); cw.CC.App.paintAuth();
       /* long tables show one page at a time */
       localStorage.removeItem('cc.pagesize');

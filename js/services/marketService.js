@@ -114,7 +114,7 @@
     if (!userId || userId === DEMO_HOLDER) return;
     w.CC.Notifications.push(userId, type || 'market', title, body);
     ['email', 'whatsapp'].forEach(function (ch) {
-      if (ch === 'email' && !(emailOn(userId) && String(type || '').indexOf('market:open:') === 0)) return;   // email only for new-request alerts, and only for people who switched it on
+      if (ch === 'email' && !(emailOn(userId) && (String(type || '').indexOf('market:open:') === 0 || title === 'Payment held safely'))) return;   // email only for new-request alerts and the payment confirmation, and only for people who switched it on
       S.insert('mkOutbox', { id: rid('out'), userId: userId, channel: ch, title: title, body: body, requestId: requestId || null, status: 'QUEUED', createdAt: nowIso() });
     });
   }

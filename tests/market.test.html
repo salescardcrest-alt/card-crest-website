@@ -464,11 +464,14 @@
     await paid('ORDER', orderD());
     eq(mails(), 1, 'switching it off stops the emails');
   });
-  test('email alerts are only for new requests, not for every update', async function () {
+  test('email alerts: the buyer gets the payment confirmation, but not every other update', async function () {
     resetWorld();
     await C('setEmailAlerts', { on: true }, BUYER);
-    await paid('ORDER', orderD());                 // the buyer gets "Payment held safely": an update, not a new request
-    eq(S.get('mkOutbox').filter(function (o) { return o.userId === BUYER && o.channel === 'email'; }).length, 0, 'no email for updates');
+    var rq = await accepted('ORDER', orderD());     // pays (confirmation), then a cardholder accepts ("A cardholder accepted")
+    var mails = S.get('mkOutbox').filter(function (o) { return o.userId === BUYER && o.channel === 'email'; });
+    eq(mails.length, 1, 'exactly one email for the buyer');
+    eq(mails[0].title, 'Payment held safely', 'it is the payment confirmation: ' + mails[0].title);
+    ok(!!mails[0].requestId, 'it points at the request so the email can describe it');
   });
   test('live alerts: a cardholder who steps back re-alerts the others but not themselves', async function () {
     resetWorld();

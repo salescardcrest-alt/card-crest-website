@@ -101,7 +101,7 @@ When a buyer's payment lands in escrow (or a cardholder steps back), the databas
 
 ## Email alerts for new requests (opt-in)
 
-On the Earn page a cardholder can press **Email me new requests**. From then on, every new request their card can fulfil is
+On the Earn page a person can press **Email me alerts**. From then on, every new request their card can fulfil, and the buyer's "Payment held safely" confirmation, is
 also emailed to the address on their account (for example their Gmail). It is off until they switch it on, and they can
 switch it off the same way.
 

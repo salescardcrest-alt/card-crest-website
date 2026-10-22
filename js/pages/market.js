@@ -467,9 +467,9 @@
         var eb = root.querySelector('#emailBtn');
         function drawEmail() {
           var on = M.emailAlerts(u.id);
-          eb.textContent = on ? 'Email alerts: on' : 'Email me new requests';
+          eb.textContent = on ? 'Email alerts: on' : 'Email me alerts';
           eb.className = 'btn btn--xs ' + (on ? 'btn--primary' : 'btn--soft');
-          eb.title = 'Sent to ' + u.email;
+          eb.title = 'New requests you can fulfil, and your payment confirmations, are sent to ' + u.email;
         }
         if (eb) {
           drawEmail();
@@ -478,7 +478,7 @@
             M.do('setEmailAlerts', { on: on }).then(function (r) {
               eb.disabled = false;
               if (!r.ok) return UI.toast(r.error, 'error');
-              UI.toast(on ? 'We will email ' + u.email + ' when a new request comes in' : 'Email alerts are off');
+              UI.toast(on ? 'We will email ' + u.email + ' about new requests and your payments' : 'Email alerts are off');
               drawEmail();
             });
           };

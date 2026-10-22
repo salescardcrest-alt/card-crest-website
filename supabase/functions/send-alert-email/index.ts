@@ -1,5 +1,5 @@
-// Card Crest: send-alert-email
-// Sends the "new request" email to people who switched on "Email me new requests".
+// Card Crest: send-alert-email (new-request alerts for cardholders, and the buyer's "Payment held safely" confirmation)
+// Sends emails to people who switched on "Email me alerts".
 //
 // How it is triggered: a Supabase Database Webhook on INSERT into public.mk_outbox calls this function.
 // The database only queues an email row for people who opted in (see mk_set_email_alerts in 05_marketplace.sql).
@@ -63,45 +63,81 @@ function summarise(r: any): { headline: string; lines: Line[] } {
   return { headline, lines: lines.filter((l) => l[1]) };
 }
 
-function render(opts: { title: string; headline: string; intro: string; lines: Line[]; link: string; site: string }) {
-  const rows = opts.lines.map(([k, v], i) =>
+/** What the buyer sees after paying: the request, the amount held and what happens next. */
+function summariseBuyer(r: any): { headline: string; lines: Line[] } {
+  const d = r?.details || {}, s = r?.fee_snapshot || {};
+  const lines: Line[] = [];
+  let headline = "Your request";
+  if (r?.module === "LOUNGE") {
+    const kind = d.type === "INTERNATIONAL" ? "International" : "Domestic";
+    headline = `${kind} lounge access at ${d.airport || "the airport"}`;
+    if (d.dateTime) lines.push(["Visit time", when(d.dateTime)]);
+  } else if (r?.module === "MOVIE") {
+    headline = `Movie offer: ${d.movie || "your movie"}`;
+    if (d.showTime) lines.push(["Show time", when(d.showTime)]);
+  } else if (r?.module === "ORDER") {
+    headline = `Order & Earn on ${d.platform || "your shopping site"}`;
+  } else if (r?.module === "PAY") {
+    headline = `Pay & Earn on ${d.platform || "your shopping site"}`;
+  }
+  if (s.total != null) lines.push(["Amount held", rupees(s.total)]);
+  if (Number(s.saved) > 0) lines.push(["Your saving", rupees(s.saved)]);
+  lines.push(["Status", "Waiting for a cardholder"]);
+  if (r?.accept_by) lines.push(["Open until", when(r.accept_by)]);
+  return { headline, lines };
+}
+
+type Mail = {
+  eyebrow: string; title: string; intro: string; headline: string; lines: Line[];
+  steps?: string[]; button: string; link: string; note: string; reason: string; site: string; gif: string;
+};
+
+function render(m: Mail) {
+  const rows = m.lines.map(([k, v], i) =>
     `<tr><td style="padding:12px 0;${i ? "border-top:1px solid #e6ece8;" : ""}color:#6c7b73;font-size:14px;width:42%">${esc(k)}</td>` +
     `<td style="padding:12px 0;${i ? "border-top:1px solid #e6ece8;" : ""}color:#0b1f17;font-size:14px;font-weight:600;text-align:right">${esc(v)}</td></tr>`).join("");
+  const steps = (m.steps || []).map((s, i) =>
+    `<tr><td style="padding:6px 12px 6px 0;vertical-align:top"><div style="width:24px;height:24px;border-radius:12px;background:#0e5c3c;color:#fff;font-size:12px;font-weight:700;line-height:24px;text-align:center">${i + 1}</div></td>` +
+    `<td style="padding:6px 0;color:#3a4a42;font-size:14px;line-height:1.5">${esc(s)}</td></tr>`).join("");
   const html = `<!doctype html><html><body style="margin:0;padding:0;background:#f4f7f5;font-family:Arial,Helvetica,sans-serif">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(opts.intro)}</div>
+<div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(m.intro)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7f5;padding:24px 12px"><tr><td align="center">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e6ece8">
     <tr><td style="background:#0e5c3c;padding:20px 28px">
       <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:.4px">Card<span style="color:#8fd3b4">Crest</span></span>
     </td></tr>
-    <tr><td style="padding:30px 28px 8px">
-      <div style="color:#17a06a;font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase">Share &amp; Earn</div>
-      <h1 style="margin:8px 0 10px;color:#0b1f17;font-size:24px;line-height:1.25;font-weight:700">${esc(opts.title)}</h1>
-      <p style="margin:0;color:#3a4a42;font-size:15px;line-height:1.6">${esc(opts.intro)}</p>
+    <tr><td align="center" style="background:#e8f5ee;padding:0;line-height:0">
+      <img src="${esc(m.gif)}" width="480" height="190" alt="A happy smiley celebrating with confetti" style="display:block;width:100%;max-width:480px;height:auto;border:0">
+    </td></tr>
+    <tr><td style="padding:28px 28px 8px">
+      <div style="color:#17a06a;font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase">${esc(m.eyebrow)}</div>
+      <h1 style="margin:8px 0 10px;color:#0b1f17;font-size:24px;line-height:1.25;font-weight:700">${esc(m.title)}</h1>
+      <p style="margin:0;color:#3a4a42;font-size:15px;line-height:1.6">${esc(m.intro)}</p>
     </td></tr>
     <tr><td style="padding:18px 28px 6px">
       <div style="background:#f4f7f5;border-radius:12px;padding:6px 20px">
-        <div style="padding:14px 0 4px;color:#0b1f17;font-size:16px;font-weight:700">${esc(opts.headline)}</div>
+        <div style="padding:14px 0 4px;color:#0b1f17;font-size:16px;font-weight:700">${esc(m.headline)}</div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
       </div>
     </td></tr>
+    ${steps ? `<tr><td style="padding:18px 28px 0"><div style="color:#0b1f17;font-size:15px;font-weight:700;margin-bottom:6px">What happens next</div>
+      <table role="presentation" cellpadding="0" cellspacing="0">${steps}</table></td></tr>` : ""}
     <tr><td style="padding:22px 28px 8px" align="left">
-      <a href="${esc(opts.link)}" style="display:inline-block;background:#0e5c3c;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 30px;border-radius:30px">View the request</a>
-      <p style="margin:14px 0 0;color:#6c7b73;font-size:13px;line-height:1.5">The first cardholder to accept gets the request. Open Card Crest, check the details and accept it with your own card.</p>
+      <a href="${esc(m.link)}" style="display:inline-block;background:#0e5c3c;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 30px;border-radius:30px">${esc(m.button)}</a>
+      <p style="margin:14px 0 0;color:#6c7b73;font-size:13px;line-height:1.5">${esc(m.note)}</p>
     </td></tr>
     <tr><td style="padding:22px 28px 26px">
       <div style="border-top:1px solid #e6ece8;padding-top:18px;color:#6c7b73;font-size:12px;line-height:1.6">
         <strong style="color:#3a4a42">Stay safe.</strong> Card Crest never asks for your card number, CVV, PIN or OTP. Never share personal or contact details with anyone.<br><br>
-        You receive this email because you turned on "Email me new requests". You can turn it off any time on the Earn page of your account.<br><br>
-        Card Crest, Bengaluru, India &middot; <a href="${esc(opts.site)}" style="color:#0e5c3c;text-decoration:none">Visit Card Crest</a>
+        ${esc(m.reason)}<br><br>
+        Card Crest, Bengaluru, India &middot; <a href="${esc(m.site)}" style="color:#0e5c3c;text-decoration:none">Visit Card Crest</a>
       </div>
     </td></tr>
   </table>
 </td></tr></table></body></html>`;
-  const text = `${opts.title}\n\n${opts.intro}\n\n${opts.headline}\n` +
-    opts.lines.map(([k, v]) => `${k}: ${v}`).join("\n") +
-    `\n\nView the request: ${opts.link}\n\nStay safe: Card Crest never asks for your card number, CVV, PIN or OTP. ` +
-    `You receive this email because you turned on "Email me new requests". You can turn it off any time on the Earn page.`;
+  const text = `${m.title}\n\n${m.intro}\n\n${m.headline}\n` + m.lines.map(([k, v]) => `${k}: ${v}`).join("\n") +
+    ((m.steps || []).length ? "\n\nWhat happens next:\n" + (m.steps || []).map((s, i) => `${i + 1}. ${s}`).join("\n") : "") +
+    `\n\n${m.button}: ${m.link}\n\n${m.note}\n\nStay safe: Card Crest never asks for your card number, CVV, PIN or OTP.\n${m.reason}`;
   return { html, text };
 }
 
@@ -133,15 +169,47 @@ Deno.serve(async (req) => {
     }
 
     const site = (Deno.env.get("SITE_URL") || "").replace(/\/?$/, "/");
-    const link = site + "#/market/earn";
-    const sum = request ? summarise(request) : { headline: row.title, lines: [] as Line[] };
-    const subject = request && sum.lines.find((l) => l[0] === "You would earn")
-      ? `New request: ${sum.headline.toLowerCase().replace(/^./, (c) => c.toUpperCase())}. Earn ${sum.lines.find((l) => l[0] === "You would earn")![1]}`
-      : row.title;
-    const intro = request
-      ? "A new request matches one of your cards. Here are the details."
-      : String(row.body || "");
-    const mail = render({ title: "New request you can fulfil", headline: sum.headline, intro, lines: sum.lines, link, site });
+    const gif = site + "assets/email/happy-payment.gif";
+    const reason = 'You receive this email because you turned on "Email me alerts". You can turn it off any time on the Earn page of your account.';
+    let subject = String(row.title || "Card Crest update");
+    let mail;
+
+    if (row.title === "Payment held safely") {
+      // the buyer's confirmation
+      const sum = summariseBuyer(request);
+      const amount = request?.fee_snapshot?.total;
+      subject = amount != null ? `Your payment of ${rupees(amount)} is held safely` : "Your payment is held safely";
+      mail = render({
+        eyebrow: "Payment confirmed", title: "Your payment is held safely",
+        intro: amount != null
+          ? `Thank you. We have received your payment of ${rupees(amount)} and are holding it securely until your request is completed.`
+          : "Thank you. We have received your payment and are holding it securely until your request is completed.",
+        headline: sum.headline, lines: sum.lines,
+        steps: [
+          "A cardholder whose card fits your request accepts it. The first to accept gets it.",
+          "They complete it with their own card and upload proof.",
+          "You check the proof and confirm. Only then is the money released to them.",
+        ],
+        button: "Track your request", link: site + "#/market/requests",
+        note: "If nobody accepts before the time shown, your payment is refunded to you in full, automatically.",
+        reason, site, gif,
+      });
+    } else {
+      // a new request for a cardholder
+      const sum = request ? summarise(request) : { headline: row.title, lines: [] as Line[] };
+      const earn = sum.lines.find((l) => l[0] === "You would earn");
+      subject = request && earn
+        ? `New request: ${sum.headline.replace(/^./, (c) => c.toUpperCase())}. Earn ${earn[1]}`
+        : String(row.title);
+      mail = render({
+        eyebrow: "Share & Earn", title: "New request you can fulfil",
+        intro: request ? "A new request matches one of your cards. Here are the details." : String(row.body || ""),
+        headline: sum.headline, lines: sum.lines,
+        button: "View the request", link: site + "#/market/earn",
+        note: "The first cardholder to accept gets the request. Open Card Crest, check the details and accept it with your own card.",
+        reason, site, gif,
+      });
+    }
 
     const user_ = Deno.env.get("SMTP_USER") || Deno.env.get("GMAIL_USER")!;
     const pass_ = Deno.env.get("SMTP_PASSWORD") || Deno.env.get("GMAIL_APP_PASSWORD")!;
