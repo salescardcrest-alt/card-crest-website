@@ -19,7 +19,91 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
-const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+const esc = (s: unknown) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+const rupees = (n: unknown) => "₹" + new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(Number(n) || 0);
+const when = (iso?: string) => {
+  if (!iso) return "";
+  try {
+    return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(iso)) + " IST";
+  } catch { return ""; }
+};
+
+type Line = [string, string];
+
+/** A plain-language summary of the request, in sentence case. */
+function summarise(r: any): { headline: string; lines: Line[] } {
+  const d = r?.details || {}, s = r?.fee_snapshot || {};
+  const lines: Line[] = [];
+  let headline = "A new request matches one of your cards";
+  if (r?.module === "LOUNGE") {
+    const kind = d.type === "INTERNATIONAL" ? "International" : "Domestic";
+    headline = `${kind} lounge access at ${d.airport || "an airport"}`;
+    lines.push(["Service", `${kind} lounge access`]);
+    lines.push(["Airport", `${d.airport || ""}${d.terminal ? ", " + d.terminal : ""}`]);
+    if (d.dateTime) lines.push(["Visit time", when(d.dateTime)]);
+  } else if (r?.module === "MOVIE") {
+    headline = `Movie offer: ${d.movie || "a movie"}`;
+    lines.push(["Service", d.offer === "BOGO" ? "Buy one, get one" : "₹500 off on 2 seats"]);
+    if (d.theatre) lines.push(["Theatre", `${d.theatre}${d.city ? ", " + d.city : ""}`]);
+    if (d.showTime) lines.push(["Show time", when(d.showTime)]);
+  } else if (r?.module === "ORDER") {
+    headline = `Order & Earn on ${d.platform || "a shopping site"}`;
+    lines.push(["Service", "Order & Earn"]);
+    lines.push(["Shop", d.platform || ""]);
+    if (d.offerWanted) lines.push(["Card offer needed", d.offerWanted]);
+  } else if (r?.module === "PAY") {
+    headline = `Pay & Earn on ${d.platform || "a shopping site"}`;
+    lines.push(["Service", "Pay & Earn"]);
+    lines.push(["Shop", d.platform || ""]);
+    if (d.offerWanted) lines.push(["Card offer needed", d.offerWanted]);
+  }
+  if (s.holderFee != null) lines.push(["You would earn", rupees(s.holderFee)]);
+  if (Number(s.reimbursement) > 0) lines.push(["Reimbursed to you", rupees(s.reimbursement) + " after the order"]);
+  if (r?.accept_by) lines.push(["Accept before", when(r.accept_by)]);
+  return { headline, lines: lines.filter((l) => l[1]) };
+}
+
+function render(opts: { title: string; headline: string; intro: string; lines: Line[]; link: string; site: string }) {
+  const rows = opts.lines.map(([k, v], i) =>
+    `<tr><td style="padding:12px 0;${i ? "border-top:1px solid #e6ece8;" : ""}color:#6c7b73;font-size:14px;width:42%">${esc(k)}</td>` +
+    `<td style="padding:12px 0;${i ? "border-top:1px solid #e6ece8;" : ""}color:#0b1f17;font-size:14px;font-weight:600;text-align:right">${esc(v)}</td></tr>`).join("");
+  const html = `<!doctype html><html><body style="margin:0;padding:0;background:#f4f7f5;font-family:Arial,Helvetica,sans-serif">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(opts.intro)}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7f5;padding:24px 12px"><tr><td align="center">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e6ece8">
+    <tr><td style="background:#0e5c3c;padding:20px 28px">
+      <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:.4px">Card<span style="color:#8fd3b4">Crest</span></span>
+    </td></tr>
+    <tr><td style="padding:30px 28px 8px">
+      <div style="color:#17a06a;font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase">Share &amp; Earn</div>
+      <h1 style="margin:8px 0 10px;color:#0b1f17;font-size:24px;line-height:1.25;font-weight:700">${esc(opts.title)}</h1>
+      <p style="margin:0;color:#3a4a42;font-size:15px;line-height:1.6">${esc(opts.intro)}</p>
+    </td></tr>
+    <tr><td style="padding:18px 28px 6px">
+      <div style="background:#f4f7f5;border-radius:12px;padding:6px 20px">
+        <div style="padding:14px 0 4px;color:#0b1f17;font-size:16px;font-weight:700">${esc(opts.headline)}</div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
+      </div>
+    </td></tr>
+    <tr><td style="padding:22px 28px 8px" align="left">
+      <a href="${esc(opts.link)}" style="display:inline-block;background:#0e5c3c;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 30px;border-radius:30px">View the request</a>
+      <p style="margin:14px 0 0;color:#6c7b73;font-size:13px;line-height:1.5">The first cardholder to accept gets the request. Open Card Crest, check the details and accept it with your own card.</p>
+    </td></tr>
+    <tr><td style="padding:22px 28px 26px">
+      <div style="border-top:1px solid #e6ece8;padding-top:18px;color:#6c7b73;font-size:12px;line-height:1.6">
+        <strong style="color:#3a4a42">Stay safe.</strong> Card Crest never asks for your card number, CVV, PIN or OTP. Never share personal or contact details with anyone.<br><br>
+        You receive this email because you turned on "Email me new requests". You can turn it off any time on the Earn page of your account.<br><br>
+        Card Crest, Bengaluru, India &middot; <a href="${esc(opts.site)}" style="color:#0e5c3c;text-decoration:none">Visit Card Crest</a>
+      </div>
+    </td></tr>
+  </table>
+</td></tr></table></body></html>`;
+  const text = `${opts.title}\n\n${opts.intro}\n\n${opts.headline}\n` +
+    opts.lines.map(([k, v]) => `${k}: ${v}`).join("\n") +
+    `\n\nView the request: ${opts.link}\n\nStay safe: Card Crest never asks for your card number, CVV, PIN or OTP. ` +
+    `You receive this email because you turned on "Email me new requests". You can turn it off any time on the Earn page.`;
+  return { html, text };
+}
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("POST only", { status: 405 });
@@ -41,14 +125,23 @@ Deno.serve(async (req) => {
     const to = user?.user?.email;
     if (error || !to) { await mark("FAILED"); return new Response("no address", { status: 200 }); }
 
+    // the request behind the alert, to write a clear summary
+    let request: any = null;
+    if (row.request_id) {
+      const { data } = await admin.from("mk_requests").select("module, details, fee_snapshot, accept_by").eq("id", row.request_id).maybeSingle();
+      request = data;
+    }
+
     const site = (Deno.env.get("SITE_URL") || "").replace(/\/?$/, "/");
     const link = site + "#/market/earn";
-    const html = `<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;color:#0b1f17">
-      <h2 style="margin:0 0 12px">${esc(row.title)}</h2>
-      <p style="font-size:15px;line-height:1.5">${esc(row.body)}</p>
-      <p><a href="${link}" style="display:inline-block;background:#0e5c3c;color:#fff;text-decoration:none;padding:12px 22px;border-radius:30px;font-weight:bold">See the request</a></p>
-      <p style="font-size:12px;color:#6c7b73">You get this because you switched on "Email me new requests" on Card Crest. You can switch it off on the Earn page.
-      Card Crest never asks for your card number, CVV or OTP.</p></div>`;
+    const sum = request ? summarise(request) : { headline: row.title, lines: [] as Line[] };
+    const subject = request && sum.lines.find((l) => l[0] === "You would earn")
+      ? `New request: ${sum.headline.toLowerCase().replace(/^./, (c) => c.toUpperCase())}. Earn ${sum.lines.find((l) => l[0] === "You would earn")![1]}`
+      : row.title;
+    const intro = request
+      ? "A new request matches one of your cards. Here are the details."
+      : String(row.body || "");
+    const mail = render({ title: "New request you can fulfil", headline: sum.headline, intro, lines: sum.lines, link, site });
 
     const user_ = Deno.env.get("SMTP_USER") || Deno.env.get("GMAIL_USER")!;
     const pass_ = Deno.env.get("SMTP_PASSWORD") || Deno.env.get("GMAIL_APP_PASSWORD")!;
@@ -57,7 +150,7 @@ Deno.serve(async (req) => {
     const smtp = new SMTPClient({
       connection: { hostname: host_, port: port_, tls: port_ === 465, auth: { username: user_, password: pass_ } },
     });
-    await smtp.send({ from: `Card Crest <${user_}>`, to, subject: row.title, content: row.body, html });
+    await smtp.send({ from: `Card Crest <${user_}>`, to, subject, content: mail.text, html: mail.html });
     await smtp.close();
     await mark("SENT");
     return new Response("sent", { status: 200 });

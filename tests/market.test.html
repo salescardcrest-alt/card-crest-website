@@ -464,6 +464,12 @@
     await paid('ORDER', orderD());
     eq(mails(), 1, 'switching it off stops the emails');
   });
+  test('email alerts are only for new requests, not for every update', async function () {
+    resetWorld();
+    await C('setEmailAlerts', { on: true }, BUYER);
+    await paid('ORDER', orderD());                 // the buyer gets "Payment held safely": an update, not a new request
+    eq(S.get('mkOutbox').filter(function (o) { return o.userId === BUYER && o.channel === 'email'; }).length, 0, 'no email for updates');
+  });
   test('live alerts: a cardholder who steps back re-alerts the others but not themselves', async function () {
     resetWorld();
     S.get('mkCards').push({ id: 'mkc-r3', ownerId: 'u-003', bank: 'axis', variant: 'Magnus', active: true, benefits: [{ kind: 'LOUNGE_DOM', program: 'Visa', quota: 4, airports: ['ANY'] }] });

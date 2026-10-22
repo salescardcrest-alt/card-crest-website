@@ -727,6 +727,7 @@ create or replace function public.mk_money(n numeric) returns text language sql 
 $$;
 
 -- in-app notification + queued email and WhatsApp
+-- Email goes only for new-request alerts (mk_notify_open below), not for every update.
 create or replace function public.mk_notify(uid uuid, title text, body text, rid uuid default null)
 returns void language plpgsql security definer set search_path = public as $$
 begin
@@ -735,8 +736,6 @@ begin
   values ('ntf-' || replace(gen_random_uuid()::text, '-', ''), uid, 'market', title, body);
   insert into public.mk_outbox (user_id, channel, title, body, request_id)
   values (uid, 'whatsapp', title, body, rid);
-  insert into public.mk_outbox (user_id, channel, title, body, request_id)
-  select uid, 'email', title, body, rid where exists (select 1 from public.mk_member m where m.user_id = uid and m.email_alerts);
 end $$;
 
 create or replace function public.mk_recalc_member(uid uuid)
