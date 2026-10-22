@@ -1,0 +1,68 @@
+<!doctype html><meta charset="utf-8"><title>responsive audit</title>
+<body style="margin:0"><pre id="out"></pre><div id="host" style="position:absolute; left:0; top:0; opacity:0; pointer-events:none"></div>
+<script>
+/* Loads each route in an iframe of a given width and reports horizontal overflow and the elements that cause it. */
+var WIDTHS = (new URLSearchParams(location.search).get('w') || '320,360,390,768,1024,1366,1920').split(',').map(Number);
+var ROUTES = (new URLSearchParams(location.search).get('r') || '').split(',').filter(Boolean);
+var ADMIN = new URLSearchParams(location.search).get('admin') === '1';
+var DEFAULT_ROUTES = ['#/', '#/cards', '#/cards/hdfc-millennia', '#/compare', '#/eligibility', '#/calculator', '#/offers', '#/stores', '#/rewards', '#/refer',
+  '#/dashboard', '#/dashboard/applications', '#/dashboard/transactions', '#/dashboard/notifications', '#/profile', '#/login', '#/signup', '#/help', '#/how-it-works',
+  '#/legal/privacy', '#/apply-earn', '#/market', '#/market/new/ORDER', '#/market/new/PAY', '#/market/new/LOUNGE', '#/market/new/MOVIE', '#/market/requests', '#/market/earn', '#/market/cards', '#/market/wallet'];
+var ADMIN_ROUTES = ['#/admin', '#/admin/users', '#/admin/cards', '#/admin/stores', '#/admin/transactions', '#/admin/applications', '#/admin/approvals', '#/admin/revenue', '#/admin/market'];
+var list = ROUTES.length ? ROUTES : (ADMIN ? ADMIN_ROUTES : DEFAULT_ROUTES);
+var out = document.getElementById('out'), host = document.getElementById('host');
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function sel(el) {
+  var s = el.tagName.toLowerCase();
+  if (el.id) s += '#' + el.id;
+  if (el.className && typeof el.className === 'string') s += '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.');
+  return s;
+}
+async function check(width, route) {
+  var f = document.createElement('iframe');
+  f.style.cssText = 'width:' + width + 'px; height:900px; border:0; position:absolute; left:0; top:0';
+  host.appendChild(f);
+  f.src = '../index.html?demo=1&x=' + Math.random() + route;
+  await new Promise(function (r) { f.onload = r; });
+  var win = f.contentWindow, t0 = Date.now();
+  while (Date.now() - t0 < 6000) { try { if (win.CC && win.CC.Router && win.document.getElementById('view') && win.document.getElementById('view').children.length) break; } catch (e) {} await sleep(100); }
+  if (ADMIN) { try { win.CC.Store.set('session', 'u-000'); win.CC.App.paintAuth(); win.location.hash = '#/x'; await sleep(50); win.location.hash = route; } catch (e) {} }
+  else { try { if (win.CC.Store.get('session') !== 'u-001') { win.CC.Store.set('session', 'u-001'); win.CC.App.paintAuth(); win.location.hash = '#/x'; await sleep(50); win.location.hash = route; } } catch (e) {} }
+  await sleep(500);
+  var d = win.document, de = d.documentElement, res = { width: width, route: route, over: 0, bad: [] };
+  res.over = de.scrollWidth - de.clientWidth;
+  if (res.over > 1) {
+    var vw = de.clientWidth, seen = {};
+    d.querySelectorAll('body *').forEach(function (el) {
+      var r = el.getBoundingClientRect();
+      if (r.width && (r.right > vw + 1 || r.left < -1)) {
+        var cs = win.getComputedStyle(el);
+        if (cs.position === 'fixed' && cs.display === 'none') return;
+        var k = sel(el); if (!seen[k] && res.bad.length < 5) { seen[k] = 1; res.bad.push(k + ' [' + Math.round(r.left) + '..' + Math.round(r.right) + ']'); }
+      }
+    });
+  }
+  // text/controls that are clipped or tiny tap targets are reported separately
+  var small = 0;
+  if (width <= 768) d.querySelectorAll('a.btn, button.btn, .tab-main a, input, select').forEach(function (el) {
+    var r = el.getBoundingClientRect(); if (r.width && r.height && r.height < 32 && getComputedStyle(el).visibility !== 'hidden' && getComputedStyle(el).display !== 'none') small++;
+  });
+  res.small = small;
+  var errv = d.getElementById('view') && /could not load/i.test(d.getElementById('view').innerText);
+  if (errv) res.error = true;
+  host.removeChild(f);
+  return res;
+}
+(async function () {
+  var lines = [], bad = 0;
+  for (var i = 0; i < list.length; i++) {
+    for (var j = 0; j < WIDTHS.length; j++) {
+      try {
+        var r = await check(WIDTHS[j], list[i]);
+        if (r.over > 1 || r.error) { bad++; lines.push('OVERFLOW ' + r.width + 'px ' + r.route + ' +' + r.over + 'px' + (r.error ? ' PAGE ERROR' : '') + '  ' + r.bad.join(' | ')); }
+      } catch (e) { lines.push('ERR ' + WIDTHS[j] + ' ' + list[i] + ' ' + e.message); }
+    }
+  }
+  out.textContent = lines.join('\n') + '\nDONE ' + bad + ' problems in ' + (list.length * WIDTHS.length) + ' checks';
+})();
+</script>

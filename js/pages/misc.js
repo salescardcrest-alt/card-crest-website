@@ -43,7 +43,7 @@
         '<div class="panel" id="contact"><h2 class="h2" style="margin-bottom:8px">Raise a ticket</h2>' +
         '<p class="muted small" style="margin-bottom:22px">Tell us what happened and we will pick it up. If it is about a specific transaction, include the reference from your transactions page.</p>' +
         '<form id="ticketForm" novalidate><div class="form-grid" style="margin-bottom:16px">' +
-        '<div class="field"><label for="t-name">Your name</label><input id="t-name" type="text" value="' + UI.esc(u ? u.name : '') + '"><span class="err">Tell us who you are.</span></div>' +
+        '<div class="field"><label for="t-name">Your name</label><input id="t-name" data-name type="text" value="' + UI.esc(u ? u.name : '') + '"><span class="err">Tell us who you are.</span></div>' +
         '<div class="field"><label for="t-email">Email address</label><input id="t-email" type="email" value="' + UI.esc(u ? u.email : '') + '"><span class="err">We need somewhere to reply.</span></div>' +
         '</div>' +
         '<div class="field" style="margin-bottom:16px"><label for="t-cat">What is it about?</label><select id="t-cat">' +
@@ -89,7 +89,7 @@
           });
           if (bad) return;
           var t = SP.create({
-            userId: u ? u.id : null, name: name.value.trim(), email: email.value.trim(),
+            userId: u ? u.id : null, name: UI.titleCase(name.value).trim(), email: email.value.trim(),
             category: root.querySelector('#t-cat').value, message: msg.value.trim()
           });
           UI.modal({
@@ -175,6 +175,7 @@
       ['Why we collect it', 'To estimate your eligibility, rank cards against the way you spend, track cashback back to your account and pay out rewards. We do not sell personal data.'],
       ['Who we share it with', 'When you apply for a card, the details you have entered go to the issuing bank so they can process the application. Merchants receive an anonymous tracking identifier, never your name or contact details.'],
       ['Credit information', 'Card Crest does not pull your credit report. Eligibility results are estimates calculated from what you tell us. A bank makes a hard enquiry only when you submit a real application to them.'],
+      ['How we protect it', 'Connections use HTTPS. Sign-in and passwords are handled by a secure authentication service, and database rules let each person read only their own records. We never ask for or store card numbers, CVV, PINs or OTPs, and we do not sell personal data.'],
       ['Your choices', 'You can edit or delete your profile details at any time from your settings. In this demo build all data sits in your own browser and never leaves your device.']
     ]],
     terms: ['Terms of use', [
@@ -185,6 +186,7 @@
       ['Your account', 'Keep your login details to yourself. You are responsible for activity on your account. We may suspend an account we reasonably believe is being used fraudulently.']
     ]],
     disclaimer: ['Disclaimer', [
+      ['Your data is safe with us', 'We protect your information with encrypted connections (HTTPS), password protection handled by a secure sign-in service, and database rules that let each person see only their own records. Card Crest never asks for, or stores, your card number, CVV, PIN or OTP, and we do not sell your personal data. We work hard to keep your data safe, but no website or online service can promise absolute security, so please keep your password private and never share card or contact details with anyone, including in chat.'],
       ['Estimates, not guarantees', 'Card Value Scores, reward projections, eligibility percentages and net value figures are produced by our own model. They are estimates. Nothing on Card Crest is a guarantee of approval, of cashback, of a credit limit or of any financial outcome.'],
       ['Card details change', 'Banks revise fees, reward rates and benefits regularly, sometimes at short notice. Always confirm the current terms on the bank\'s own website before applying.'],
       ['Not financial advice', 'Card Crest provides information and comparison tools. It does not provide financial, tax or legal advice, and does not take your full circumstances into account. Consider getting independent advice before taking on credit.'],

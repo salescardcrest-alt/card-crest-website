@@ -189,8 +189,8 @@ input[type=range]{width:100%; height:auto; padding:0; accent-color:var(--crest);
 .pw-wrap{position:relative}
 .pw-wrap input{padding-right:60px}
 .pw-toggle{position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:0; font-size:.78rem; font-weight:600; color:var(--crest); cursor:pointer}
-.check{display:flex; align-items:flex-start; gap:9px; font-size:.88rem; cursor:pointer; color:var(--ink-2)}
-.check input{width:17px; height:17px; accent-color:var(--crest); margin-top:2px; flex-shrink:0}
+.check{display:block; position:relative; padding-left:27px; font-size:.88rem; line-height:1.5; cursor:pointer; color:var(--ink-2)}   /* the sentence flows as one piece of text, so links and words never spread apart */
+.check input{position:absolute; left:0; top:3px; width:17px; height:17px; margin:0; accent-color:var(--crest)}
 .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px}
 
 /* ---------- tables ---------- */
@@ -365,3 +365,13 @@ table.tbl{width:100%; border-collapse:collapse; font-size:.89rem}
 .pwm__list li::before{content:"" !important; width:18px; height:18px; border-radius:50%; border:2px solid var(--line); flex:none; display:inline-block; transition:all .2s}
 .pwm__list li.is-ok{color:#12804f !important; font-weight:600}
 .pwm__list li.is-ok::before{content:"✓" !important; background:#1fa971; border-color:#1fa971; color:#fff; font-size:.7rem; line-height:14px; text-align:center; font-weight:800}
+
+/* "Turn on notifications?" card */
+.notif-ask{position:fixed; right:20px; bottom:24px; z-index:190; width:min(380px, calc(100vw - 32px)); display:grid; grid-template-columns:auto 1fr; gap:6px 12px; align-items:start;
+  background:#fff; border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--sh-3); padding:16px; animation:toastIn .3s cubic-bezier(.2,.7,.3,1)}
+.notif-ask__ico{font-size:1.5rem; line-height:1; width:42px; height:42px; display:grid; place-items:center; border-radius:12px; background:var(--mint)}
+.notif-ask__t{display:grid; gap:3px; min-width:0}
+.notif-ask__t strong{font-size:.98rem}
+.notif-ask__t span{font-size:.84rem; color:var(--ink-2); line-height:1.45}
+.notif-ask__b{grid-column:1 / -1; display:flex; gap:10px; justify-content:flex-end; margin-top:6px}
+@media (max-width:768px){ .notif-ask{left:16px; right:16px; width:auto; bottom:78px} }

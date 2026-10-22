@@ -164,7 +164,7 @@
 
       (u ? '<div class="grid g-3" style="margin-bottom:28px">' +
         '<div class="stat"><span class="stat__k">Your active requests</span><span class="stat__v">' + active + '</span><span class="stat__sub"><a href="#/market/requests">View all</a></span></div>' +
-        '<div class="stat"><span class="stat__k">Jobs you are doing</span><span class="stat__v">' + jobs + '</span><span class="stat__sub"><a href="#/market/earn">Open requests</a></span></div>' +
+        '<div class="stat"><span class="stat__k">Tasks you are doing</span><span class="stat__v">' + jobs + '</span><span class="stat__sub"><a href="#/market/earn">Open requests</a></span></div>' +
         '<div class="stat stat--accent"><span class="stat__k">Wallet available</span><span class="stat__v">' + money(M.wallet(u.id).available) + '</span><span class="stat__sub">Trust score ' + M.trust(u.id) + ' / 100</span></div>' +
         '</div>' : '') +
 
@@ -244,7 +244,7 @@
         '<div class="form-grid">' + field('f-terminal', 'Terminal', '<select id="f-terminal"></select><input id="f-terminalx" placeholder="e.g. T3 or Terminal 1" maxlength="20" autocomplete="off" hidden>') +
         field('f-date', 'Flight date and time', '<input id="f-date" type="datetime-local" min="' + nowLocalMin(2) + '">', 'At least 2 hours from now.') + '</div>' +
         '<div class="form-grid">' + field('f-flight', 'Flight number', '<input id="f-flight" placeholder="AI 101" maxlength="8" autocomplete="off">') +
-        field('f-guest', 'Name as per ID', '<input id="f-guest" placeholder="As on your boarding pass" autocomplete="name">') + '</div>';
+        field('f-guest', 'Name as per ID', '<input id="f-guest" data-name placeholder="As on your boarding pass" autocomplete="name">') + '</div>';
     },
     MOVIE: function () {
       return field('f-offer', 'Offer', '<select id="f-offer"><option value="FLAT_500_OFF_2_SEATS">₹500 off on 2 seats</option><option value="BOGO">Buy one get one</option></select>') +
@@ -266,7 +266,7 @@
         field('f-exp', pay ? 'Amount to pay on that page (₹)' : 'Price after the card offer (₹)', '<input id="f-exp" type="number" min="1" max="200000" inputmode="decimal">', 'Must be less than the listed price.') + '</div>' +
         field('f-offer', 'Card offer you want', '<input id="f-offer" placeholder="10% instant discount on HDFC credit cards">') +
         field('f-bank', 'Card', '<select id="f-bank">' + bankOptions() + '</select>') +
-        (pay ? '' : '<h3 class="h3" style="margin:6px 0 10px">Delivery address</h3><div class="form-grid">' + field('f-an', 'Full name', '<input id="f-an" autocomplete="name">') + field('f-apin', 'PIN code', '<input id="f-apin" maxlength="6" inputmode="numeric" autocomplete="postal-code">') + '</div>' +
+        (pay ? '' : '<h3 class="h3" style="margin:6px 0 10px">Delivery address</h3><div class="form-grid">' + field('f-an', 'Full name', '<input id="f-an" data-name autocomplete="name">') + field('f-apin', 'PIN code', '<input id="f-apin" maxlength="6" inputmode="numeric" autocomplete="postal-code">') + '</div>' +
           field('f-aline', 'Address', '<input id="f-aline" autocomplete="street-address" placeholder="House, street, area">') + field('f-acity', 'City', '<input id="f-acity" autocomplete="address-level2">') +
           '<p class="muted small">Only the cardholder who accepts your request sees the address.</p>');
     }
@@ -294,14 +294,14 @@
 
         function collect() {
           if (module === 'LOUNGE') {
-            return { type: type, airport: $('f-airport').value, terminal: type === 'INTERNATIONAL' ? $('f-terminalx').value : $('f-terminal').value, dateTime: $('f-date').value, flight: $('f-flight').value, guestName: $('f-guest').value };
+            return { type: type, airport: $('f-airport').value, terminal: type === 'INTERNATIONAL' ? $('f-terminalx').value : $('f-terminal').value, dateTime: $('f-date').value, flight: $('f-flight').value, guestName: UI.titleCase($('f-guest').value).trim() };
           }
           if (module === 'MOVIE') {
             return { offer: $('f-offer').value, movie: $('f-movie').value, theatre: $('f-theatre').value, city: $('f-city').value, showTime: $('f-show').value,
               seats: $('f-seats').value, seatCount: Number($('f-count').value), ticketTotal: Number($('f-total').value), platform: $('f-plat').value, bank: $('f-bank').value };
           }
           var o = { url: module === 'ORDER' ? $('f-url').value : '', platform: $('f-plat').value, listPrice: Number($('f-list').value), expectedPrice: Number($('f-exp').value), offerWanted: $('f-offer').value, bank: $('f-bank').value };
-          if (module === 'ORDER') o.address = { name: $('f-an').value, line: $('f-aline').value, city: $('f-acity').value, pin: $('f-apin').value };
+          if (module === 'ORDER') o.address = { name: UI.titleCase($('f-an').value).trim(), line: $('f-aline').value, city: $('f-acity').value, pin: $('f-apin').value };
           if (module === 'PAY') o.payUrl = $('f-pay').value;
           return o;
         }
@@ -439,14 +439,14 @@
       }).join('') + '</div>' : UI.empty('No open requests right now', 'New ones appear here as buyers pay. Check back soon.');
 
     var inner = '<div class="section__head"><h1 class="h1">Earn with my card</h1><p class="lede">Pick up requests your cards can fulfil. You pay with your own card, get reimbursed, and earn the service fee.</p></div>' +
-      '<div class="mk-live"><span class="mk-live__dot" aria-hidden="true"></span><div class="mk-live__t"><strong>Live alerts are on.</strong> You are told the moment someone needs a service one of your cards can do, with no refresh needed.</div><div class="row row--wrap" style="gap:8px"><button class="btn btn--ghost btn--xs" id="soundBtn"></button><button class="btn btn--soft btn--xs" id="alertBtn" hidden>Get desktop alerts</button></div></div>' +
+      '<div class="mk-live"><span class="mk-live__dot" aria-hidden="true"></span><div class="mk-live__t"><strong>Live alerts are on.</strong> You are told the moment someone needs a service one of your cards can do, with no refresh needed.</div><div class="row row--wrap" style="gap:8px"><button class="btn btn--ghost btn--xs" id="soundBtn"></button><button class="btn btn--soft btn--xs" id="alertBtn" hidden>Get desktop alerts</button><button class="btn btn--soft btn--xs" id="emailBtn" type="button"></button></div></div>' +
       '<div class="grid g-3" style="margin-bottom:24px">' +
       '<div class="stat stat--accent"><span class="stat__k">Wallet available</span><span class="stat__v">' + money(wal.available) + '</span><span class="stat__sub">' + money(wal.pending) + ' on the way</span></div>' +
       '<div class="stat"><span class="stat__k">Trust score</span><span class="stat__v">' + M.trust(u.id) + '</span><span class="stat__sub">Rating ' + (M.rating(u.id).count ? M.rating(u.id).avg.toFixed(1) + ' (' + M.rating(u.id).count + ')' : 'none yet') + '</span></div>' +
       '<div class="stat"><span class="stat__k">KYC</span><span class="stat__v" style="font-size:1.2rem">' + (kyc ? kyc.status.charAt(0) + kyc.status.slice(1).toLowerCase() : 'Not started') + '</span><span class="stat__sub"><a href="#/market/wallet">Needed before your first payout</a></span></div></div>' +
       '<div class="tabs"><button class="' + (tab === 'open' ? 'is-on' : '') + '" data-tab="open">Open requests (' + open.filter(function (o) { return o.eligible; }).length + ')</button>' +
-      '<button class="' + (tab === 'jobs' ? 'is-on' : '') + '" data-tab="jobs">My jobs (' + mine.length + ')</button></div>' +
-      (tab === 'open' ? openHtml : requestList(mine, UI.empty('No jobs yet', 'Accepted requests show up here.'), false));
+      '<button class="' + (tab === 'jobs' ? 'is-on' : '') + '" data-tab="jobs">My tasks (' + mine.length + ')</button></div>' +
+      (tab === 'open' ? openHtml : requestList(mine, UI.empty('No tasks yet', 'Accepted requests show up here.'), false));
 
     return {
       title: 'Earn with my card | Share & Earn | Card Crest', html: shell('/market/earn', inner),
@@ -463,6 +463,26 @@
         }
         drawSound(); drawAlert();
         sb.onclick = function () { M.setSound(!M.soundOn()); drawSound(); };
+        /* email alerts: one switch, sent to the address on the account (for example your Gmail) */
+        var eb = root.querySelector('#emailBtn');
+        function drawEmail() {
+          var on = M.emailAlerts(u.id);
+          eb.textContent = on ? 'Email alerts: on' : 'Email me new requests';
+          eb.className = 'btn btn--xs ' + (on ? 'btn--primary' : 'btn--soft');
+          eb.title = 'Sent to ' + u.email;
+        }
+        if (eb) {
+          drawEmail();
+          eb.onclick = function () {
+            var on = !M.emailAlerts(u.id); eb.disabled = true;
+            M.do('setEmailAlerts', { on: on }).then(function (r) {
+              eb.disabled = false;
+              if (!r.ok) return UI.toast(r.error, 'error');
+              UI.toast(on ? 'We will email ' + u.email + ' when a new request comes in' : 'Email alerts are off');
+              drawEmail();
+            });
+          };
+        }
         ab.onclick = function () { M.askAlerts().then(drawAlert); };
         if (M.mode() === 'supabase') {
           var alive = stamp(), tick = setInterval(function () {
@@ -545,7 +565,10 @@
           M.do('saveCard', { id: card && card.id, bank: m.querySelector('#c-bank').value, variant: m.querySelector('#c-var').value, network: m.querySelector('#c-net').value, benefits: benefits }).then(function (r) {
             busy(btn, false);
             if (!r.ok) { var e = m.querySelector('#c-err'); e.textContent = r.error; e.style.display = 'block'; return; }
-            UI.closeModal(); UI.toast(card ? 'Card updated' : 'Card added'); w.CC.Router.refresh();
+            UI.closeModal();
+            var waiting = card ? 0 : M.openFor(Auth.current().id).filter(function (o) { return o.eligible; }).length;
+            UI.toast(card ? 'Card updated' : waiting ? 'Card added. ' + waiting + (waiting === 1 ? ' request is' : ' requests are') + ' waiting for it' : 'Card added');
+            if (waiting) w.CC.Router.go('#/market/earn'); else w.CC.Router.refresh();
           });
         };
       }
@@ -562,10 +585,26 @@
           '<div class="small muted">' + esc(c.network || 'Network not set') + '</div></div><div class="row"><button class="btn btn--ghost btn--xs" data-edit>Edit</button><button class="btn btn--danger btn--xs" data-del>Remove</button></div></div>' +
           '<ul class="mk-ben-list">' + benefitSummary(c) + '</ul></div>';
       }).join('') + '</div>' : UI.empty('No cards added', 'Add a card and the benefits it carries. Lounge visits are tracked per quarter, domestic and international separately.'));
+    /* cards saved from the catalog (Credit cards > Save card) live here too, so there is one place for your cards */
+    var savedList = C.saved(u.id).map(function (sv) { return { sv: sv, card: C.byId(sv.cardId) }; }).filter(function (x) { return x.card; });
+    var savedHtml = '<div class="section__head" style="margin-top:34px"><div><h2 class="h2">Saved from the catalog</h2>' +
+      '<p class="lede">Cards you saved while browsing, up to ' + C.MAX_SAVED + '. <a href="#/cards">Browse credit cards</a></p></div></div>' +
+      (savedList.length ? '<div class="stack">' + savedList.map(function (x) {
+        var b = C.bank(x.card.bank);
+        return '<div class="panel" data-saved="' + x.card.id + '"><div class="spread" style="gap:14px; flex-wrap:wrap"><div><h3 class="h3"><a href="#/cards/' + x.card.id + '">' + esc(x.card.name) + '</a></h3>' +
+          '<div class="small muted">' + esc(b ? b.name : '') + (x.sv.primary ? ' &middot; primary' : '') + '</div></div>' +
+          '<div class="row"><a class="btn btn--ghost btn--xs" href="#/cards/' + x.card.id + '">Benefits</a><button class="btn btn--danger btn--xs" data-unsave>Remove</button></div></div></div>';
+      }).join('') + '</div>' : '<p class="muted">Nothing saved yet. Use "Save card" on any card page.</p>');
+    inner += savedHtml;
     return { title: 'My benefit cards | Share & Earn | Card Crest', html: shell('/market/cards', inner),
       mount: function (root) {
         fresh(root);
         root.querySelector('#addCard').onclick = function () { cardEditor(null); };
+        root.querySelectorAll('[data-saved]').forEach(function (el) {
+          el.querySelector('[data-unsave]').onclick = function () {
+            C.unsave(u.id, el.dataset.saved); UI.toast('Removed from your saved cards'); w.CC.Router.refresh();
+          };
+        });
         root.querySelectorAll('[data-id]').forEach(function (el) {
           el.querySelector('[data-edit]').onclick = function () { cardEditor(M.card(el.dataset.id)); };
           el.querySelector('[data-del]').onclick = function () {
@@ -584,7 +623,7 @@
     var lines = M.ledgerAll().filter(function (e) { return e.account === 'holder:' + u.id; }).sort(function (a, b) { return new Date(b.at) - new Date(a.at); }).slice(0, 15);
     var kycHtml = !kyc || kyc.status === 'REJECTED'
       ? (kyc ? '<div class="note note--warn" style="margin-bottom:12px">Needs changes: ' + esc(kyc.reviewNote || 'please re-submit') + '</div>' : '') +
-        '<div class="form-grid">' + field('k-name', 'Name as on PAN', '<input id="k-name" autocomplete="name" value="' + esc(kyc ? kyc.legalName : u.name) + '">') +
+        '<div class="form-grid">' + field('k-name', 'Name as on PAN', '<input id="k-name" data-name autocomplete="name" value="' + esc(kyc ? kyc.legalName : u.name) + '">') +
         field('k-pan', 'PAN', '<input id="k-pan" maxlength="10" style="text-transform:uppercase" placeholder="ABCDE1234F">') + '</div>' +
         '<div class="form-grid">' + field('k-upi', 'UPI ID for payouts', '<input id="k-upi" placeholder="name@bank">', 'Or fill the bank details below.') + '<div></div></div>' +
         '<div class="form-grid">' + field('k-acct', 'Bank account number', '<input id="k-acct" inputmode="numeric">') + field('k-ifsc', 'IFSC', '<input id="k-ifsc" maxlength="11" style="text-transform:uppercase">') + '</div>' +
@@ -622,7 +661,7 @@
         var kg = root.querySelector('#k-go');
         if (kg) kg.onclick = function () {
           var err = root.querySelector('#k-err'); err.style.display = 'none'; busy(kg, true);
-          M.do('submitKyc', { legalName: root.querySelector('#k-name').value, pan: root.querySelector('#k-pan').value, upi: root.querySelector('#k-upi').value,
+          M.do('submitKyc', { legalName: UI.titleCase(root.querySelector('#k-name').value).trim(), pan: root.querySelector('#k-pan').value, upi: root.querySelector('#k-upi').value,
             account: root.querySelector('#k-acct').value, ifsc: root.querySelector('#k-ifsc').value }).then(function (r) {
             busy(kg, false);
             if (!r.ok) { err.textContent = r.error; err.style.display = 'block'; return; }
@@ -702,6 +741,73 @@
     return '<div class="panel mk-helper"><strong>Test helper</strong><p class="muted small" style="margin:4px 0 10px">Runs only on your own browser. It plays the other side so you can try every step alone.</p><div class="row row--wrap" style="gap:8px">' + btns + '</div></div>';
   }
 
+  /* ---------------- Deal Timeline (cardholder, Order & Earn / Pay & Earn) ---------------- */
+  var DEAL_FAQ = [
+    ['What is Order & Earn? How is it different from Pay & Earn?', 'In Order & Earn you place the whole order on the shopping site with your card offer and it is delivered to the buyer. In Pay & Earn you only complete a payment on a page the buyer shares.'],
+    ['Do I pay from my own money?', 'Yes, you pay on the shop with your own card. The buyer’s payment to Card Crest covers it: you get the amount back plus your earning when the deal completes.'],
+    ['When exactly do I get my money back?', 'After you send proof and the buyer confirms (or it confirms by itself), your reimbursement and earning are released to your wallet.'],
+    ['What if I accept a deal and change my mind?', 'Use Exit deal before you place the order. The request goes back to other cardholders. Stepping back can lower your trust score a little.'],
+    ['How long do I have?', 'The countdown at the top shows the time left to place the order and send proof.']
+  ];
+  function copyRow(label, value) {
+    if (value === undefined || value === null || value === '') return '';
+    return '<div class="deal-copy"><div><span class="deal-copy__k">' + esc(label) + '</span><span class="deal-copy__v">' + esc(value) + '</span></div>' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-copy="' + esc(value) + '" data-label="' + esc(label) + '">Copy</button></div>';
+  }
+  function dealPanel(r, x, s) {
+    var pay = r.module === 'PAY', site = x.platform || 'the shop', st = r.status;
+    var order = ['ACCEPTED', 'FULFILLED', 'CONFIRMED', 'SETTLED'].indexOf(st);
+    var card = r.cardId ? M.card(r.cardId) : null;
+    var confirmH = Number(s.confirmHours || 24);
+    var steps = [
+      ['Deal accepted', 'You took this request. The buyer’s money is held safely.', order >= 0],
+      ['Card selected', card ? bankName(card.bank) + ' ' + (card.variant || '') : 'Your card', order >= 0],
+      [pay ? 'Pay on the payment page' : 'Place the order on ' + site, '', order >= 1],
+      [pay ? 'Enter payment details' : 'Enter order details', '', order >= 1],
+      ['Buyer confirms', st === 'FULFILLED' ? 'Proof sent. The buyer is checking it. It confirms by itself if they do not respond.' : '', order >= 2],
+      ['Payment unlocked', 'About ' + (confirmH >= 48 ? Math.round(confirmH / 24) + ' days' : confirmH + ' hours') + ' after confirmation', st === 'SETTLED']
+    ];
+    var cur = -1; steps.forEach(function (p, i) { if (!p[2] && cur < 0) cur = i; });
+    var tl = '<ul class="deal-tl">' + steps.map(function (p, i) {
+      var body = '';
+      if (i === 2 && st === 'ACCEPTED') {
+        var link = pay ? x.payUrl : x.url;
+        body = '<p class="muted small">' + (pay ? 'Open the payment page and pay exactly ' + money(s.reimbursement) + ' with your own card.' : 'Open ' + esc(site) + ' in a window next to this page. Use your card offer and the address below.') + '</p>' +
+          (link ? '<button type="button" class="btn btn--primary btn--sm" data-open-store="' + esc(link) + '">' + (pay ? 'Open payment page' : 'Open ' + esc(site)) + ' in a window</button>' : '');
+      } else if (i === 3 && st === 'ACCEPTED') {
+        body = '<p class="muted small">When you have ' + (pay ? 'paid' : 'placed the order') + ', add the ' + (pay ? 'payment' : 'order') + ' ID, the amount and a screenshot in <a href="#actions" data-jump>What next</a>.</p>';
+      }
+      var state = p[2] ? 'is-done' : (i === cur ? 'is-now' : '');
+      return '<li class="deal-tl__i ' + state + '"><div class="deal-tl__t">' + esc(p[0]) + '</div>' + (p[1] ? '<div class="deal-tl__d">' + esc(p[1]) + '</div>' : '') + body + '</li>';
+    }).join('') + '</ul>';
+
+    var a = x.address;
+    var addr = (!pay && a) ? '<div class="panel"><h2 class="h3" style="margin-bottom:10px">Delivery address</h2>' +
+      copyRow('Name', a.name) + copyRow('Address', a.line) + copyRow('City', a.city) + copyRow('Pincode', a.pin) +
+      copyRow('Full address', a.name + ', ' + a.line + ', ' + a.city + ' ' + a.pin) + '</div>' : '';
+    var instr = ['Accept only if you can finish within the time shown above.',
+      pay ? 'Pay only on the payment page the buyer shared, and only the amount shown below.' : 'You will place the order on ' + esc(site) + '. The delivery address is below, with Copy buttons.',
+      'Pay with your own card only. Never share your card number, CVV or OTP with anyone, including the buyer.',
+      'Pay the full amount due on your card as usual, so the offer is not reversed.',
+      'The ' + (pay ? 'payment' : 'order') + ' ID you enter must match what you actually placed. A mismatch can lead to cancellation' + (s.penalty ? ' and a penalty of ' + money(s.penalty) : '') + '.',
+      'If something looks wrong, message the buyer in the chat on this page, or contact support.'];
+    return '<div class="deal">' +
+      '<div class="panel"><div class="spread" style="gap:12px; flex-wrap:wrap; margin-bottom:14px"><h2 class="h3">Deal Timeline</h2>' +
+      (st === 'ACCEPTED' && r.fulfilBy ? '<div class="deal-timer"><span class="deal-timer__t" data-deadline="' + esc(r.fulfilBy) + '">--:--</span><span class="deal-timer__l">' + (pay ? 'To pay' : 'To enter order details') + '</span></div>' : '') + '</div>' + tl + '</div>' +
+      addr +
+      '<div class="panel"><h2 class="h3" style="margin-bottom:10px">Instructions</h2><ul class="deal-bullets">' + instr.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul></div>' +
+      '<div class="panel"><h2 class="h3" style="margin-bottom:10px">Payment details</h2>' +
+        '<div class="deal-line"><span>' + (pay ? 'Amount to pay' : 'Price to pay') + '</span><strong class="deal-big">' + money(s.reimbursement) + '</strong></div>' +
+        '<div class="deal-get"><span>Amount you get</span><strong>' + money(Number(s.reimbursement) + Number(s.holderFee)) + '</strong></div>' +
+        row('Reimbursement', money(s.reimbursement)) + row('Your earning', money(s.holderFee), true) + '</div>' +
+      '<div class="panel"><div class="spread" style="margin-bottom:10px"><h2 class="h3">Offer details</h2><span class="deal-tag">Apply before paying</span></div>' +
+        '<div class="deal-line"><span>' + esc(x.offerWanted || '') + '</span><strong class="deal-off">' + money(s.discount) + ' off</strong></div>' +
+        '<div class="deal-chip">' + esc(bankName(x.bank)) + '</div></div>' +
+      '<div class="panel"><h2 class="h3" style="margin-bottom:6px">Help &amp; FAQs</h2>' + DEAL_FAQ.map(function (f) {
+        return '<details class="deal-faq"><summary>' + esc(f[0]) + '</summary><p class="muted">' + esc(f[1]) + '</p></details>'; }).join('') + '</div>' +
+      (st === 'ACCEPTED' ? '<button type="button" class="deal-exit" data-exit-deal>Exit deal</button>' : '') + '</div>';
+  }
+
   w.CC.Pages.marketRequest = function (params) {
     if (!Auth.require()) return false;
     var u = Auth.current(), r = M.request(params.id);
@@ -713,10 +819,10 @@
     var isBuyer = r.buyerId === u.id, isHolder = r.cardholderId === u.id, x = r.details || {}, s = r.feeSnapshot;
 
     var detailRows = '';
-    if (r.module === 'LOUNGE') detailRows = row('Airport', esc(x.airport + ' ' + x.terminal)) + row('Lounge', esc(x.type === 'INTERNATIONAL' ? 'International' : 'Domestic')) + row('Flight', esc(x.flight)) + row('When', dt(x.dateTime)) + (x.guestName ? row('Guest name', esc(x.guestName)) : '');
+    if (r.module === 'LOUNGE') detailRows = row('Airport', esc(x.airport + ' ' + x.terminal)) + row('Lounge', esc(x.type === 'INTERNATIONAL' ? 'International' : 'Domestic')) + row('Flight', esc(x.flight)) + row('When', dt(x.dateTime)) + (x.guestName ? row('Guest name', esc(UI.titleCase(x.guestName))) : '');
     else if (r.module === 'MOVIE') detailRows = row('Movie', esc(x.movie)) + row('Theatre', esc(x.theatre + (x.city ? ', ' + x.city : ''))) + row('Showtime', dt(x.showTime)) + row('Seats', esc(x.seats + ' (' + x.seatCount + ')')) + row('Offer', x.offer === 'BOGO' ? 'Buy one get one' : '₹500 off on 2 seats') + row('Card', esc(bankName(x.bank))) + row('Booking site', esc(x.platform));
     else detailRows = row('Site', esc(x.platform)) + (x.url ? row('Product', '<a href="' + esc(x.url) + '" target="_blank" rel="noopener noreferrer">Open link</a>') : '') + row('Offer wanted', esc(x.offerWanted)) + row('Card', esc(bankName(x.bank))) +
-      (x.address && (isBuyer || isHolder || admin) ? row('Deliver to', esc(x.address.name + ', ' + x.address.line + ', ' + x.address.city + ' ' + x.address.pin)) : '') +
+      (x.address && (isBuyer || isHolder || admin) ? row('Deliver to', esc(UI.titleCase(x.address.name) + ', ' + x.address.line + ', ' + x.address.city + ' ' + x.address.pin)) : '') +
       (x.payUrl && (isHolder || isBuyer || admin) ? row('Payment page', '<a href="' + esc(x.payUrl) + '" target="_blank" rel="noopener noreferrer">Open payment page</a>') : '');
     if (r.cardholderId) detailRows += row('Cardholder', esc(M.nameOf(r.cardholderId)) + ' · trust ' + M.trust(r.cardholderId)) + (r.cardId && M.card(r.cardId) ? row('Using', esc(bankName(M.card(r.cardId).bank) + ' ' + M.card(r.cardId).variant)) : '');
     if (!isBuyer) detailRows += row('Buyer', esc(M.nameOf(r.buyerId)) + ' · trust ' + M.trust(r.buyerId));
@@ -730,6 +836,7 @@
     }).join('') + '</ul>';
 
     var who = isHolder ? 'holder' : 'buyer';
+    var dealOn = isHolder && (r.module === 'ORDER' || r.module === 'PAY') && ['ACCEPTED', 'FULFILLED', 'CONFIRMED', 'SETTLED'].indexOf(r.status) > -1;
     var proofs = M.proofs(r.id);
     var dispute = M.dispute(r.id);
     var adj = r.actual != null && r.module !== 'LOUNGE' ? Core.adjust(s, r.actual) : null;
@@ -740,16 +847,17 @@
       (r.status === 'DISPUTED' && dispute ? '<div class="note note--warn" style="margin-bottom:18px"><strong>Dispute open.</strong> ' + esc(dispute.note) + '</div>' : '') +
       (dispute && dispute.status === 'RESOLVED' && dispute.reason !== 'ENTRY_DENIED' ? '<div class="note" style="margin-bottom:18px"><strong>Dispute resolved: ' + esc(String(dispute.resolution).toLowerCase()) + '.</strong> ' + esc(dispute.adminNote || '') + '</div>' : '') +
       '<div class="detail market-detail"><div class="stack">' +
+      (dealOn ? dealPanel(r, x, s) : '') +
       '<div class="panel"><h2 class="h3" style="margin-bottom:8px">Details</h2>' + detailRows + '</div>' +
       '<div class="panel"><h2 class="h3" style="margin-bottom:8px">' + (isHolder ? 'What you get' : 'Price breakdown') + '</h2>' + breakdown(r.module, s, who) +
       (adj && (adj.refund || adj.topup) ? '<div class="note note--warn" style="margin-top:12px">Final price ' + money(r.actual) + ' vs estimate ' + money(s.reimbursement) + ': ' + (adj.refund ? money(adj.refund) + ' goes back to the buyer.' : money(adj.topup) + ' ' + (r.topupDue > 0 ? 'top-up is due from the buyer.' : 'top-up was paid.')) + '</div>' : '') + '</div>' +
-      '<div class="panel"><h2 class="h3" style="margin-bottom:14px">Progress</h2>' + tl + '</div>' +
+      (dealOn ? '' : '<div class="panel"><h2 class="h3" style="margin-bottom:14px">Progress</h2>' + tl + '</div>') +
       (proofs.length ? '<div class="panel"><h2 class="h3" style="margin-bottom:12px">Proofs</h2><div class="mk-proofs" id="proofs">' + proofs.map(function (p) {
         return '<figure data-p="' + p.id + '"><a target="_blank" rel="noopener noreferrer"><img alt="' + esc(p.name) + '"></a><figcaption class="small muted">' + (p.kind === 'EVIDENCE' ? 'Buyer evidence' : 'Cardholder proof') + '</figcaption></figure>'; }).join('') + '</div></div>' : '') +
       '</div><aside class="detail__side"><div class="stack">' +
       '<div class="panel" id="actions"><h2 class="h3" style="margin-bottom:12px">What next</h2>' + (admin && !isBuyer && !isHolder ? '<p class="muted">You are viewing as staff. Manage this from the admin panel.</p><a class="btn btn--soft btn--sm" href="#/admin/market">Open admin</a>' : actionBox(r, u)) + '</div>' +
       (r.cardholderId && (isBuyer || isHolder || admin) ? '<div class="panel" id="chat"><h2 class="h3" style="margin-bottom:10px">Chat</h2><div class="mk-chat" id="chatLog"></div>' +
-        (['REFUNDED', 'CANCELLED', 'EXPIRED'].indexOf(r.status) < 0 ? '<form class="row" id="chatForm" style="margin-top:10px; gap:8px"><input id="chatIn" maxlength="500" placeholder="Write a message" autocomplete="off" style="flex:1"><button class="btn btn--primary btn--sm">Send</button></form><p class="muted small" style="margin-top:6px">Phone numbers and emails are hidden. Keep the conversation here.</p>' : '') + '</div>' : '') +
+        (['REFUNDED', 'CANCELLED', 'EXPIRED'].indexOf(r.status) < 0 ? '<form class="row" id="chatForm" style="margin-top:10px; gap:8px"><input id="chatIn" maxlength="500" placeholder="Write a message" autocomplete="off" style="flex:1"><button class="btn btn--primary btn--sm">Send</button></form><p class="small" id="chatLeft" style="margin-top:8px; font-weight:600"></p><div class="note note--warn" style="margin-top:8px"><strong>Never share personal or contact details.</strong> No phone numbers, emails, home addresses, card numbers, CVV, OTP or bank details, and nothing with more than 4 digits. Each person can send 2 messages. Card Crest will never ask you for these.</div>' : '') + '</div>' : '') +
       localHelper(r) + '</div></aside></div></div>';
 
     return {
@@ -761,17 +869,69 @@
         onChange(root, w.CC.Router.refresh);                       // the request itself changed: redraw the page
         w.addEventListener('cc:market', function h() { if (!alive()) return w.removeEventListener('cc:market', h); drawChat(); });   // new chat messages only
 
+        /* deal timeline: copy buttons, the shop in a window beside this page, the countdown, exit */
+        root.querySelectorAll('[data-copy]').forEach(function (b) {
+          b.onclick = function () {
+            var t = b.getAttribute('data-copy');
+            function ok() { UI.toast(b.getAttribute('data-label') + ' copied'); }
+            if (w.navigator.clipboard && w.navigator.clipboard.writeText) w.navigator.clipboard.writeText(t).then(ok, function () { w.prompt('Copy this', t); });
+            else w.prompt('Copy this', t);
+          };
+        });
+        root.querySelectorAll('[data-open-store]').forEach(function (b) {
+          b.onclick = function () {
+            var url = b.getAttribute('data-open-store'), W = Math.min(1100, Math.round(w.screen.availWidth * 0.62)), H = w.screen.availHeight - 80;
+            var win = w.open(url, 'ccstore', 'popup=yes,width=' + W + ',height=' + H + ',left=' + Math.max(0, w.screen.availWidth - W) + ',top=40');
+            if (!win) w.open(url, '_blank', 'noopener');
+            else UI.toast('The shop opened in a window. Keep this page open beside it.');
+          };
+        });
+        var jump = root.querySelector('[data-jump]');
+        if (jump) jump.onclick = function (e) { e.preventDefault(); var a = root.querySelector('#actions'); if (a) a.scrollIntoView({ behavior: 'smooth' }); };
+        var ex = root.querySelector('[data-exit-deal]');
+        if (ex) ex.onclick = function () { var rel = root.querySelector('[data-act="release"]'); if (rel) rel.click(); else UI.toast('You can step back from What next.'); };
+        var tmr = root.querySelector('.deal-timer__t');
+        if (tmr) {
+          var dl = new Date(tmr.getAttribute('data-deadline')).getTime();
+          (function tick() {
+            if (!alive() || !tmr.isConnected) return;
+            var ms = dl - Date.now();
+            if (ms <= 0) { tmr.textContent = 'Time is up'; return; }
+            var sec = Math.floor(ms / 1000), h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s2 = sec % 60;
+            function p2(n) { return (n < 10 ? '0' : '') + n; }
+            tmr.textContent = (h ? h + ':' + p2(m) : p2(m)) + ':' + p2(s2);
+            tmr.classList.toggle('is-low', ms < 300000);
+            setTimeout(tick, 1000);
+          })();
+        }
+
         /* proofs */
         root.querySelectorAll('#proofs figure').forEach(function (fig) {
           var p = M.proofs(r.id).filter(function (x) { return x.id === fig.dataset.p; })[0];
           M.proofUrl(p).then(function (url) { var img = fig.querySelector('img'); img.src = url; fig.querySelector('a').href = url; });
         });
 
+        /* chat limits: 2 messages each, at most 4 digits in a message */
+        var CH = Core.CHAT, staff = u.role === 'admin' && !isBuyer && !isHolder;
+        function chatLeft() {
+          var used = M.messages(r.id).filter(function (m) { return m.senderId === u.id; }).length, left = Math.max(0, CH.MAX_MESSAGES - used);
+          var cl = root.querySelector('#chatLeft'), ci = root.querySelector('#chatIn'), cb = root.querySelector('#chatForm button');
+          if (cl && !staff) cl.textContent = left ? 'You can send ' + left + ' more message' + (left === 1 ? '' : 's') + ' (of ' + CH.MAX_MESSAGES + '). Up to ' + CH.MAX_DIGITS + ' digits in a message.' : 'You have used your ' + CH.MAX_MESSAGES + ' messages on this request.';
+          if (ci && !staff) { ci.disabled = !left; ci.placeholder = left ? 'Write a message (no numbers or contact details)' : 'You have used your messages'; if (cb) cb.disabled = !left; }
+        }
+        var chatIn0 = root.querySelector('#chatIn');
+        if (chatIn0 && !staff) chatIn0.addEventListener('input', function () {
+          var n = 0, out = '';
+          for (var i = 0; i < chatIn0.value.length; i++) { var ch = chatIn0.value.charAt(i); if (/\d/.test(ch)) { n++; if (n > CH.MAX_DIGITS) continue; } out += ch; }
+          if (out !== chatIn0.value) { chatIn0.value = out; UI.toast('A message can have at most ' + CH.MAX_DIGITS + ' digits.', 'error'); }
+        });
         /* chat */
         var chatKey = '';
         function drawChat() {
           var log = root.querySelector('#chatLog'); if (!log) return;
           var msgs = M.messages(r.id), key = msgs.map(function (m) { return m.id; }).join(',');
+
+          chatLeft();
           if (key === chatKey) return;                       // nothing new, leave the box alone
           chatKey = key;
           var atBottom = log.scrollTop + log.clientHeight >= log.scrollHeight - 30;
@@ -779,13 +939,15 @@
             return '<div class="mk-msg' + (m.senderId === u.id ? ' is-me' : '') + '"><div class="mk-msg__b">' + esc(m.body) + '</div><div class="mk-msg__m">' + (m.senderId === u.id ? 'You' : esc(M.nameOf(m.senderId))) + ' · ' + dt(m.createdAt) + '</div></div>';
           }).join('') : '<p class="muted small">No messages yet.</p>';
           if (atBottom || msgs.length === 1) log.scrollTop = log.scrollHeight;
+
         }
         drawChat();
         var cf = root.querySelector('#chatForm');
         if (cf) cf.onsubmit = function (e) {
           e.preventDefault();
           var inp = root.querySelector('#chatIn'), body = inp.value.trim(); if (!body) return;
-          M.do('sendMessage', { id: r.id, body: body }).then(function (res) { if (!res.ok) UI.toast(res.error, 'error'); else { inp.value = ''; drawChat(); } });
+          if (!staff && Core.chatCheck(body)) return UI.toast(Core.chatCheck(body), 'error');
+          M.do('sendMessage', { id: r.id, body: body }).then(function (res) { if (!res.ok) UI.toast(res.error, 'error'); else { inp.value = ''; drawChat(); chatLeft(); } });
         };
         if (M.mode() === 'supabase' && r.cardholderId) {
           var poll = setInterval(function () {

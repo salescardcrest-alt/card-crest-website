@@ -1,0 +1,136 @@
+<!doctype html><meta charset="utf-8"><title>overlap audit</title>
+<body style="margin:0"><pre id="out"></pre><div id="host" style="position:absolute; left:0; top:0; opacity:0; pointer-events:none"></div>
+<script>
+/* For each route and width: text that spills out of its own box, sibling boxes drawn over each other, and clipped text. */
+var Q = new URLSearchParams(location.search);
+var WIDTHS = (Q.get('w') || '320,390,768,1024,1366').split(',').map(Number);
+var ADMIN = Q.get('admin') === '1';
+var DEFAULT_ROUTES = ['#/', '#/cards', '#/cards/hdfc-millennia', '#/compare', '#/eligibility', '#/calculator', '#/offers', '#/stores', '#/rewards', '#/refer',
+  '#/dashboard', '#/dashboard/applications', '#/dashboard/transactions', '#/profile', '#/login', '#/signup', '#/help', '#/how-it-works',
+  '#/apply-earn', '#/market', '#/market/new/ORDER', '#/market/new/PAY', '#/market/requests', '#/market/earn', '#/market/cards', '#/market/wallet'];
+var ADMIN_ROUTES = ['#/admin', '#/admin/users', '#/admin/cards', '#/admin/stores', '#/admin/transactions', '#/admin/applications', '#/admin/approvals', '#/admin/revenue', '#/admin/market'];
+var list = (Q.get('r') ? Q.get('r').split(',') : (ADMIN ? ADMIN_ROUTES : DEFAULT_ROUTES));
+var out = document.getElementById('out'), host = document.getElementById('host');
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function sel(el) {
+  var s = el.tagName.toLowerCase();
+  if (el.id) s += '#' + el.id;
+  var c = typeof el.className === 'string' ? el.className.trim().split(/\s+/).filter(Boolean).slice(0, 2) : [];
+  if (c.length) s += '.' + c.join('.');
+  return s;
+}
+function txt(el) { return (el.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 28); }
+
+async function audit(width, route) {
+  var f = document.createElement('iframe');
+  f.style.cssText = 'width:' + width + 'px; height:900px; border:0; position:absolute; left:0; top:0';
+  host.appendChild(f);
+  f.src = '../index.html?demo=1&x=' + Math.random() + route;
+  await new Promise(function (r) { f.onload = r; });
+  var win = f.contentWindow, t0 = Date.now();
+  while (Date.now() - t0 < 6000) { try { if (win.CC && win.CC.Router && win.document.getElementById('view') && win.document.getElementById('view').children.length) break; } catch (e) {} await sleep(100); }
+  var who = ADMIN ? 'u-000' : 'u-001';
+  try { if (win.CC.Store.get('session') !== who) { win.CC.Store.set('session', who); win.CC.App.paintAuth(); win.location.hash = '#/x'; await sleep(60); win.location.hash = route; } } catch (e) {}
+  await sleep(700);
+  var d = win.document, issues = [], seen = {};
+  function add(kind, el, extra) {
+    var k = kind + sel(el);
+    if (seen[k]) return; seen[k] = 1;
+    if (issues.length < 20) issues.push(kind + ' ' + sel(el) + ' "' + txt(el) + '" ' + (extra || ''));
+  }
+  function visible(el) {
+    var cs = win.getComputedStyle(el);
+    if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0) return false;
+    var r = el.getBoundingClientRect();
+    return r.width > 1 && r.height > 1;
+  }
+  function clipped(el) {
+    var r = el.getBoundingClientRect();
+    for (var p = el.parentElement; p && p !== d.body; p = p.parentElement) {
+      var cs = win.getComputedStyle(p);
+      if (cs.overflowX === 'visible' && cs.overflowY === 'visible') continue;
+      var pr = p.getBoundingClientRect();
+      var ow = Math.min(r.right, pr.right) - Math.max(r.left, pr.left), oh = Math.min(r.bottom, pr.bottom) - Math.max(r.top, pr.top);
+      if (ow < r.width * 0.5 || oh < r.height * 0.5) return true;   // mostly hidden by a clipping ancestor (carousels, scroll areas)
+    }
+    return false;
+  }
+  var all = Array.prototype.slice.call(d.querySelectorAll('body *'));
+  all = all.filter(function (el) {
+    if (el.closest('.skip-link, .modal, .toasts, #cmpTray, script, style, noscript')) return false;
+    if (el.closest('svg') && el.tagName.toLowerCase() !== 'svg') return false;
+    return visible(el) && !clipped(el);
+  });
+
+  /* 1. text spilling out of (or clipped by) its own box */
+  all.forEach(function (el) {
+    var cs = win.getComputedStyle(el);
+    if (['auto', 'scroll'].indexOf(cs.overflowX) > -1) return;
+    var hasText = Array.prototype.some.call(el.childNodes, function (n) { return n.nodeType === 3 && n.textContent.trim(); });
+    if (!hasText) return;
+    if (cs.textOverflow === 'ellipsis') return;
+    if (el.scrollWidth > el.clientWidth + 2 && el.clientWidth > 0 && cs.display !== 'inline') {
+      add(cs.overflowX === 'hidden' || cs.overflowX === 'clip' ? 'CLIPPED' : 'SPILL', el, 'sw' + el.scrollWidth + '>cw' + el.clientWidth);
+    }
+    if (cs.overflowY === 'hidden' && el.scrollHeight > el.clientHeight + 3 && el.clientHeight > 0 && !/line-clamp|webkit-box/.test(cs.display + cs.webkitLineClamp)) {
+      add('CLIPPED-Y', el, 'sh' + el.scrollHeight + '>ch' + el.clientHeight);
+    }
+  });
+
+  /* 2. sibling boxes drawn over each other */
+  issues.push('stats: ' + all.length + ' elements checked');
+  var parents = new Set(); all.forEach(function (el) { if (el.parentElement) parents.add(el.parentElement); });
+  parents.forEach(function (p) {
+    var pcs = win.getComputedStyle(p);
+    if (pcs.display === 'none') return;
+    var kids = Array.prototype.filter.call(p.children, function (c) {
+      if (all.indexOf(c) < 0) return false;
+      var cs = win.getComputedStyle(c);
+      if (cs.position === 'absolute' || cs.position === 'fixed' || cs.position === 'sticky') return false;
+      if (cs.pointerEvents === 'none') return false;
+      var r = c.getBoundingClientRect(); return r.width >= 8 && r.height >= 8;
+    });
+    if (kids.length < 2 || kids.length > 40) return;
+    if (/stage|rc|ring|hero__bg|orb/.test(typeof p.className === 'string' ? p.className : '')) return;
+    for (var i = 0; i < kids.length; i++) for (var j = i + 1; j < kids.length; j++) {
+      var a = kids[i].getBoundingClientRect(), b = kids[j].getBoundingClientRect();
+      var ow = Math.min(a.right, b.right) - Math.max(a.left, b.left), oh = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+      if (ow > 4 && oh > 4) {
+        var area = ow * oh, small = Math.min(a.width * a.height, b.width * b.height);
+        if (area > small * 0.25) add('OVERLAP', kids[j], 'with ' + sel(kids[i]) + ' ' + Math.round(ow) + 'x' + Math.round(oh));
+      }
+    }
+  });
+  /* 3. text drawn over other text or over buttons, anywhere on the page (even absolutely positioned pieces) */
+  var leaves = all.filter(function (el) {
+    if (el.closest('.hdr, .tabbar, .tray, .toasts, [data-no-overlap-check]')) return false;
+    var own = Array.prototype.some.call(el.childNodes, function (n) { return n.nodeType === 3 && n.textContent.trim().length > 1; });
+    return own && el.children.length === 0;
+  });
+  if (leaves.length < 400) for (var a = 0; a < leaves.length; a++) {
+    var ra = leaves[a].getBoundingClientRect();
+    for (var b = a + 1; b < leaves.length; b++) {
+      if (leaves[a].contains(leaves[b]) || leaves[b].contains(leaves[a])) continue;
+      var rb = leaves[b].getBoundingClientRect();
+      var ow2 = Math.min(ra.right, rb.right) - Math.max(ra.left, rb.left), oh2 = Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top);
+      if (ow2 > 3 && oh2 > 3 && ow2 * oh2 > Math.min(ra.width * ra.height, rb.width * rb.height) * 0.2) {
+        add('TEXT-OVER-TEXT', leaves[b], 'with ' + sel(leaves[a]) + ' "' + txt(leaves[a]) + '" ' + Math.round(ow2) + 'x' + Math.round(oh2));
+      }
+    }
+  }
+  host.removeChild(f);
+  return issues;
+}
+(async function () {
+  var lines = [], n = 0;
+  for (var i = 0; i < list.length; i++) {
+    for (var j = 0; j < WIDTHS.length; j++) {
+      try {
+        var is = await audit(WIDTHS[j], list[i]); n += is.length;
+        if (is.length) lines.push('== ' + WIDTHS[j] + 'px ' + list[i] + '\n   ' + is.join('\n   '));
+      } catch (e) { lines.push('ERR ' + WIDTHS[j] + ' ' + list[i] + ' ' + e.message); }
+    }
+  }
+  out.textContent = lines.join('\n') + '\nDONE ' + n + ' issues';
+})();
+</script>

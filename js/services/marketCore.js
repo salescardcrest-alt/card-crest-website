@@ -226,6 +226,15 @@
       .replace(/(\+?\d[\d\s().-]{6,}\d)/g, function (m) { return m.replace(/\D/g, '').length >= 8 ? '[number hidden]' : m; });
   };
 
+  /* Chat limits: a message can carry at most 4 digits (so no phone, card, account or OTP numbers), and each person can
+     send 2 messages on a request. Staff are exempt so support can always help. */
+  Core.CHAT = { MAX_DIGITS: 4, MAX_MESSAGES: 2 };
+  Core.chatDigits = function (text) { return String(text || '').replace(/\D/g, '').length; };
+  Core.chatCheck = function (text) {
+    return Core.chatDigits(text) > Core.CHAT.MAX_DIGITS
+      ? 'A message can have at most ' + Core.CHAT.MAX_DIGITS + ' digits. Never share phone, card, account or OTP numbers.' : '';
+  };
+
   /* ---------- airports ---------- */
   Core.AIRPORTS = [
     { code: 'DEL', name: 'Delhi (Indira Gandhi)', terminals: { T1: ['DOMESTIC'], T2: ['DOMESTIC'], T3: ['DOMESTIC', 'INTERNATIONAL'] } },

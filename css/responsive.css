@@ -131,3 +131,68 @@
   .brand__word{font-size:1.12rem}
   .hdr__burger{flex-shrink:0}
 }
+
+/* ---------- fully responsive pass: every device from 320px phones to 4K ---------- */
+
+/* keep every media object inside its box */
+img, svg, video, canvas, iframe { max-width: 100%; }
+img, video { height: auto; }
+table { max-width: 100%; }
+pre, code { overflow-wrap: anywhere; }
+.wrap, .panel, .section, main { min-width: 0; }
+h1, h2, h3, .h1, .h2, .h3, .h-display { overflow-wrap: break-word; }
+
+/* filter bars (offers, stores, cards): wrap on narrow screens instead of pushing the page wider */
+@media (max-width: 760px) {
+  .mkt__bar > input[type="search"], .mkt__bar > input { min-width: 0 !important; flex: 1 1 100% !important; }
+  .mkt__bar .row { width: 100%; flex-wrap: wrap; }
+  .mkt__bar select { flex: 1 1 140px; min-width: 0; max-width: 100%; width: auto; }
+}
+
+/* very small phones (320px) */
+@media (max-width: 360px) {
+  .hdr__in { gap: 5px; }
+  .hdr__act { gap: 5px; }
+  .hdr__act .btn--sm { height: 32px; padding: 0 8px; font-size: .72rem; }
+  .brand { gap: 5px; }
+  .brand__mark { width: 28px; height: 28px; }
+  .brand__word { font-size: .98rem; letter-spacing: -.01em; }
+  .hdr__burger { width: 36px; height: 36px; }
+  .h-display { font-size: 1.95rem; }
+  .h1 { font-size: 1.7rem; }
+}
+
+/* rows that put a label and a value side by side: let them wrap on phones and tablets instead of pushing the page wider */
+@media (max-width: 760px) {
+  .spread { flex-wrap: wrap; row-gap: 6px; }
+  .spread > [style*="nowrap"] { white-space: normal !important; }
+}
+
+/* overlap and clipping fixes found by the layout audit */
+.stage__hint { z-index: 6; pointer-events: none; background: rgba(255,255,255,.85); padding: 4px 10px; border-radius: 50px }
+.ctile__reward b { white-space: normal; overflow-wrap: anywhere }
+@media (max-width: 380px) {
+  .ctile__top { grid-template-columns: 96px minmax(0, 1fr); gap: 10px }
+  .ctile__name { font-size: 1rem; -webkit-line-clamp: 3; min-height: 3.6em }
+  .ctile__reward { padding: 9px 11px }
+}
+@media (max-width: 360px) {
+  .btn { white-space: normal; height: auto; min-height: 44px; padding-block: 9px; text-align: center; line-height: 1.2 }
+}
+
+/* grids: columns may shrink below their content, and three columns become two on tablets */
+@media (min-width: 901px) {
+  .g-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .g-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 769px) and (max-width: 900px) {
+  .g-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* foldable phones (about 280px): the menu holds Sign in, so keep only Sign up in the bar */
+@media (max-width: 300px) {
+  .hdr__act .btn--ghost { display: none; }
+}
+@media (max-width: 300px) {
+  .brand__word { display: none; }       /* logo mark only; the page title still names the site */
+}
+.otile, .stile, .ctile, .mk-tile { min-width: 0; overflow-wrap: anywhere; }

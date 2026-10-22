@@ -56,7 +56,7 @@
       var meta = authUser.user_metadata || {};
       var row = {
         id: authUser.id,
-        name: p.name || meta.name || authUser.email.split('@')[0],
+        name: w.CC.UI.titleCase(p.name || meta.name || authUser.email.split('@')[0]),
         email: authUser.email,
         mobile: p.mobile || meta.mobile || '',
         role: p.role || 'user',
@@ -141,7 +141,7 @@
       if (sb) {
         return sb.auth.signUp({
           email: email, password: data.password,
-          options: { data: { name: data.name.trim(), mobile: data.mobile } }
+          options: { data: { name: w.CC.UI.titleCase(data.name).trim(), mobile: data.mobile } }
         }).then(function (r) {
           if (r.error) return fail(friendly(r.error));
           // Supabase returns an empty identities list for an email that already exists.
@@ -159,7 +159,7 @@
       var exists = S.where('users', function (x) { return x.email.toLowerCase() === email; }).length;
       if (exists) return Promise.resolve(fail('An account already uses that email address.'));
       var u = {
-        id: S.uid('u'), name: data.name.trim(), email: email,
+        id: S.uid('u'), name: w.CC.UI.titleCase(data.name).trim(), email: email,
         password: data.password, mobile: data.mobile, role: 'user', city: '',
         employment: '', income: 0, credit: 0,
         joined: new Date().toISOString().slice(0, 10), active: true
@@ -225,6 +225,7 @@
 
     updateProfile: function (patch) {
       var u = Auth.current();
+      if (patch && typeof patch.name === 'string') patch = Object.assign({}, patch, { name: w.CC.UI.titleCase(patch.name).trim() });
       if (!u) return { ok: false, error: 'You need to be signed in.' };
       if (sb) {
         patch = Object.assign({}, patch);

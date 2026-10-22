@@ -209,7 +209,7 @@
     var more = '<div class="grid g-2" style="margin-top:26px">' +
       '<div class="panel"><h3 class="h3" style="margin-bottom:16px">Requests by status</h3>' + bars(statusRows, function (v) { return v; }) + '</div>' +
       '<div class="panel"><h3 class="h3" style="margin-bottom:16px">Card Crest revenue by service</h3>' + bars(revRows, money) + '<p class="small muted">Fees kept on completed requests, plus penalties.</p></div></div>' +
-      '<div class="grid g-2" style="margin-top:22px"><div><h3 class="h3" style="margin-bottom:10px">Top cardholders</h3>' + table(['Cardholder', 'Jobs done', 'Trust', 'Earned'], holderRows, 'No earnings yet.') + '</div>' +
+      '<div class="grid g-2" style="margin-top:22px"><div><h3 class="h3" style="margin-bottom:10px">Top cardholders</h3>' + table(['Cardholder', 'Tasks done', 'Trust', 'Earned'], holderRows, 'No earnings yet.') + '</div>' +
       '<div><h3 class="h3" style="margin-bottom:10px">Top buyers</h3>' + table(['Buyer', 'Completed', 'Spent'], buyerRows, 'No completed requests yet.') + '</div></div>' +
       '<h3 class="h3" style="margin:26px 0 10px">Latest ledger entries</h3>' + table(['When', 'Type', 'Account', 'Out', 'In'], recent, 'No money has moved yet.');
     return head + more;

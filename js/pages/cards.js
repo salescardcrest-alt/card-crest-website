@@ -511,7 +511,7 @@
           if (step === 1) {
             body.innerHTML = '<p class="step-count">Step 1 of 6</p><h2 class="h2" style="margin-bottom:18px">About you</h2>' +
               '<div class="form-grid">' +
-              '<div class="field"><label for="e-name">Full name</label><input id="e-name" type="text" value="' + UI.esc(form.name) + '" placeholder="As it appears on your PAN"></div>' +
+              '<div class="field"><label for="e-name">Full name</label><input id="e-name" data-name type="text" value="' + UI.esc(form.name) + '" placeholder="As it appears on your PAN"></div>' +
               '<div class="field"><label for="e-age">Age</label><input id="e-age" type="number" min="18" max="75" value="' + form.age + '"></div>' +
               '<div class="field" style="grid-column:1/-1"><label for="e-city">City</label><input id="e-city" type="text" value="' + UI.esc(form.city) + '" placeholder="Where you live"></div>' +
               '</div>' + nav(null, 'Continue', null, false);
@@ -589,7 +589,7 @@
             if (step === 1) {
               var n = body.querySelector('#e-name').value.trim();
               if (!n) return UI.toast('Add your name to continue', 'error');
-              form.name = n;
+              form.name = UI.titleCase(n);
               form.age = Number(body.querySelector('#e-age').value) || 30;
               form.city = body.querySelector('#e-city').value.trim();
             }

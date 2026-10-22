@@ -42,7 +42,7 @@
         '<div class="dropdown__menu" id="userMenu" hidden>' +
           '<div class="dropdown__head"><strong>' + UI.esc(u.name) + '</strong><span>' + UI.esc(u.email) + '</span></div>' +
           '<a href="#/dashboard">Dashboard</a>' +
-          '<a href="#/dashboard/cards">My cards</a>' +
+          '<a href="#/market/cards">My benefit cards</a>' +
           '<a href="#/rewards">My rewards</a>' +
           '<a href="#/dashboard/transactions">Transactions</a>' +
           '<a href="#/dashboard/applications">Applications</a>' +
@@ -237,6 +237,64 @@
     });
   };
   w.addEventListener('cc:recovery', function () { setTimeout(App.askNewPassword, 400); });
+
+  /* Name fields (data-name): a capital letter at the start of every word as you type, and the whole name tidied when you leave the box. */
+  d.addEventListener('input', function (e) {
+    var t = e.target;
+    if (!t || !t.matches || !t.matches('input[data-name]') || e.isComposing) return;
+    var v = t.value, nv = w.CC.UI.liftFirstLetters(v);
+    if (nv !== v) { var p = t.selectionStart; t.value = nv; try { t.setSelectionRange(p, p); } catch (x) {} }
+  });
+  d.addEventListener('focusout', function (e) {
+    var t = e.target;
+    if (!t || !t.matches || !t.matches('input[data-name]')) return;
+    var nv = w.CC.UI.titleCase(t.value).trim();
+    if (nv !== t.value) { t.value = nv; t.dispatchEvent(new Event('input', { bubbles: true })); }
+  });
+
+  /* ---------------- ask to allow notifications ----------------
+     A small card asks once a person is signed in: Allow or Not now. The browser's own permission box only opens from
+     a click on Allow (browsers refuse to open it any other way). "Not now" asks again after 7 days; a block in the
+     browser is respected and never asked again. */
+  var SNOOZE_KEY = 'cc.notifAskUntil';
+  function notifSupported() { return !!(w.Notification && 'requestPermission' in w.Notification); }
+  function snoozed() { try { return Number(w.localStorage.getItem(SNOOZE_KEY) || 0) > Date.now(); } catch (e) { return false; } }
+  function snooze(days) { try { w.localStorage.setItem(SNOOZE_KEY, String(Date.now() + days * 86400000)); } catch (e) {} }
+  App.askNotifications = function (force) {
+    if (!notifSupported() || !w.CC.Auth.current()) return;
+    if (w.Notification.permission !== 'default') return;          // already allowed or blocked
+    if (!force && snoozed()) return;
+    if (d.getElementById('notifAsk')) return;
+    var el = d.createElement('div');
+    el.id = 'notifAsk'; el.className = 'notif-ask'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Allow notifications');
+    el.innerHTML = '<div class="notif-ask__ico" aria-hidden="true">&#128276;</div>' +
+      '<div class="notif-ask__t"><strong>Turn on notifications?</strong>' +
+      '<span>Get an alert the moment a request you can fulfil is posted, or your application or reward changes. You can change this any time in your browser settings.</span></div>' +
+      '<div class="notif-ask__b"><button type="button" class="btn btn--primary btn--sm" data-allow>Allow</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-later>Not now</button></div>';
+    d.body.appendChild(el);
+    el.querySelector('[data-later]').onclick = function () { snooze(7); el.remove(); };
+    el.querySelector('[data-allow]').onclick = function () {
+      var done = function (p) {
+        el.remove();
+        if (p === 'granted') {
+          w.CC.UI.toast('Notifications are on');
+          try { new w.Notification('Card Crest', { body: 'Notifications are on. We will alert you here.', icon: 'assets/logo-mark-64.png' }); } catch (e) {}
+        } else if (p === 'denied') { w.CC.UI.toast('Notifications are blocked. You can allow them in your browser settings.'); snooze(30); }
+        else snooze(7);
+      };
+      try {
+        var r = w.Notification.requestPermission(done);       // old browsers take a callback, new ones return a promise
+        if (r && r.then) r.then(done);
+      } catch (e) { done('default'); }
+    };
+  };
+  /* ask a few seconds after sign-in and after each sign-in from now on, not on every page */
+  w.addEventListener('cc:routed', function () {
+    if (App._asked || !w.CC.Auth.current()) return;
+    App._asked = true;
+    setTimeout(function () { App.askNotifications(false); }, 4000);
+  });
   /* ---------------- boot ---------------- */
   App.start = function () {
     d.getElementById('yr').textContent = new Date().getFullYear();

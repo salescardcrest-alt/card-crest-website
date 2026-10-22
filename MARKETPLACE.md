@@ -98,3 +98,21 @@ When a buyer's payment lands in escrow (or a cardholder steps back), the databas
 * **Email and WhatsApp:** the same alert is queued in `mk_outbox` for the sender described under "Going live".
 * **Setup:** `05_marketplace.sql` adds the `notifications` table to the `supabase_realtime` publication. Realtime must be enabled for the project (it is by default).
 * **Offline demo:** with `?demo=1`, two browser windows signed in as different users also get each other's alerts live.
+
+## Email alerts for new requests (opt-in)
+
+On the Earn page a cardholder can press **Email me new requests**. From then on, every new request their card can fulfil is
+also emailed to the address on their account (for example their Gmail). It is off until they switch it on, and they can
+switch it off the same way.
+
+How it works: the database (`mk_notify_open`) queues an email row in `mk_outbox` only for people who opted in
+(`mk_member.email_alerts`). The Edge Function `supabase/functions/send-alert-email` sends each queued row through Gmail.
+
+One-time setup (the website part works without it; without it the emails stay queued):
+1. Run `supabase/05_marketplace.sql` again in the SQL Editor (adds the opt-in column and `mk_set_email_alerts`).
+2. Use the mailbox you send from. A Hostinger mailbox such as admin@cardcrest.in needs no app password: it uses the mailbox password (Hostinger hPanel, Emails). A Gmail mailbox needs an App password instead.
+3. In Supabase, Edge Functions, create `send-alert-email` and paste `supabase/functions/send-alert-email/index.ts`, then add these secrets:
+   `SMTP_HOST` (smtp.hostinger.com), `SMTP_PORT` (465), `SMTP_USER` (admin@cardcrest.in), `SMTP_PASSWORD`, `WEBHOOK_SECRET` (any long random text), `SITE_URL`.
+4. In Supabase, Database, Webhooks: create a webhook on table `mk_outbox`, event **Insert**, type **Supabase Edge Function**,
+   function `send-alert-email`, with the HTTP header `x-webhook-secret` set to the same `WEBHOOK_SECRET`.
+Never put the service-role key or the app password in the website or the app.

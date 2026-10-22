@@ -88,10 +88,11 @@
   function nowIso() { return new Date(clock()).toISOString(); }
   function byId(name, id) { return col(name).filter(function (r) { return r.id === id; })[0] || null; }
   function me() { var u = w.CC.Auth.current(); return u ? u.id : null; }
+  function tc(s) { return w.CC.UI && w.CC.UI.titleCase ? w.CC.UI.titleCase(s) : s; }
   function nameOf(id) {
     if (id === DEMO_HOLDER) return 'Test cardholder';
     var u = S.get('users').filter(function (x) { return x.id === id; })[0];
-    return u ? u.name : 'Member';
+    return u ? tc(u.name) : 'Member';
   }
   function firstName(id) { return String(nameOf(id)).split(' ')[0]; }
   function fmt(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
@@ -108,10 +109,12 @@
   }
 
   /* in-app notification now; email + WhatsApp rows are queued for a sender (see README) */
+  function emailOn(uid) { var u = S.get('users').filter(function (x) { return x.id === uid; })[0]; return !!(u && u.emailAlerts); }
   function notify(userId, title, body, requestId, type) {
     if (!userId || userId === DEMO_HOLDER) return;
     w.CC.Notifications.push(userId, type || 'market', title, body);
     ['email', 'whatsapp'].forEach(function (ch) {
+      if (ch === 'email' && !emailOn(userId)) return;                // email only for people who switched it on
       S.insert('mkOutbox', { id: rid('out'), userId: userId, channel: ch, title: title, body: body, requestId: requestId || null, status: 'QUEUED', createdAt: nowIso() });
     });
   }
@@ -355,7 +358,7 @@
     if (req.status !== 'PAID') fail('Someone else already picked this up, or it is no longer open.');
     if (new Date(req.acceptBy).getTime() <= clock()) fail('This request has expired.');
     var live = col('mkRequests').filter(function (r) { return r.cardholderId === actor && ['ACCEPTED', 'FULFILLED', 'DISPUTED'].indexOf(r.status) > -1; }).length;
-    if (live >= 5) fail('Finish a few of your open jobs before taking more.');
+    if (live >= 5) fail('Finish a few of your open tasks before taking more.');
     var card = byId('mkCards', p.cardId);
     if (!card || card.ownerId !== actor) fail('Choose one of your own cards.');
     var fit = Core.cardFits(card, req, quotaUsed);
@@ -539,6 +542,15 @@
     }
     row.id = rid('mkc'); row.ownerId = actor; row.createdAt = nowIso();
     S.insert('mkCards', row);
+    /* A card added after requests were already paid: tell the owner about every open request it can fulfil right away. */
+    var waiting = col('mkRequests').filter(function (r) {
+      return r.status === 'PAID' && r.buyerId !== actor && new Date(r.acceptBy).getTime() > clock() && Core.cardFits(row, r, quotaUsed).ok;
+    });
+    if (waiting.length) {
+      var most = waiting.reduce(function (a, r) { return Math.max(a, r.feeSnapshot.holderFee || 0); }, 0);
+      notify(actor, waiting.length + (waiting.length === 1 ? ' request is' : ' requests are') + ' waiting for your card',
+        'You can fulfil ' + (waiting.length === 1 ? 'it' : 'them') + ' with the card you just added. Earn up to ' + fmt(most) + '. First to accept gets it.', waiting[0].id, 'market:open:' + waiting[0].id);
+    }
     return { id: row.id };
   };
   L.removeCard = function (actor, p) {
@@ -622,6 +634,11 @@
   };
 
   /* ---------- chat and ratings ---------- */
+  L.setEmailAlerts = function (actor, p) {
+    activeUser(actor);
+    S.update('users', actor, { emailAlerts: !!p.on });
+    return { on: !!p.on };
+  };
   L.sendMessage = function (actor, p) {
     var req = byId('mkRequests', p.id);
     if (!req || !perm(actor, req)) fail('You are not part of this request.');
@@ -630,6 +647,11 @@
     var body = String(p.body || '').trim();
     if (!body) fail('Type a message first.');
     if (body.length > 500) fail('Keep messages under 500 characters.');
+    if (!isAdmin(actor)) {
+      var bad = Core.chatCheck(body); if (bad) fail(bad);
+      var sent = col('mkMessages').filter(function (m) { return m.requestId === req.id && m.senderId === actor; }).length;
+      if (sent >= Core.CHAT.MAX_MESSAGES) fail('You can send ' + Core.CHAT.MAX_MESSAGES + ' messages on a request, and you have used them. Use the request page or contact support.');
+    }
     var recent = col('mkMessages').filter(function (m) { return m.senderId === actor && clock() - new Date(m.createdAt).getTime() < 60000; }).length;
     if (recent >= 20) fail('You are sending messages too quickly.');
     S.insert('mkMessages', { id: rid('msg'), requestId: req.id, senderId: actor, body: Core.maskContact(body), createdAt: nowIso() });
@@ -704,13 +726,13 @@
     jobs.push(sb.rpc('mk_open_requests').then(function (r) { remoteOpen = (r.data || []); }, function () {}));
     jobs.push(sb.from('mk_member').select('*').then(function (r) {
 
-      (r.data || []).forEach(function (m) { remoteMember[m.user_id] = { name: m.display_name, trust: Number(m.trust), done: m.jobs_done }; });
+      (r.data || []).forEach(function (m) { remoteMember[m.user_id] = { name: m.display_name, trust: Number(m.trust), done: m.jobs_done, emailAlerts: !!m.email_alerts }; });
     }, function () {}));
     return Promise.all(jobs).then(function () {});
   };
 
   var ACTIONS = ['create', 'cancel', 'accept', 'release', 'fulfil', 'confirm', 'denied', 'dispute', 'resolveDispute', 'saveCard', 'removeCard',
-    'submitKyc', 'reviewKyc', 'requestPayout', 'processPayout', 'saveFee', 'sendMessage', 'rate', 'banUser', 'startPayment', 'topup'];
+    'submitKyc', 'reviewKyc', 'requestPayout', 'processPayout', 'saveFee', 'sendMessage', 'rate', 'banUser', 'startPayment', 'topup', 'setEmailAlerts'];
 
   /* One entry point for every write. */
   Market.do = function (action, params, asUser) {
@@ -792,7 +814,12 @@
   Market.kycAll = function () { return col('mkKyc').slice(); };
   Market.payouts = function (uid) { return col('mkPayouts').filter(function (p) { return !uid || p.userId === uid; }).sort(byNewest); };
   Market.outbox = function () { return col('mkOutbox'); };
-  Market.nameOf = function (id) { return remoteMember[id] ? remoteMember[id].name : nameOf(id); };
+  Market.nameOf = function (id) { return remoteMember[id] ? tc(remoteMember[id].name) : nameOf(id); };
+  /* is "email me new requests" switched on for this person? (the email goes to their account address) */
+  Market.emailAlerts = function (uid) {
+    if (sb && remoteMember[uid]) return !!remoteMember[uid].emailAlerts;
+    return emailOn(uid);
+  };
   Market.trust = function (uid) {
     if (sb && remoteMember[uid]) return remoteMember[uid].trust;
     var score = 50;
@@ -897,14 +924,27 @@
     } catch (e) {}
   }
   Market.ring = beep;
+  /* a real desktop notification for anything that is not a marketplace alert, when this tab is in the background */
+  function desktopNotify(n) {
+    try {
+      if (!w.Notification || Notification.permission !== 'granted' || w.document.hasFocus()) return;
+      var x = new Notification(n.title || 'Card Crest', { body: n.body || '', tag: String(n.type || n.id || 'cc'), icon: 'assets/logo-mark-64.png' });
+      x.onclick = function () { try { w.focus(); w.location.hash = '#/dashboard/notifications'; x.close(); } catch (e) {} };
+    } catch (e) {}
+  }
   /* toast + sound + desktop alert for a new "request you can fulfil" */
   function announce(n) {
     if (!n) return;
     var fresh = !n.createdAt || (Date.now() - new Date(n.createdAt).getTime()) < 120000;   // never ring for old alerts
     if (fresh) beep();
-    if (String(n.type).indexOf('market:open:') !== 0) return;
+    if (String(n.type).indexOf('market:open:') !== 0) { if (fresh) desktopNotify(n); return; }
     w.CC.UI.toast(n.title + ': ' + String(n.body).split('.')[0]);
-    try { if (w.Notification && Notification.permission === 'granted') new Notification(n.title, { body: n.body, tag: n.type }); } catch (e) {}
+    try {
+      if (w.Notification && Notification.permission === 'granted') {
+        var x = new Notification(n.title, { body: n.body, tag: n.type, icon: 'assets/logo-mark-64.png' });
+        x.onclick = function () { try { w.focus(); w.location.hash = '#/market/earn'; x.close(); } catch (e) {} };
+      }
+    } catch (e) {}
   }
 
   /* Supabase: a Realtime subscription on this user's notification rows, plus a 15s check as a backup

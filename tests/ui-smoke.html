@@ -110,8 +110,11 @@
       ok(/Proof uploaded/.test(txt()) && q('[data-act="confirm"]'), 'proof uploaded, buyer sees Confirm');
       ok(q('#proofs img') !== null, 'proof image is shown');
       /* chat masks contact details */
-      set('#chatIn', 'call 98765 43210'); q('#chatForm').dispatchEvent(new Event('submit', { cancelable: true })); await sleep(250);
-      ok(/number hidden/.test(q('#chatLog').innerText) && !/98765/.test(q('#chatLog').innerText), 'chat hides phone numbers');
+      ok(/Never share personal or contact details/.test(txt()) && /more message/.test(q('#chatLeft').innerText), 'the chat shows the disclaimer and how many messages are left');
+      set('#chatIn', 'mail me at a.b@gmail.com'); q('#chatForm').dispatchEvent(new Event('submit', { cancelable: true })); await sleep(250);
+      ok(/email hidden/.test(q('#chatLog').innerText) && !/gmail/.test(q('#chatLog').innerText), 'chat hides email addresses');
+      set('#chatIn', 'call 98765 43210'); q('#chatIn').dispatchEvent(new Event('input', { bubbles: true }));
+      ok(q('#chatIn').value.replace(/\D/g, '').length <= 4, 'the chat box stops at 4 digits: ' + q('#chatIn').value);
       click('[data-act="confirm"]'); await sleep(400);
       ok(/Completed/.test(txt()), 'confirming completes the request');
       ok(/All done/.test(txt()) && q('[data-star="5"]'), 'rating buttons appear');
@@ -151,6 +154,7 @@
       set('#c-bank', 'hdfc'); set('#c-var', 'Regalia');
       D.querySelector('.mk-ben[data-kind="LOUNGE_DOM"] [data-on]').click();
       click('.modal [data-save]'); await sleep(300);
+      if (cw.location.hash !== '#/market/cards') await go('#/market/cards');   // a card added while requests are waiting jumps to the open requests
       ok(/Regalia/.test(txt()), 'a benefit card can be added');
       await go('#/market/wallet'); ok(/Wallet and payouts/.test(txt()) && /KYC/.test(txt()), 'wallet page shows KYC and payouts');
 
@@ -223,10 +227,65 @@
       cw.CC.Store.set('session', 'u-001'); cw.CC.App.paintAuth();
       cw.CC.Cards.save('u-001', 'axis-bank');
       await go('#/dashboard/cards');
-      ok(/Axis Bank Credit Card/.test(txt()) && /Set by the bank/.test(txt()) && !/NaN/.test(txt()), 'My cards lists a saved partner card without a broken score');
+      ok(cw.location.hash === '#/market/cards', 'My cards now opens My benefit cards');
+      await sleep(300); ok(/Saved from the catalog/.test(txt()) && /Axis Bank Credit Card/.test(txt()) && !/NaN/.test(txt()), 'My benefit cards also lists cards saved from the catalog');
       await go('#/cards/axis-bank');
       ok(!/could not load/.test(txt()) && /Earn ₹1,300 when approved/.test(txt()), 'a partner card has a working Benefits page');
       cw.CC.Cards.unsave('u-001', 'axis-bank');
+      cw.CC.Store.set('session', 'u-000'); cw.CC.App.paintAuth();
+      /* the cardholder's Deal Timeline on an accepted Order & Earn request */
+      var MK = cw.CC.Market;
+      var sv = await MK.do('saveCard', { bank: 'hdfc', variant: 'Millennia', benefits: [{ kind: 'SHOPPING' }] }, 'u-002');
+      var holdCard = MK.cards('u-002')[0];
+      var created = await MK.do('create', { module: 'ORDER', details: { url: 'https://www.flipkart.com/p/abc', platform: 'Flipkart', listPrice: 1000, expectedPrice: 900, offerWanted: '10% off on HDFC cards', bank: 'any', address: { name: 'Test Buyer', line: '12 Test Street Area', city: 'Patna', pin: '800004' } } }, 'u-001');
+      var dealReq = created && created.request;
+      if (dealReq && holdCard) {
+        cw.CC.Store.set('session', 'u-001');
+        var pd = await MK.pay(dealReq.id);
+        ok(pd.ok, 'pay: ' + JSON.stringify(pd));
+        var acc = await MK.do('accept', { id: dealReq.id, cardId: holdCard.id }, 'u-002');
+        ok(acc.ok, 'accept: ' + JSON.stringify(acc) + ' status ' + MK.request(dealReq.id).status + ' holder ' + MK.request(dealReq.id).cardholderId);
+        cw.CC.Store.set('session', 'u-002'); cw.CC.App.paintAuth();
+        await go('#/market/r/' + dealReq.id);
+        ok(!!q('.deal') && !!q('.deal-timer__t') && /Deal Timeline/.test(txt()), 'the cardholder sees the Deal Timeline with a countdown | ' + txt().slice(0, 160).replace(/s+/g, ' '));
+        ok(!!q('.deal-copy [data-copy]') && /Test Buyer/.test(q('.deal').innerText), 'the delivery address has Copy buttons');
+        ok(!!q('[data-open-store]') && !!q('[data-exit-deal]'), 'the shop opens in a window and the deal can be exited');
+        ok(/Instructions/.test(txt()) && /Payment details/.test(txt()) && /Offer details/.test(txt()) && /Help/.test(txt()), 'instructions, payment details, offer details and FAQs show');
+        cw.CC.Store.set('session', 'u-000'); cw.CC.App.paintAuth();
+      } else ok(false, 'could not set up an accepted request for the Deal Timeline test: ' + JSON.stringify(created) + JSON.stringify(sv));
+      /* names: first letter of every word is a capital */
+      var UIc = cw.CC.UI;
+      ok(UIc.titleCase('ayush kumar') === 'Ayush Kumar' && UIc.titleCase('BADDY') === 'Baddy' && UIc.titleCase("o'neil mc-donald") === "O'Neil Mc-Donald", 'names get a capital at the start of every word');
+      ok(UIc.titleCase('McDonald de Souza') === 'McDonald De Souza' && UIc.titleCase('  a.k.  sharma ') === ' A.K. Sharma ', 'mixed-case words and initials are kept');
+      ok(UIc.liftFirstLetters('ayush ku') === 'Ayush Ku', 'typing lifts only the first letters');
+      cw.CC.Store.set('session', null); cw.CC.App.paintAuth(); await go('#/signup'); await sleep(200); var sn = q('#s-name'); sn.value = 'ayush kumar'; sn.dispatchEvent(new cw.Event('input', { bubbles: true })); sn.dispatchEvent(new cw.Event('focusout', { bubbles: true }));
+      ok(sn.value === 'Ayush Kumar', 'the sign-up name box tidies itself: ' + sn.value);
+      cw.CC.Store.set('session', 'u-000'); cw.CC.App.paintAuth();
+      /* the sign-up terms sentence is one line of text, not words spread across the row */
+      cw.CC.Store.set('session', null); cw.CC.App.paintAuth(); await go('#/signup'); await sleep(250);
+      var tl = q('#s-terms').closest('label'), tlr = tl.getBoundingClientRect(), ta = tl.querySelector('a').getBoundingClientRect();
+      ok(ta.left > tlr.left + 100 && Math.abs(tl.querySelector('a').getBoundingClientRect().top - tlr.top) < 40, 'the terms link sits inside the sentence, next to its words');
+      cw.CC.Store.set('session', 'u-000'); cw.CC.App.paintAuth();
+      /* the "turn on notifications?" card: shown only while the browser permission is still undecided */
+      cw.CC.Store.set('session', 'u-001'); cw.CC.App.paintAuth();
+      var perm0 = cw.Notification ? cw.Notification.permission : 'unsupported';
+      cw.CC.App.askNotifications(true); await sleep(150);
+      if (perm0 === 'default') {
+        ok(!!q('#notifAsk [data-allow]') && !!q('#notifAsk [data-later]'), 'a card asks the signed-in user to Allow or say Not now');
+        click('#notifAsk [data-later]'); await sleep(100);
+        ok(!q('#notifAsk'), 'Not now closes the card');
+        cw.CC.App.askNotifications(false); await sleep(100);
+        ok(!q('#notifAsk'), 'and it stays away for a while');
+      } else ok(!q('#notifAsk'), 'no card when the browser has already decided (' + perm0 + ')');
+      cw.CC.Store.set('session', 'u-000'); cw.CC.App.paintAuth();
+      await go('#/legal/disclaimer'); ok(/Your data is safe with us/.test(txt()) && /never asks for, or stores, your card number/.test(txt()), 'the disclaimer says the data is safe and how it is protected');
+      await go('#/legal/privacy'); ok(/How we protect it/.test(txt()), 'the privacy policy explains how data is protected');
+      cw.CC.Store.set('session', 'u-001'); cw.CC.App.paintAuth(); await go('#/market/earn'); await sleep(250);
+      ok(!!q('#emailBtn') && /Email me new requests/.test(q('#emailBtn').innerText), 'the Earn page has an "Email me new requests" button');
+      click('#emailBtn'); await sleep(300);
+      ok(/Email alerts: on/.test(q('#emailBtn').innerText), 'pressing it switches email alerts on');
+      click('#emailBtn'); await sleep(300);
+      ok(/Email me new requests/.test(q('#emailBtn').innerText), 'pressing it again switches them off');
       cw.CC.Store.set('session', 'u-000'); cw.CC.App.paintAuth();
       /* long tables show one page at a time */
       localStorage.removeItem('cc.pagesize');

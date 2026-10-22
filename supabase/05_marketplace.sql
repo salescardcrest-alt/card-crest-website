@@ -34,6 +34,8 @@ insert into public.mk_member (user_id, display_name)
 select id, coalesce(nullif(split_part(name, ' ', 1), ''), 'Member') from public.profiles
 on conflict (user_id) do nothing;
 
+alter table public.mk_member add column if not exists email_alerts boolean not null default false;   -- opt in: email me new requests
+
 create or replace function public.mk_member_from_profile()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
@@ -732,7 +734,9 @@ begin
   insert into public.notifications (id, user_id, type, title, body)
   values ('ntf-' || replace(gen_random_uuid()::text, '-', ''), uid, 'market', title, body);
   insert into public.mk_outbox (user_id, channel, title, body, request_id)
-  values (uid, 'email', title, body, rid), (uid, 'whatsapp', title, body, rid);
+  values (uid, 'whatsapp', title, body, rid);
+  insert into public.mk_outbox (user_id, channel, title, body, request_id)
+  select uid, 'email', title, body, rid where exists (select 1 from public.mk_member m where m.user_id = uid and m.email_alerts);
 end $$;
 
 create or replace function public.mk_recalc_member(uid uuid)
@@ -984,7 +988,9 @@ begin
   insert into public.notifications (id, user_id, type, title, body)
   values ('ntf-' || replace(gen_random_uuid()::text, '-', ''), uid, 'market:open:' || rid, title, body);
   insert into public.mk_outbox (user_id, channel, title, body, request_id)
-  values (uid, 'email', title, body, rid), (uid, 'whatsapp', title, body, rid);
+  values (uid, 'whatsapp', title, body, rid);
+  insert into public.mk_outbox (user_id, channel, title, body, request_id)
+  select uid, 'email', title, body, rid where exists (select 1 from public.mk_member m where m.user_id = uid and m.email_alerts);
 end $$;
 
 -- Everyone whose card fits this request (right benefit, airport, quota, bank) except the buyer and `skip`.
@@ -1011,6 +1017,29 @@ begin
     perform public.mk_notify_open(h.owner_id, 'New request you can fulfil',
       'Someone needs ' || what || '. You would earn ' || earn || '. First to accept gets it.', rid);
   end loop;
+end $$;
+
+-- A card added after requests were already paid: tell its owner about every open request it can fulfil, right away.
+create or replace function public.mk_notify_new_card(cid uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare c public.mk_cards; r public.mk_requests; n integer := 0; first_id uuid; best numeric := 0;
+begin
+  select * into c from public.mk_cards where id = cid;
+  if not found then return; end if;
+  for r in select * from public.mk_requests
+           where status = 'PAID' and buyer_id <> c.owner_id and accept_by > now() order by created_at desc loop
+    if public.mk_card_fit(c.id, r) = '' then
+      n := n + 1;
+      if first_id is null then first_id := r.id; end if;
+      best := greatest(best, coalesce((r.fee_snapshot->>'holderFee')::numeric, 0));
+    end if;
+  end loop;
+  if n > 0 then
+    perform public.mk_notify_open(c.owner_id,
+      n || case when n = 1 then ' request is' else ' requests are' end || ' waiting for your card',
+      'You can fulfil ' || case when n = 1 then 'it' else 'them' end || ' with the card you just added. Earn up to ' || public.mk_money(best) || '. First to accept gets it.',
+      first_id);
+  end if;
 end $$;
 
 -- push notifications to the browser as they are created
@@ -1227,7 +1256,7 @@ begin
   if r.status <> 'PAID' then raise exception 'Someone else already picked this up, or it is no longer open.'; end if;
   if r.accept_by <= t then raise exception 'This request has expired.'; end if;
   if (select count(*) from public.mk_requests where cardholder_id = u and status in ('ACCEPTED','FULFILLED','DISPUTED')) >= 5 then
-    raise exception 'Finish a few of your open jobs before taking more.';
+    raise exception 'Finish a few of your open tasks before taking more.';
   end if;
   select * into c from public.mk_cards where id = (p->>'cardId')::uuid and owner_id = u;
   if not found then raise exception 'Choose one of your own cards.'; end if;
@@ -1551,6 +1580,7 @@ begin
     if cid is null then raise exception 'Card not found.'; end if;
   else
     insert into public.mk_cards (owner_id, bank, variant, network, benefits) values (u, v_bank, v_variant, coalesce(p->>'network', ''), bens) returning id into cid;
+    perform public.mk_notify_new_card(cid);
   end if;
   return jsonb_build_object('ok', true, 'id', cid);
 end $$;
@@ -1625,6 +1655,14 @@ begin
   if r.status in ('REFUNDED', 'CANCELLED', 'EXPIRED') then raise exception 'This request is closed.'; end if;
   if body = '' then raise exception 'Type a message first.'; end if;
   if length(body) > 500 then raise exception 'Keep messages under 500 characters.'; end if;
+  if not public.is_admin() then
+    if length(regexp_replace(body, '\D', '', 'g')) > 4 then
+      raise exception 'A message can have at most 4 digits. Never share phone, card, account or OTP numbers.';
+    end if;
+    if (select count(*) from public.mk_messages where request_id = r.id and sender_id = u) >= 2 then
+      raise exception 'You can send 2 messages on a request, and you have used them. Use the request page or contact support.';
+    end if;
+  end if;
   if (select count(*) from public.mk_messages where sender_id = u and created_at > now() - interval '1 minute') >= 20 then
     raise exception 'You are sending messages too quickly.';
   end if;
@@ -1668,7 +1706,7 @@ end $$;
 -- internal helpers must not be callable from the browser
 do $$ declare f text; begin
   foreach f in array array[
-    'mk_audit(text,text,text,text,jsonb)','mk_notify(uuid,text,text,uuid)','mk_notify_open(uuid,text,text,uuid)','mk_notify_eligible(uuid,uuid)','mk_trust(uuid,numeric,text,uuid)','mk_recalc_member(uuid)',
+    'mk_audit(text,text,text,text,jsonb)','mk_notify(uuid,text,text,uuid)','mk_notify_open(uuid,text,text,uuid)','mk_notify_eligible(uuid,uuid)','mk_notify_new_card(uuid)','mk_trust(uuid,numeric,text,uuid)','mk_recalc_member(uuid)',
     'mk_go(uuid,text,text,text)','mk_post(uuid,text,jsonb,text)','mk_refund(uuid,numeric,text)','mk_settle(uuid,text)',
     'mk_confirm_now(uuid,text)','mk_clean_request(text,jsonb)','mk_card_fit(uuid,public.mk_requests)']
   loop
@@ -1679,3 +1717,14 @@ end $$;
 -- Optional: run the timers every 5 minutes without anyone visiting the site.
 --   create extension if not exists pg_cron;
 --   select cron.schedule('mk-sweep', '*/5 * * * *', 'select public.mk_sweep()');
+
+-- A person turns "email me new requests" on or off. Emails go to their account address, and only for people who opted in.
+create or replace function public.mk_set_email_alerts(p jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare u uuid := public.mk_me();
+begin
+  update public.mk_member set email_alerts = coalesce((p->>'on')::boolean, false) where user_id = u;
+  return jsonb_build_object('ok', true, 'on', coalesce((p->>'on')::boolean, false));
+end $$;
+revoke all on function public.mk_set_email_alerts(jsonb) from public, anon;
+grant execute on function public.mk_set_email_alerts(jsonb) to authenticated;

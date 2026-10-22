@@ -19,6 +19,22 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   };
+
+  /* ---------- names: first letter of every word capital ----------
+     "ayush kumar" and "AYUSH KUMAR" become "Ayush Kumar". A word that already mixes cases ("McDonald", "DeSouza")
+     keeps its capitals and only gets a capital first letter. Words are split at spaces, hyphens and apostrophes. */
+  UI.titleCase = function (s) {
+    return String(s == null ? '' : s).replace(/\s+/g, ' ').replace(/[^\s\-'’.]+/g, function (w) {
+      var letters = w.replace(/[^A-Za-z\u00C0-\u024F]/g, '');
+      var plain = letters && (letters === letters.toLowerCase() || letters === letters.toUpperCase());
+      var rest = plain ? w.slice(1).toLowerCase() : w.slice(1);
+      return w.charAt(0).toUpperCase() + rest;
+    });
+  };
+  /* while typing, only lift the first letter of each word, so nothing the person types is rewritten under their fingers */
+  UI.liftFirstLetters = function (s) {
+    return String(s).replace(/(^|[\s\-'’.])([a-z\u00E0-\u00FF])/g, function (m, a, b) { return a + b.toUpperCase(); });
+  };
   UI.date = function (iso) {
     var dt = new Date(iso);
     if (isNaN(dt)) return '—';

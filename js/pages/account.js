@@ -14,7 +14,7 @@
   function shell(active, title, inner) {
     var items = [
       ['/dashboard', 'Overview'],
-      ['/dashboard/cards', 'My cards'],
+      ['/market/cards', 'My benefit cards'],
       ['/dashboard/transactions', 'Transactions'],
       ['/dashboard/applications', 'Applications'],
       ['/rewards', 'Rewards wallet'],
@@ -130,7 +130,7 @@
       html: '<div class="auth-wrap"><div class="auth-card">' +
         '<h1 class="h1">Create your account</h1><p class="muted" style="margin-bottom:24px">Free, and it takes about a minute.</p>' +
         '<form id="signupForm" novalidate>' +
-        '<div class="field" style="margin-bottom:14px"><label for="s-name">Full name</label><input id="s-name" type="text" autocomplete="name"><span class="err">Tell us what to call you.</span></div>' +
+        '<div class="field" style="margin-bottom:14px"><label for="s-name">Full name</label><input id="s-name" data-name type="text" autocomplete="name"><span class="err">Tell us what to call you.</span></div>' +
         '<div class="field" style="margin-bottom:14px"><label for="s-email">Email address</label><input id="s-email" type="email" autocomplete="email"><span class="err">Enter a valid email address.</span></div>' +
         '<div class="field" style="margin-bottom:14px"><label for="s-mobile">Mobile number</label><input id="s-mobile" type="tel" inputmode="numeric" maxlength="10" autocomplete="tel-national" placeholder="10 digits"><span class="err">Enter a 10-digit mobile number.</span></div>' +
         '<div class="field" style="margin-bottom:14px"><label for="s-pw">Password</label>' +
@@ -282,137 +282,8 @@
   /* ---------------- /dashboard/cards ---------------- */
   w.CC.Pages.myCards = function () {
     if (!Auth.require()) return false;
-    var u = Auth.current();
-    var saved = C.saved(u.id);
-
-    var inner = '<div class="spread section__head"><div><h1 class="h1">My cards</h1>' +
-      '<p class="lede">Cards you have saved, with what each is worth over a year at an average spending pattern.</p></div>' +
-      '<button class="btn btn--primary btn--sm" data-add-card>Add a card</button></div>' +
-      (saved.length ? '<div class="stack">' + saved.map(function (s) {
-        var card = C.byId(s.cardId);
-        if (!card) return '';
-        var sc = card.partner ? null : C.score(card);
-        var renew = new Date(s.savedAt); renew.setFullYear(renew.getFullYear() + 1);
-        return '<div class="panel"><div class="row row--wrap" style="gap:20px; align-items:flex-start">' +
-          '<div style="width:130px; flex-shrink:0">' + UI.plastic(card) + '</div>' +
-          '<div style="flex:1; min-width:200px">' +
-          '<div class="row" style="gap:10px; margin-bottom:6px">' +
-          '<h3 class="h3" style="font-size:1.1rem">' + UI.esc(card.name) + '</h3>' +
-          (s.primary ? '<span class="badge">Primary</span>' : '') + '</div>' +
-          '<div class="small muted" style="margin-bottom:12px">' + UI.esc(C.bank(card.bank).name) + ' &middot; saved ' + UI.date(s.savedAt) + '</div>' +
-          (card.partner ?
-            '<div class="grid g-3" style="gap:14px"><div><span class="fact__k">Reward when approved</span><span class="fact__v" style="color:var(--crest)">' + UI.money(C.rewardFor(card)) + '</span></div>' +
-            '<div><span class="fact__k">Fees and benefits</span><span class="fact__v">Set by the bank</span></div>' +
-            '<div><span class="fact__k">Renews</span><span class="fact__v">' + UI.date(renew.toISOString()) + '</span></div></div></div>'
-          :
-            '<div class="grid g-3" style="gap:14px">' +
-          '<div><span class="fact__k">Annual fee</span><span class="fact__v">' + (card.annualFee ? UI.money(card.annualFee) : 'None') + '</span></div>' +
-          '<div><span class="fact__k">Est. yearly value</span><span class="fact__v" style="color:var(--crest)">' + UI.money(sc.value.net) + '</span></div>' +
-          '<div><span class="fact__k">Renews</span><span class="fact__v">' + UI.date(renew.toISOString()) + '</span></div>' +
-            '</div></div>' +
-            '<div style="text-align:center">' + UI.gauge(sc.total, false) + '</div>') +
-          '</div>' +
-          '<div class="row row--wrap" style="margin-top:18px; gap:8px">' +
-          '<a class="btn btn--ghost btn--sm" href="#/cards/' + card.id + '">Benefits</a>' +
-          (card.partner ? '' : '<a class="btn btn--ghost btn--sm" href="#/calculator?card=' + card.id + '">Model my spend</a>') +
-          (s.primary ? '' : '<button class="btn btn--soft btn--sm" data-primary="' + s.id + '">Make primary</button>') +
-          '<button class="btn btn--danger btn--sm" data-remove="' + card.id + '" style="margin-left:auto">Remove</button>' +
-          '</div></div>';
-      }).join('') + '</div>'
-        : UI.empty('No saved cards yet',
-          'Save a card and it lands here with its renewal date and what it is worth to you over a year.',
-          'Browse credit cards', '#/cards') + '<div style="text-align:center; margin-top:14px"><button class="btn btn--ghost" data-add-card>Add a card I already have</button></div>');
-
-    return {
-      title: 'My cards | Card Crest',
-      html: shell('/dashboard/cards', 'My cards', inner),
-      mount: function (root) {
-        /* Add a card: pick the company, the card type, then the card itself. */
-        function openAddCard() {
-          var typeNames = { cashback: 'Cashback', travel: 'Travel', rewards: 'Rewards', premium: 'Premium', shopping: 'Shopping', fuel: 'Fuel', dining: 'Dining', lifetime: 'Lifetime free', entry: 'Entry level', business: 'Business', partner: 'Other' };
-          function cardsOf(bank) {
-            var seen = {}, out = [];
-            C.all().concat(C.partners()).forEach(function (c) { if (c.bank === bank && !seen[c.id]) { seen[c.id] = 1; out.push(c); } });
-            return out;
-          }
-          function typesOf(list) {
-            var t = [];
-            list.forEach(function (c) { (c.type || []).forEach(function (x) { if (x !== 'partner' && t.indexOf(x) < 0) t.push(x); }); });
-            return t;
-          }
-          var banks = C.banks().filter(function (b) { return cardsOf(b.id).length; });
-          UI.modal({
-            title: 'Add a card',
-            body: '<p class="muted" style="margin-bottom:14px">Choose the company, the type of card and the card you hold. You can add up to ' + C.MAX_SAVED + ' cards, so keep adding and press Done when finished.</p>' +
-              '<div class="field"><label for="ac-bank">Card company</label><select id="ac-bank"><option value="">Select company</option>' +
-              banks.map(function (b) { return '<option value="' + b.id + '">' + UI.esc(b.name) + '</option>'; }).join('') + '</select></div>' +
-              '<div class="field" style="margin-top:12px"><label for="ac-type">Card type</label><select id="ac-type" disabled><option value="">Select company first</option></select></div>' +
-              '<div class="field" style="margin-top:12px"><label for="ac-card">Card</label><select id="ac-card" disabled><option value="">Select company first</option></select></div>' +
-              '<div class="small muted" id="ac-note" style="margin-top:10px"></div>' +
-              '<div class="small" id="ac-count" style="margin-top:6px; font-weight:600"></div>',
-            foot: '<button class="btn btn--ghost" data-x>Done</button><button class="btn btn--primary" data-ac-save disabled>Add card</button>',
-            onMount: function (m) {
-              var bankEl = m.querySelector('#ac-bank'), typeEl = m.querySelector('#ac-type'), cardEl = m.querySelector('#ac-card'),
-                  note = m.querySelector('#ac-note'), save = m.querySelector('[data-ac-save]');
-              function fillCards() {
-                var list = cardsOf(bankEl.value), t = typeEl.value;
-                if (t) list = list.filter(function (c) { return (c.type || []).indexOf(t) > -1; });
-                cardEl.innerHTML = '<option value="">' + (list.length ? 'Select card' : 'No card of this type') + '</option>' +
-                  list.map(function (c) { return '<option value="' + c.id + '">' + UI.esc(c.name) + '</option>'; }).join('');
-                cardEl.disabled = !list.length; save.disabled = true;
-              }
-              bankEl.onchange = function () {
-                var list = cardsOf(bankEl.value), ts = typesOf(list);
-                typeEl.disabled = !bankEl.value;
-                typeEl.innerHTML = '<option value="">All types</option>' + ts.map(function (x) { return '<option value="' + x + '">' + (typeNames[x] || x) + '</option>'; }).join('');
-                note.textContent = ''; fillCards();
-              };
-              typeEl.onchange = fillCards;
-              cardEl.onchange = function () {
-                save.disabled = !cardEl.value;
-                note.textContent = cardEl.value && C.isSaved(u.id, cardEl.value) ? 'You have already added this card.' : '';
-              };
-              function count() {
-                var n = C.saved(u.id).length;
-                m.querySelector('#ac-count').textContent = n + ' of ' + C.MAX_SAVED + ' cards added';
-                save.textContent = n >= C.MAX_SAVED ? 'Limit reached' : 'Add card';
-                return n;
-              }
-              count();
-              save.onclick = function () {
-                var id = cardEl.value; if (!id) return;
-                if (count() >= C.MAX_SAVED) { note.textContent = 'You can add up to ' + C.MAX_SAVED + ' cards. Remove one to add another.'; save.disabled = true; return; }
-                if (!C.save(u.id, id)) { note.textContent = 'You have already added this card.'; return; }
-                UI.toast('Card added to My cards');
-                w.CC.Router.refresh();
-                var left = count();
-                cardEl.value = ''; save.disabled = true;
-                note.textContent = left >= C.MAX_SAVED ? 'You have reached the limit of ' + C.MAX_SAVED + ' cards.' : 'Added. Pick another card, or press Done.';
-              };
-            }
-          });
-        }
-        root.querySelectorAll('[data-add-card]').forEach(function (b) { b.onclick = openAddCard; });
-        root.querySelectorAll('[data-primary]').forEach(function (b) {
-          b.onclick = function () {
-            C.setPrimary(u.id, b.dataset.primary);
-            UI.toast('Primary card updated');
-            w.CC.Router.refresh();
-          };
-        });
-        root.querySelectorAll('[data-remove]').forEach(function (b) {
-          b.onclick = function () {
-            var card = C.byId(b.dataset.remove);
-            UI.confirm('Remove ' + card.name + '?', 'It disappears from this list. You can save it again at any time.',
-              'Remove card', function () {
-                C.unsave(u.id, b.dataset.remove);
-                UI.toast('Card removed');
-                w.CC.Router.refresh();
-              }, true);
-          };
-        });
-      }
-    };
+    w.CC.Router.go('#/market/cards');      // one place for your cards: My benefit cards
+    return false;
   };
 
   /* ---------------- /dashboard/applications ---------------- */
@@ -736,7 +607,7 @@
 
       '<div class="panel" style="margin-bottom:20px"><h2 class="h3" style="margin-bottom:18px">Personal information</h2>' +
       '<div class="form-grid">' +
-      '<div class="field"><label for="p-name">Full name</label><input id="p-name" type="text" value="' + UI.esc(u.name) + '"></div>' +
+      '<div class="field"><label for="p-name">Full name</label><input id="p-name" data-name type="text" value="' + UI.esc(u.name) + '"></div>' +
       '<div class="field"><label for="p-city">City</label><input id="p-city" type="text" value="' + UI.esc(u.city || '') + '"></div>' +
       '<div class="field"><label for="p-email">Email address</label><input id="p-email" type="email" value="' + UI.esc(u.email) + '"></div>' +
       '<div class="field"><label for="p-mobile">Mobile number</label><input id="p-mobile" type="tel" inputmode="numeric" maxlength="10" placeholder="10 digits" autocomplete="tel-national" value="' + UI.esc(u.mobile || '') + '"></div>' +

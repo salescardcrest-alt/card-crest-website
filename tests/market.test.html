@@ -435,6 +435,35 @@
     await paid('LOUNGE', loungeD(ABROAD));                // international: Neha has no international benefit
     eq(S.get('notifications').filter(function (n) { return String(n.type).indexOf('market:open:') === 0; }).length, 1, 'no new alert when no card fits');
   });
+  test('a card added after a request was paid shows that request and alerts the owner', async function () {
+    resetWorld();
+    var NEW = 'u-003';
+    var rq = await paid('ORDER', orderD());
+    eq(M.openFor(NEW).filter(function (o) { return o.eligible; }).length, 0, 'no card yet, nothing to fulfil');
+    var n0 = S.get('notifications').filter(function (n) { return n.userId === NEW && String(n.type).indexOf('market:open:') === 0; }).length;
+    var sv = await C('saveCard', { bank: 'hdfc', variant: 'Millennia', benefits: [{ kind: 'SHOPPING' }] }, NEW);
+    ok(sv.ok, sv.error);
+    eq(M.openFor(NEW).filter(function (o) { return o.eligible; }).length, 1, 'the open request is listed straight away');
+    var mine = S.get('notifications').filter(function (n) { return n.userId === NEW && String(n.type).indexOf('market:open:') === 0; });
+    eq(mine.length, n0 + 1, 'the new cardholder is alerted');
+    ok(mine[mine.length - 1].type.indexOf(rq.id) > -1 && /waiting for your card/.test(mine[mine.length - 1].title), 'the alert says a request is waiting: ' + mine[mine.length - 1].title);
+  });
+  test('email alerts are opt-in: new-request emails are queued only for people who switched them on', async function () {
+    resetWorld();
+    var NEW = 'u-003';
+    await C('saveCard', { bank: 'hdfc', variant: 'Millennia', benefits: [{ kind: 'SHOPPING' }] }, NEW);
+    var mails = function () { return S.get('mkOutbox').filter(function (o) { return o.userId === NEW && o.channel === 'email'; }).length; };
+    eq(M.emailAlerts(NEW), false, 'off by default');
+    await paid('ORDER', orderD());
+    eq(mails(), 0, 'no email while it is off');
+    var on = await C('setEmailAlerts', { on: true }, NEW);
+    ok(on.ok, on.error); eq(M.emailAlerts(NEW), true);
+    await paid('ORDER', orderD());
+    eq(mails(), 1, 'one email queued for the new request once it is on');
+    await C('setEmailAlerts', { on: false }, NEW);
+    await paid('ORDER', orderD());
+    eq(mails(), 1, 'switching it off stops the emails');
+  });
   test('live alerts: a cardholder who steps back re-alerts the others but not themselves', async function () {
     resetWorld();
     S.get('mkCards').push({ id: 'mkc-r3', ownerId: 'u-003', bank: 'axis', variant: 'Magnus', active: true, benefits: [{ kind: 'LOUNGE_DOM', program: 'Visa', quota: 4, airports: ['ANY'] }] });
@@ -446,13 +475,32 @@
     var after = S.get('notifications').filter(function (n) { return String(n.type).indexOf('market:open:') === 0; });
     eq(after.length, 3, 'only the other cardholder is alerted again'); eq(after[0].userId, 'u-003');
   });
-  test('chat masks phone numbers and emails', async function () {
+  test('chat masks emails and phone numbers', async function () {
     resetWorld();
     var rq = await accepted('LOUNGE', loungeD());
-    ok((await C('sendMessage', { id: rq.id, body: 'Call me on +91 98765 43210 or mail a.b@gmail.com' })).ok);
+    ok((await C('sendMessage', { id: rq.id, body: 'mail me at a.b@gmail.com' })).ok);
     var m = M.messages(rq.id)[0].body;
-    ok(m.indexOf('98765') < 0 && m.indexOf('gmail') < 0, m);
+    ok(m.indexOf('gmail') < 0, m);
     eq(Core.maskContact('flight AI 101 at 10'), 'flight AI 101 at 10');
+    eq(Core.maskContact('Call +91 98765 43210'), 'Call [number hidden]');
+  });
+  test('chat: at most 4 digits in a message', async function () {
+    resetWorld();
+    var rq = await accepted('LOUNGE', loungeD());
+    ok(!(await C('sendMessage', { id: rq.id, body: 'my number is 98765 43210' })).ok, 'a phone number is refused');
+    ok(!(await C('sendMessage', { id: rq.id, body: 'card 1234 5678' })).ok, 'two groups of digits add up: 8 digits is refused');
+    ok((await C('sendMessage', { id: rq.id, body: 'gate 12 at 7' })).ok, '3 digits are fine');
+    eq(Core.chatDigits('a1 b2 c3 d4'), 4); ok(Core.chatCheck('12345') !== '' && Core.chatCheck('1234') === '');
+  });
+  test('chat: each person can send 2 messages on a request', async function () {
+    resetWorld();
+    var rq = await accepted('LOUNGE', loungeD());
+    ok((await C('sendMessage', { id: rq.id, body: 'hi' })).ok, 'first message');
+    ok((await C('sendMessage', { id: rq.id, body: 'see you at T3' })).ok, 'second message');
+    var third = await C('sendMessage', { id: rq.id, body: 'one more' });
+    ok(!third.ok && /2 messages/.test(third.error), 'the third is refused: ' + third.error);
+    ok((await C('sendMessage', { id: rq.id, body: 'hello' }, HOLDER)).ok, 'the other person still has their own 2');
+    ok((await C('sendMessage', { id: rq.id, body: 'staff note' }, ADMIN)).ok, 'staff are not limited');
   });
   test('chat is closed before acceptance and for outsiders', async function () {
     resetWorld();

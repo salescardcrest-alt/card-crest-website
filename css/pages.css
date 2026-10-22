@@ -308,3 +308,44 @@ a.mk-tile:hover{border-color:var(--crest); transform:translateY(-3px); box-shado
 /* the compare bar and the toasts share the bottom edge: lift the toasts above the bar while it is showing */
 body:has(#cmpTray:not([hidden])) .toasts{bottom:100px}
 @media (max-width:900px){ body:has(#cmpTray:not([hidden])) .toasts{bottom:156px} }
+
+/* ---------- Deal Timeline (cardholder, Order & Earn / Pay & Earn) ---------- */
+.deal{display:grid; gap:16px}
+.deal-timer{display:inline-flex; align-items:center; gap:10px; padding:8px 14px; border-radius:14px; background:#fff1e6; border:1px solid #f3c9a3; color:#b4541a}
+.deal-timer__t{font-weight:800; font-size:1.15rem; font-variant-numeric:tabular-nums; letter-spacing:.02em}
+.deal-timer__t.is-low{color:var(--danger,#c0392b)}
+.deal-timer__l{font-size:.74rem; line-height:1.2; max-width:7.5em}
+.deal-tl{list-style:none; margin:0; padding:0}
+.deal-tl__i{position:relative; padding:0 0 20px 44px}
+.deal-tl__i::before{content:""; position:absolute; left:0; top:0; width:28px; height:28px; border-radius:50%; background:#d9dde3}
+.deal-tl__i::after{content:""; position:absolute; left:13px; top:30px; bottom:2px; width:2px; background:#d9dde3}
+.deal-tl__i:last-child::after{display:none}
+.deal-tl__i.is-done::before{background:var(--leaf) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4 8-9' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/18px no-repeat}
+.deal-tl__i.is-done::after{background:var(--leaf)}
+.deal-tl__i.is-now::before{background:#fff; border:3px solid #2f5fd0; box-shadow:inset 0 0 0 5px #fff, inset 0 0 0 14px #2f5fd0}
+.deal-tl__t{font-weight:700; font-size:1.02rem; line-height:28px}
+.deal-tl__i:not(.is-done):not(.is-now) .deal-tl__t{color:var(--muted); font-weight:500}
+.deal-tl__d{color:var(--ink-2); font-size:.9rem; margin-top:2px}
+.deal-tl__i .btn{margin-top:8px}
+.deal-copy{display:flex; align-items:center; gap:12px; padding:10px 0; border-top:1px solid var(--line-soft)}
+.deal-copy:first-of-type{border-top:0}
+.deal-copy > div{flex:1; min-width:0}
+.deal-copy__k{display:block; font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+.deal-copy__v{display:block; font-weight:600; overflow-wrap:anywhere}
+.deal-bullets{margin:0; padding:0; list-style:none; display:grid; gap:10px}
+.deal-bullets li{position:relative; padding-left:20px; color:var(--ink)}
+.deal-bullets li::before{content:""; position:absolute; left:0; top:.55em; width:8px; height:8px; border-radius:50%; background:#2f5fd0}
+.deal-line{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:4px 0}
+.deal-big{font-size:1.4rem}
+.deal-off{color:var(--leaf)}
+.deal-get{display:flex; align-items:center; justify-content:space-between; margin:10px 0; padding:12px 14px; border-radius:12px; background:#e6ecfb; font-weight:700}
+.deal-get strong{font-size:1.2rem}
+.deal-tag{font-size:.74rem; font-weight:700; color:#b4541a; background:#ffebd6; padding:4px 10px; border-radius:50px}
+.deal-chip{margin-top:10px; padding:12px 14px; border:1px solid var(--line); border-radius:12px; font-weight:600}
+.deal-faq{border-top:1px solid var(--line-soft); padding:12px 0}
+.deal-faq summary{cursor:pointer; font-weight:600; list-style:none; display:flex; justify-content:space-between; gap:12px}
+.deal-faq summary::after{content:"+"; color:var(--muted); font-size:1.2rem; line-height:1}
+.deal-faq[open] summary::after{content:"\2212"}
+.deal-faq p{margin:8px 0 0}
+.deal-exit{width:100%; padding:16px; border:0; border-radius:14px; background:#fde8e6; color:#b3261e; font-weight:800; font-size:1rem; cursor:pointer}
+.deal-exit:hover{background:#fbd9d5}
