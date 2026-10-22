@@ -304,3 +304,7 @@ a.mk-tile:hover{border-color:var(--crest); transform:translateY(-3px); box-shado
 /* How it works: use the full page width, two columns on wide screens */
 .hiw-grid { display: grid; grid-template-columns: 1fr; gap: 0 clamp(24px, 3vw, 56px); align-items: start; }
 @media (min-width: 1000px) { .hiw-grid { grid-template-columns: 1fr 1fr; } }
+
+/* the compare bar and the toasts share the bottom edge: lift the toasts above the bar while it is showing */
+body:has(#cmpTray:not([hidden])) .toasts{bottom:100px}
+@media (max-width:900px){ body:has(#cmpTray:not([hidden])) .toasts{bottom:156px} }
