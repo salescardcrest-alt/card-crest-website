@@ -138,7 +138,7 @@ function render(m: Mail) {
   const text = `${m.title}\n\n${m.intro}\n\n${m.headline}\n` + m.lines.map(([k, v]) => `${k}: ${v}`).join("\n") +
     ((m.steps || []).length ? "\n\nWhat happens next:\n" + (m.steps || []).map((s, i) => `${i + 1}. ${s}`).join("\n") : "") +
     `\n\n${m.button}: ${m.link}\n\n${m.note}\n\nStay safe: Card Crest never asks for your card number, CVV, PIN or OTP.\n${m.reason}`;
-  return { html, text };
+  return { html: html.replace(/\s*\n\s*/g, " "), text };   // one line: stray line-end spaces show as "=20" in some mail apps
 }
 
 Deno.serve(async (req) => {
@@ -169,7 +169,7 @@ Deno.serve(async (req) => {
     }
 
     const site = (Deno.env.get("SITE_URL") || "").replace(/\/?$/, "/");
-    const gif = site + "assets/email/happy-payment.gif";
+    const gifPaid = site + "assets/email/happy-payment.gif", gifNew = site + "assets/email/new-request.gif";
     const reason = 'You receive this email because you turned on "Email me alerts". You can turn it off any time on the Earn page of your account.';
     let subject = String(row.title || "Card Crest update");
     let mail;
@@ -192,7 +192,7 @@ Deno.serve(async (req) => {
         ],
         button: "Track your request", link: site + "#/market/requests",
         note: "If nobody accepts before the time shown, your payment is refunded to you in full, automatically.",
-        reason, site, gif,
+        reason, site, gif: gifPaid,
       });
     } else {
       // a new request for a cardholder
@@ -207,7 +207,7 @@ Deno.serve(async (req) => {
         headline: sum.headline, lines: sum.lines,
         button: "View the request", link: site + "#/market/earn",
         note: "The first cardholder to accept gets the request. Open Card Crest, check the details and accept it with your own card.",
-        reason, site, gif,
+        reason, site, gif: gifNew,
       });
     }
 
