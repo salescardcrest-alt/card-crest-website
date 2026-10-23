@@ -14,7 +14,7 @@
   function shell(active, title, inner) {
     var items = [
       ['/dashboard', 'Overview'],
-      ['/market/cards', 'My benefit cards'],
+      ['/market/cards', 'Add card'],
       ['/dashboard/transactions', 'Transactions'],
       ['/dashboard/applications', 'Applications'],
       ['/rewards', 'Rewards wallet'],
@@ -280,7 +280,7 @@
   /* ---------------- /dashboard/cards ---------------- */
   w.CC.Pages.myCards = function () {
     if (!Auth.require()) return false;
-    w.CC.Router.go('#/market/cards');      // one place for your cards: My benefit cards
+    w.CC.Router.go('#/market/cards');      // one place for your cards: Add card
     return false;
   };
 

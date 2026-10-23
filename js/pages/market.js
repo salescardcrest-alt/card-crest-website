@@ -57,7 +57,7 @@
   function shell(active, inner) {
     var items = [
       ['/market', 'Overview'], ['/market/requests', 'My requests'], ['/market/pay-earn', 'Pay & Earn'], ['/market/earn', 'Earn with my card'],
-      ['/market/cards', 'My benefit cards'], ['/market/wallet', 'Wallet and payouts']
+      ['/market/cards', 'Add card'], ['/market/wallet', 'Wallet and payouts']
     ];
     return '<div class="wrap section--tight"><div class="dash">' +
       '<nav class="side-nav" aria-label="Marketplace">' +
@@ -629,13 +629,21 @@
     });
   }
 
+  /* the catalog card (and so its picture) that matches a benefit card's bank and variant */
+  function catalogFor(c) {
+    var v = String(c.variant || '').trim().toLowerCase(), list = C.all().filter(function (x) { return x.bank === c.bank; });
+    return list.filter(function (x) { return x.name.toLowerCase() === v; })[0] ||
+      list.filter(function (x) { var n = x.name.toLowerCase(); return v && (n.indexOf(v) > -1 || v.indexOf(n) > -1); })[0] || null;
+  }
+  function cardPic(card) { return card ? '<div style="width:230px; flex:none">' + UI.plastic(card) + '</div>' : ''; }
+
   w.CC.Pages.marketCards = function () {
     if (!Auth.require()) return false;
     var u = Auth.current(), cards = M.cards(u.id);
-    var inner = '<div class="spread section__head"><div><h1 class="h1">My benefit cards</h1><p class="lede">The cards you can fulfil requests with. Bank and variant only, never the number.</p></div>' +
+    var inner = '<div class="spread section__head"><div><h1 class="h1">Add card</h1><p class="lede">The cards you can fulfil requests with. Bank and variant only, never the number.</p></div>' +
       '<button class="btn btn--primary btn--sm" id="addCard">Add a card</button></div>' +
       (cards.length ? '<div class="stack">' + cards.map(function (c) {
-        return '<div class="panel" data-id="' + c.id + '"><div class="spread" style="gap:14px; flex-wrap:wrap"><div><h3 class="h3">' + esc(bankName(c.bank)) + ' ' + esc(c.variant) + '</h3>' +
+        return '<div class="panel" data-id="' + c.id + '"><div class="spread" style="gap:18px; flex-wrap:wrap; align-items:center">' + cardPic(catalogFor(c)) + '<div style="flex:1; min-width:200px"><h3 class="h3">' + esc(bankName(c.bank)) + ' ' + esc(c.variant) + '</h3>' +
           '<div class="small muted">' + esc(c.network || 'Network not set') + '</div></div><div class="row"><button class="btn btn--ghost btn--xs" data-edit>Edit</button><button class="btn btn--danger btn--xs" data-del>Remove</button></div></div>' +
           '<ul class="mk-ben-list">' + benefitSummary(c) + '</ul></div>';
       }).join('') + '</div>' : UI.empty('No cards added', 'Add a card and the benefits it carries. Lounge visits are tracked per quarter, domestic and international separately.'));
@@ -645,12 +653,12 @@
       '<p class="lede">Cards you saved while browsing, up to ' + C.MAX_SAVED + '. <a href="#/cards">Browse credit cards</a></p></div></div>' +
       (savedList.length ? '<div class="stack">' + savedList.map(function (x) {
         var b = C.bank(x.card.bank);
-        return '<div class="panel" data-saved="' + x.card.id + '"><div class="spread" style="gap:14px; flex-wrap:wrap"><div><h3 class="h3"><a href="#/cards/' + x.card.id + '">' + esc(x.card.name) + '</a></h3>' +
+        return '<div class="panel" data-saved="' + x.card.id + '"><div class="spread" style="gap:18px; flex-wrap:wrap; align-items:center">' + cardPic(x.card) + '<div style="flex:1; min-width:200px"><h3 class="h3"><a href="#/cards/' + x.card.id + '">' + esc(x.card.name) + '</a></h3>' +
           '<div class="small muted">' + esc(b ? b.name : '') + (x.sv.primary ? ' &middot; primary' : '') + '</div></div>' +
           '<div class="row"><a class="btn btn--ghost btn--xs" href="#/cards/' + x.card.id + '">Benefits</a><button class="btn btn--danger btn--xs" data-unsave>Remove</button></div></div></div>';
       }).join('') + '</div>' : '<p class="muted">Nothing saved yet. Use "Save card" on any card page.</p>');
     inner += savedHtml;
-    return { title: 'My benefit cards | Share & Earn | Card Crest', html: shell('/market/cards', inner),
+    return { title: 'Add card | Share & Earn | Card Crest', html: shell('/market/cards', inner),
       mount: function (root) {
         fresh(root);
         root.querySelector('#addCard').onclick = function () { cardEditor(null); };
