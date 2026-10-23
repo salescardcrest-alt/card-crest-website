@@ -128,7 +128,8 @@
   .hdr__act .btn--sm{height:34px; padding:0 11px; font-size:.78rem}
   .brand{gap:7px}
   .brand__mark{width:32px; height:32px}
-  .brand__word{font-size:1.12rem}
+  .brand__word{font-size:1.05rem; letter-spacing:.02em}
+  .brand__txt{gap:0}
   .hdr__burger{flex-shrink:0}
 }
 
