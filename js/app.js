@@ -275,7 +275,10 @@
     d.body.appendChild(el);
     el.querySelector('[data-later]').onclick = function () { snooze(7); el.remove(); };
     el.querySelector('[data-allow]').onclick = function () {
+      var finished = false;                                   // new browsers call the callback and the promise: act once
       var done = function (p) {
+        if (finished) return;
+        finished = true;
         el.remove();
         if (p === 'granted') {
           w.CC.UI.toast('Notifications are on');
