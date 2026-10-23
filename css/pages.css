@@ -130,7 +130,7 @@
 /* ---------- dashboard ---------- */
 .dash{display:grid; grid-template-columns:230px 1fr; gap:32px; align-items:start}
 .side-nav{position:sticky; top:calc(var(--hdr-h) + 16px); display:flex; flex-direction:column; gap:2px}
-.side-nav a{padding:10px 14px; border-radius:var(--r-sm); font-size:.9rem; font-weight:500; color:var(--ink-2)}
+.side-nav a{padding:8px 12px; border-radius:var(--r-sm); font-size:.86rem; font-weight:500; color:var(--ink-2)}
 .side-nav a:hover{background:var(--mist)}
 .side-nav a.is-active{background:var(--mint); color:var(--crest); font-weight:600}
 .side-nav h4{font-size:.7rem; letter-spacing:.11em; text-transform:uppercase; color:var(--muted); padding:16px 14px 7px}

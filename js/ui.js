@@ -23,6 +23,19 @@
   /* ---------- names: first letter of every word capital ----------
      "ayush kumar" and "AYUSH KUMAR" become "Ayush Kumar". A word that already mixes cases ("McDonald", "DeSouza")
      keeps its capitals and only gets a capital first letter. Words are split at spaces, hyphens and apostrophes. */
+  /* One side menu for the whole account area: dashboard, requests, earning, wallet. Pages under /market light up the same item. */
+  UI.NAV_ITEMS = [
+    ['/dashboard', 'Overview'], ['/market/requests', 'My requests'], ['/market/pay-earn', 'Pay & Earn'], ['/dashboard/earn', 'Earn & Alerts'],
+    ['/dashboard/cards', 'Add card'], ['/rewards', 'Wallet & KYC'], ['/dashboard/transactions', 'Transactions'], ['/dashboard/applications', 'Applications'],
+    ['/refer', 'Refer and earn'], ['/dashboard/notifications', 'Notifications'], ['/profile', 'Profile and settings']
+  ];
+  var NAV_ALIAS = { '/market/earn': '/dashboard/earn', '/market/cards': '/dashboard/cards', '/market/wallet': '/rewards', '/dashboard/wallet': '/rewards' };
+  UI.sideNav = function (active) {
+    active = NAV_ALIAS[active] || active;
+    return '<nav class="side-nav" aria-label="Account">' + UI.NAV_ITEMS.map(function (i) {
+      return '<a href="#' + i[0] + '" class="' + (i[0] === active ? 'is-active' : '') + '">' + i[1] + '</a>';
+    }).join('') + '</nav>';
+  };
   /* sentence case for text people type in: first letter capital, the rest as typed */
   UI.sentence = function (s) { s = String(s == null ? "" : s).trim(); return s.charAt(0).toUpperCase() + s.slice(1); };
   UI.titleCase = function (s) {

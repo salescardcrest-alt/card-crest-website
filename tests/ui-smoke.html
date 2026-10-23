@@ -156,7 +156,7 @@
       click('.modal [data-save]'); await sleep(300);
       if (cw.location.hash !== '#/market/cards') await go('#/market/cards');   // a card added while requests are waiting jumps to the open requests
       ok(/Regalia/.test(txt()), 'a benefit card can be added');
-      await go('#/market/wallet'); ok(/Wallet and payouts/.test(txt()) && /KYC/.test(txt()), 'wallet page shows KYC and payouts');
+      await go('#/market/wallet'); ok(/Withdraw money/.test(txt()) && /KYC/.test(txt()), 'wallet page shows one withdraw panel and KYC');
 
       /* admin sections */
       cw.CC.Store.set('session', 'u-000'); cw.CC.App.paintAuth();

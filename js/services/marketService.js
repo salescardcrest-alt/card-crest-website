@@ -201,6 +201,8 @@
       var cur = col('mkFees').filter(function (x) { return x.id === f.id; })[0];
       if (cur && (cur.mode !== f.mode && (f.mode === 'SPLIT' || f.module === 'LOUNGE') || (f.listValue && cur.listValue == null))) S.get('mkFees')[S.get('mkFees').indexOf(cur)] = Object.assign({}, f);
       if (!cur) S.get('mkFees').push(Object.assign({}, f));
+      /* Order & Earn requests stay open 3 hours; saved pricing that still has the old 12 or 24 hours is moved to it */
+      if (cur && (f.module === 'ORDER' || f.module === 'PAY') && (cur.acceptHours === 12 || cur.acceptHours === 24)) S.update('mkFees', cur.id, { acceptHours: 3 });
     });
     S.commit();
     /* a built-in test cardholder so one person can walk the whole flow alone */
@@ -500,10 +502,24 @@
           refund(byId('mkRequests', r.id), 0, 'Nobody accepted in time');
           notify(r.buyerId, 'Request expired', 'No cardholder picked it up in time. ' + fmt(r.feeSnapshot.total) + ' has been refunded in full.', r.id);
           n++;
-        } else if (r.status === 'ACCEPTED' && r.fulfilBy && new Date(r.fulfilBy).getTime() <= t) {
+        } else if (r.status === 'ACCEPTED' && Core.holdDeadline(r) && new Date(Core.holdDeadline(r)).getTime() <= t) {
+          if (r.module === 'ORDER' || r.module === 'PAY') {
+            /* not paid within 30 minutes: it goes back to the open requests for another cardholder */
+            var holder = r.cardholderId;
+            releaseQuota(r);
+            go(r, 'PAID', 'system', 'Cardholder did not pay in time');
+            S.update('mkRequests', r.id, { cardholderId: null, cardId: null, acceptedAt: null, fulfilBy: null, acceptBy: new Date(t + Number(r.feeSnapshot.acceptHours || 12) * 3600000).toISOString() });
+            post(r, 'PENALTY', [{ account: 'holder:' + holder, debit: Core.NO_SHOW_PENALTY }, { account: 'platform', credit: Core.NO_SHOW_PENALTY }], 'Did not pay in time');
+            trustEvent(holder, -5, 'Did not pay in time', r.id);
+            notify(holder, 'Request went back', 'You did not pay within 30 minutes, so the request went back to the open requests and ' + fmt(Core.NO_SHOW_PENALTY) + ' was deducted from your wallet.', r.id);
+            notify(r.buyerId, 'Cardholder did not pay in time', 'Your request is open again for another cardholder.', r.id);
+            notifyEligible(byId('mkRequests', r.id), holder);
+            n++;
+            return;
+          }
           releaseQuota(r);
           trustEvent(r.cardholderId, -10, 'No-show', r.id);
-          refund(r, r.feeSnapshot.penalty, 'Cardholder did not deliver in time');
+          refund(r, Core.NO_SHOW_PENALTY, 'Cardholder did not deliver in time');
           notify(r.buyerId, 'Refunded in full', 'The cardholder did not deliver in time, so you were refunded.', r.id);
           n++;
         } else if (r.status === 'FULFILLED' && r.autoConfirmAt && new Date(r.autoConfirmAt).getTime() <= t && !(r.topupDue > 0)) {
@@ -590,9 +606,10 @@
     var k = col('mkKyc').filter(function (x) { return x.userId === actor; })[0];
     if (!k || k.status !== 'APPROVED') fail('Complete KYC and wait for approval before your first payout.');
     var amt = Core.r2(p.amount);
-    if (!(amt >= 100)) fail('The minimum payout is ₹100.');
+    if (!(amt >= (p.part ? 1 : Core.MIN_PAYOUT))) fail('The minimum payout is ₹' + Core.MIN_PAYOUT + '.');
     if (amt > L.available(actor)) fail('That is more than your available balance.');
-    var row = { id: rid('pay'), userId: actor, amount: amt, method: k.upi ? 'UPI' : 'BANK', destination: k.upi || ('A/c ending ' + k.account.slice(-4)), status: 'REQUESTED', createdAt: nowIso() };
+    var typed = String(p.destination || '').trim().slice(0, 160);   // where the person asked for it to go, if they typed it
+    var row = { id: rid('pay'), userId: actor, amount: amt, method: typed ? (p.method === 'UPI' ? 'UPI' : 'BANK') : (k.upi ? 'UPI' : 'BANK'), destination: typed || k.upi || ('A/c ending ' + k.account.slice(-4)), status: 'REQUESTED', createdAt: nowIso() };
     S.insert('mkPayouts', row);
     return { payout: row };
   };

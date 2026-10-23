@@ -400,8 +400,8 @@ insert into public.mk_fee_config (id, module, subtype, label, mode, fee, fee_pct
  ('fee-lounge-intl', 'LOUNGE','INTERNATIONAL',        'International lounge',   'FIXED',   1000, null, null, 500,  null, null, null, 12,  6,   200),
  ('fee-movie-flat',  'MOVIE', 'FLAT_500_OFF_2_SEATS', '₹500 off on 2 seats',    'FIXED',   300,  null, null, 100,  null, 500,  null, 12,  3,   100),
  ('fee-movie-bogo',  'MOVIE', 'BOGO',                 'Buy one get one',        'FIXED',   300,  null, null, 100,  null, null, 0,    12,  3,   100),
- ('fee-order',       'ORDER', 'DEFAULT',              'Order & Earn',           'PERCENT', null, 6,    49,   null, 40,   null, null, 24,  168, 150),
- ('fee-pay',         'PAY',   'DEFAULT',              'Pay & Earn',             'PERCENT', null, 4,    39,   null, 40,   null, null, 12,  24,  100)
+ ('fee-order',       'ORDER', 'DEFAULT',              'Order & Earn',           'PERCENT', null, 6,    49,   null, 40,   null, null, 3,   168, 150),
+ ('fee-pay',         'PAY',   'DEFAULT',              'Pay & Earn',             'PERCENT', null, 4,    39,   null, 40,   null, null, 3,   24,  100)
 on conflict (id) do nothing;
 
 -- SPLIT pricing for Lounge, Order & Earn and Pay & Earn: the discount (for lounges, the usual entry price
@@ -421,6 +421,8 @@ update public.mk_fee_config set mode = 'FIXED', fee = 500, platform_amt = 250, l
 update public.mk_fee_config set mode = 'FIXED', fee = 1000, platform_amt = 500, list_value = 2500,
   buyer_pct = null, holder_pct = null, platform_pct = null where id = 'fee-lounge-intl' and (list_value is null or mode = 'SPLIT');
 -- Order & Earn and Pay & Earn: the discount is shared 40% buyer / 30% cardholder / 30% platform.
+-- Order & Earn requests stay open 3 hours (only rows still on the old 12 or 24 hours are moved).
+update public.mk_fee_config set accept_hours = 3 where id in ('fee-order', 'fee-pay') and accept_hours in (12, 24);
 update public.mk_fee_config set mode = 'SPLIT', buyer_pct = 40, holder_pct = 30, platform_pct = 30,
   fee = null, fee_pct = null, min_fee = null, platform_amt = null where id in ('fee-order', 'fee-pay') and mode <> 'SPLIT';
 
@@ -1451,10 +1453,24 @@ begin
         perform public.mk_refund(r.id, 0, 'Nobody accepted in time');
         perform public.mk_notify(r.buyer_id, 'Request expired', 'No cardholder picked it up in time. ' || public.mk_money((r.fee_snapshot->>'total')::numeric) || ' has been refunded in full.', r.id);
         n := n + 1;
+      elsif r.status = 'ACCEPTED' and r.module in ('ORDER', 'PAY') and least(r.fulfil_by, r.accepted_at + interval '30 minutes') <= now() then
+        -- not paid within 30 minutes: back to the open requests for another cardholder
+        delete from public.mk_quota_use where request_id = r.id;
+        perform public.mk_go(r.id, 'PAID', 'system', 'Cardholder did not pay in time');
+        update public.mk_requests set cardholder_id = null, card_id = null, accepted_at = null, fulfil_by = null,
+          accept_by = now() + ((r.fee_snapshot->>'acceptHours')::numeric * interval '1 hour') where id = r.id;
+        perform public.mk_post(r.id, 'PENALTY', jsonb_build_array(
+          jsonb_build_object('account', 'holder:' || r.cardholder_id, 'debit', 50),
+          jsonb_build_object('account', 'platform', 'credit', 50)), 'Did not pay in time');
+        perform public.mk_trust(r.cardholder_id, -5, 'Did not pay in time', r.id);
+        perform public.mk_notify(r.cardholder_id, 'Request went back', 'You did not pay within 30 minutes, so the request went back to the open requests and ₹50 was deducted from your wallet.', r.id);
+        perform public.mk_notify(r.buyer_id, 'Cardholder did not pay in time', 'Your request is open again for another cardholder.', r.id);
+        perform public.mk_notify_eligible(r.id, r.cardholder_id);
+        n := n + 1;
       elsif r.status = 'ACCEPTED' and r.fulfil_by <= now() then
         delete from public.mk_quota_use where request_id = r.id;
         perform public.mk_trust(r.cardholder_id, -10, 'No-show', r.id);
-        perform public.mk_refund(r.id, (r.fee_snapshot->>'penalty')::numeric, 'Cardholder did not deliver in time');
+        perform public.mk_refund(r.id, 50, 'Cardholder did not deliver in time');
         perform public.mk_notify(r.buyer_id, 'Refunded in full', 'The cardholder did not deliver in time, so you were refunded.', r.id);
         n := n + 1;
       elsif r.status = 'FULFILLED' and r.auto_confirm_at <= now() and r.topup_due <= 0 then
@@ -1626,17 +1642,18 @@ end $$;
 
 create or replace function public.mk_request_payout(p jsonb)
 returns jsonb language plpgsql security definer set search_path = public as $$
-declare u uuid := public.mk_me(); k public.mk_kyc; amt numeric := round((p->>'amount')::numeric, 2); bal numeric; asked numeric; pid uuid;
+declare u uuid := public.mk_me(); k public.mk_kyc; amt numeric := round((p->>'amount')::numeric, 2); bal numeric; asked numeric; pid uuid; v_min numeric;
 begin
   select * into k from public.mk_kyc where user_id = u;
   if not found or k.status <> 'APPROVED' then raise exception 'Complete KYC and wait for approval before your first payout.'; end if;
-  if amt is null or amt < 100 then raise exception 'The minimum payout is ₹100.'; end if;
+  v_min := case when coalesce((p->>'part')::boolean, false) then 1 else 250 end;   -- a part of one larger withdrawal may be under 250
+  if amt is null or amt < v_min then raise exception 'The minimum payout is ₹250.'; end if;
   select coalesce(sum(credit - debit), 0) into bal from public.mk_ledger where account = 'holder:' || u;
   select coalesce(sum(amount), 0) into asked from public.mk_payouts where user_id = u and status = 'REQUESTED';
   if amt > bal - asked then raise exception 'That is more than your available balance.'; end if;
   insert into public.mk_payouts (user_id, amount, method, destination)
-  values (u, amt, case when k.upi <> '' then 'UPI' else 'BANK' end,
-          case when k.upi <> '' then k.upi else 'A/c ending ' || right(k.account, 4) end) returning id into pid;
+  values (u, amt, case when length(trim(coalesce(p->>'destination', ''))) >= 3 then (case when p->>'method' = 'UPI' then 'UPI' else 'BANK' end) when k.upi <> '' then 'UPI' else 'BANK' end,
+          case when length(trim(coalesce(p->>'destination', ''))) >= 3 then left(trim(p->>'destination'), 160) when k.upi <> '' then k.upi else 'A/c ending ' || right(k.account, 4) end) returning id into pid;
   return jsonb_build_object('ok', true, 'payout', jsonb_build_object('id', pid));
 end $$;
 

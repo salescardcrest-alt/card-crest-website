@@ -275,6 +275,8 @@ create policy "fav own" on public.favourites for all
 
 ------------------------------------------------------------
 -- redemption guard: minimum 250 and never more than the balance
+alter table public.redemptions add column if not exists part boolean not null default false;   -- true when this is one part of a larger withdrawal
+
 ------------------------------------------------------------
 create or replace function public.check_redemption()
 returns trigger
@@ -290,7 +292,8 @@ begin
     - coalesce((select sum(amount)   from public.redemptions  where user_id = new.user_id and status <> 'rejected'), 0)
   into available;
 
-  if new.amount < 250 then raise exception 'The minimum redemption is 250'; end if;
+  -- a part of one larger withdrawal (rewards plus earnings together) may be under 250; the whole is checked on the page
+  if new.amount < 250 and not new.part then raise exception 'The minimum redemption is 250'; end if;
   if new.amount > available then raise exception 'Amount is more than your available balance'; end if;
   return new;
 end;

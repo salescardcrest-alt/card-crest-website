@@ -8,6 +8,8 @@
   'use strict';
   var Core = {};
 
+  Core.NO_SHOW_PENALTY = 50;   /* taken from the cardholder who does not deliver in time, whatever the request type */
+  Core.MIN_PAYOUT = 250;   /* the least a payout can be, the same as the least a reward can be redeemed */
   Core.MODULES = ['LOUNGE', 'MOVIE', 'ORDER', 'PAY'];
   Core.MODULE_LABEL = { LOUNGE: 'Lounge access', MOVIE: 'Movie offer', ORDER: 'Order & Earn (old)', PAY: 'Order & Earn' };
 
@@ -46,9 +48,9 @@
     { id: 'fee-movie-bogo', module: 'MOVIE', subtype: 'BOGO', label: 'Buy one get one', mode: 'FIXED',
       fee: 300, platformAmt: 100, cap: 0, acceptHours: 12, confirmHours: 3, penalty: 100, active: true },
     { id: 'fee-order', module: 'ORDER', subtype: 'DEFAULT', label: 'Order & Earn', mode: 'SPLIT',
-      buyerPct: 40, holderPct: 30, platformPct: 30, acceptHours: 24, confirmHours: 168, penalty: 150, active: true },
+      buyerPct: 40, holderPct: 30, platformPct: 30, acceptHours: 3, confirmHours: 168, penalty: 150, active: true },
     { id: 'fee-pay', module: 'PAY', subtype: 'DEFAULT', label: 'Pay & Earn', mode: 'SPLIT',
-      buyerPct: 40, holderPct: 30, platformPct: 30, acceptHours: 12, confirmHours: 24, penalty: 100, active: true }
+      buyerPct: 40, holderPct: 30, platformPct: 30, acceptHours: 3, confirmHours: 24, penalty: 100, active: true }
   ];
 
   Core.feeFor = function (fees, module, subtype) {
@@ -195,6 +197,12 @@
     return iso(by);
   };
   /* Last moment the cardholder can upload proof. */
+  /* Order & Earn: the cardholder has 30 minutes from accepting to pay, whatever deadline an older request was saved with. */
+  Core.holdDeadline = function (req) {
+    var f = req.fulfilBy ? new Date(req.fulfilBy).getTime() : null;
+    if ((req.module === 'ORDER' || req.module === 'PAY') && req.acceptedAt) f = Math.min(f == null ? Infinity : f, new Date(req.acceptedAt).getTime() + 0.5 * H);
+    return f == null ? null : iso(f);
+  };
   Core.fulfilBy = function (req, acceptedAtMs) {
     var ev = Core.eventTime(req);
     return iso(ev ? new Date(ev).getTime() - 0.5 * H : acceptedAtMs + (req.module === 'ORDER' || req.module === 'PAY' ? 0.5 : 48) * H);

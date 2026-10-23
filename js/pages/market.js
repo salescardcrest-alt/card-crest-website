@@ -54,19 +54,9 @@
     return 'Price after offer ' + money(x.expectedPrice) + ' (listed ' + money(x.listPrice) + ')';
   }
 
-  /* the Add card page opens from the account menu too: keep that menu when it was opened from there */
-  var ACCOUNT_ITEMS = [['/dashboard', 'Overview'], ['/dashboard/cards', 'Add card'], ['/dashboard/earn', 'Earn with my card'], ['/dashboard/transactions', 'Transactions'], ['/dashboard/applications', 'Applications'],
-    ['/rewards', 'Rewards wallet'], ['/dashboard/wallet', 'Wallet and payouts'], ['/refer', 'Refer and earn'], ['/dashboard/notifications', 'Notifications'], ['/profile', 'Profile and settings']];
+  /* the same side menu as the account pages, so it never changes when you move between them */
   function shell(active, inner) {
-    var fromAccount = active.indexOf('/dashboard/') === 0;
-    var items = fromAccount ? ACCOUNT_ITEMS : [
-      ['/market', 'Overview'], ['/market/requests', 'My requests'], ['/market/pay-earn', 'Pay & Earn'], ['/market/earn', 'Earn with my card'],
-      ['/market/cards', 'Add card'], ['/market/wallet', 'Wallet and payouts']
-    ];
-    return '<div class="wrap section--tight"><div class="dash">' +
-      '<nav class="side-nav" aria-label="Marketplace">' +
-      items.map(function (i) { return '<a href="#' + i[0] + '" class="' + (i[0] === active ? 'is-active' : '') + '">' + i[1] + '</a>'; }).join('') +
-      '</nav><div>' + inner + '</div></div></div>';
+    return '<div class="wrap section--tight"><div class="dash">' + UI.sideNav(active) + '<div>' + inner + '</div></div></div>';
   }
 
   var lastLoad = 0;
@@ -496,7 +486,7 @@
             : '<p class="small muted" style="margin-top:12px">Not for your cards: ' + esc(o.why) + '</p>') + '</div>';
       }).join('') + '</div>' : UI.empty('No open requests right now', 'New ones appear here as buyers pay. Check back soon.');
 
-    var inner = '<div class="section__head"><h1 class="h1">Earn with my card</h1><p class="lede">Pick up requests your cards can fulfil. You pay with your own card, get reimbursed, and earn the service fee.</p></div>' +
+    var inner = '<div class="section__head"><h1 class="h1">Earn &amp; Alerts</h1><p class="lede">Pick up requests your cards can fulfil. You pay with your own card, get reimbursed, and earn the service fee.</p></div>' +
       '<div class="mk-live"><span class="mk-live__dot" aria-hidden="true"></span><div class="mk-live__t"><strong>Live alerts are on.</strong> You are told the moment someone needs a service one of your cards can do, with no refresh needed.</div><div class="row row--wrap" style="gap:8px"><button class="btn btn--ghost btn--xs" id="soundBtn"></button><button class="btn btn--soft btn--xs" id="alertBtn" hidden>Get desktop alerts</button><button class="btn btn--soft btn--xs" id="emailBtn" type="button"></button></div></div>' +
       '<div class="grid g-3" style="margin-bottom:24px">' +
       '<div class="stat stat--accent"><span class="stat__k">Wallet available</span><span class="stat__v">' + money(wal.available) + '</span><span class="stat__sub">' + money(wal.pending) + ' on the way</span></div>' +
@@ -507,7 +497,7 @@
       (tab === 'open' ? openHtml : requestList(mine, UI.empty('No tasks yet', 'Accepted requests show up here.'), false));
 
     return {
-      title: 'Earn with my card | Share & Earn | Card Crest', html: shell(w.location.hash.indexOf('#/dashboard/earn') === 0 ? '/dashboard/earn' : '/market/earn', inner),
+      title: 'Earn & Alerts | Share & Earn | Card Crest', html: shell(w.location.hash.indexOf('#/dashboard/earn') === 0 ? '/dashboard/earn' : '/market/earn', inner),
       mount: function (root) {
         fresh(root); onChange(root, w.CC.Router.refresh);
         /* live alerts: sound switch, desktop alert permission, and a gentle refresh as a safety net */
@@ -697,22 +687,35 @@
       : '<div class="spread"><div><strong>' + esc(kyc.legalName) + '</strong><div class="small muted">PAN ••••••' + esc(kyc.pan.slice(-4)) + ' · ' + (kyc.upi ? esc(kyc.upi) : 'Bank a/c ••••' + esc((kyc.account || '').slice(-4))) + '</div></div>' +
         '<span class="badge badge--' + (kyc.status === 'APPROVED' ? 'ok' : 'warn') + '">' + (kyc.status === 'APPROVED' ? 'Approved' : 'In review') + '</span></div>';
 
-    var inner = '<div class="section__head"><h1 class="h1">Wallet and payouts</h1><p class="lede">Your earnings from completed requests. Payouts need approved KYC.</p></div>' +
-      '<div class="grid g-3" style="margin-bottom:24px">' +
-      '<div class="stat stat--accent"><span class="stat__k">Available</span><span class="stat__v">' + money(wal.available) + '</span><span class="stat__sub">' + (wal.asked ? money(wal.asked) + ' payout in process' : 'Minimum payout ₹100') + '</span></div>' +
-      '<div class="stat"><span class="stat__k">On the way</span><span class="stat__v">' + money(wal.pending) + '</span><span class="stat__sub">From requests in progress</span></div>' +
-      '<div class="stat"><span class="stat__k">Earned to date</span><span class="stat__v">' + money(wal.earned) + '</span><span class="stat__sub">Reimbursements and fees</span></div></div>' +
-      '<div class="grid g-2" style="margin-bottom:24px">' +
-      '<div class="panel"><h2 class="h3" style="margin-bottom:12px">KYC</h2>' + kycHtml + '</div>' +
-      '<div class="panel"><h2 class="h3" style="margin-bottom:12px">Request a payout</h2>' +
-      (kyc && kyc.status === 'APPROVED'
-        ? field('p-amt', 'Amount (₹)', '<input id="p-amt" type="number" min="100" inputmode="decimal" value="' + Math.floor(Math.max(0, wal.available)) + '">', 'Sent to ' + esc(kyc.upi || 'your bank account') + '. Test mode, no real money moves.') +
-          '<p class="err" id="p-err" style="color:var(--danger); font-size:.86rem; display:none"></p><button class="btn btn--primary" id="p-go"' + (wal.available < 100 ? ' disabled' : '') + '>Request payout</button>'
-        : '<p class="muted">Complete KYC and wait for approval before your first payout.</p>') + '</div></div>' +
-      '<h2 class="h3" style="margin-bottom:10px">Payouts</h2>' +
-      (pays.length ? '<div class="panel panel--flush" style="margin-bottom:24px"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Date</th><th>To</th><th>Status</th><th class="num">Amount</th></tr></thead><tbody>' +
-        pays.map(function (p) { return '<tr><td>' + dt(p.createdAt) + '</td><td>' + esc(p.destination) + '</td><td><span class="badge badge--' + (p.status === 'PAID' ? 'ok' : p.status === 'REJECTED' ? 'danger' : 'warn') + '">' + p.status.charAt(0) + p.status.slice(1).toLowerCase() + '</span></td><td class="num">' + money(p.amount) + '</td></tr>'; }).join('') + '</tbody></table></div></div>'
-        : '<p class="muted" style="margin-bottom:24px">No payouts yet.</p>') +
+    var CB = w.CC.Cashback, RW = w.CC.Rewards, rt = CB.totals(u.id), redemptions = RW.redemptions(u.id);
+    var totalAvail = Number(rt.available) + Number(wal.available);
+    var approved = kyc && kyc.status === 'APPROVED';
+    /* one list of everything withdrawn, rewards and earnings together; no section at all until there is something in it */
+    var withdrawals = redemptions.map(function (r) { return { at: r.createdAt, to: r.destination || r.method, badge: UI.statusBadge(r.status), amount: r.amount }; })
+      .concat(pays.map(function (p) { return { at: p.createdAt, to: p.destination, badge: '<span class="badge badge--' + (p.status === 'PAID' ? 'ok' : p.status === 'REJECTED' ? 'danger' : 'warn') + '">' + p.status.charAt(0) + p.status.slice(1).toLowerCase() + '</span>', amount: p.amount }; }))
+      .sort(function (a, b) { return new Date(b.at) - new Date(a.at); });
+    var withdrawalsHtml = withdrawals.length ? '<h2 class="h3" style="margin-bottom:10px">Withdrawals</h2><div class="panel panel--flush" style="margin-bottom:24px"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Date</th><th>To</th><th>Status</th><th class="num">Amount</th></tr></thead><tbody>' +
+      withdrawals.map(function (x) { return '<tr><td>' + dt(x.at) + '</td><td>' + esc(x.to) + '</td><td>' + x.badge + '</td><td class="num"><strong>' + money(x.amount) + '</strong></td></tr>'; }).join('') + '</tbody></table></div></div>' : '';
+    /* one withdrawal: it comes out of the total, rewards first and then earnings, and goes where you say */
+    var withdrawHtml = '<div class="panel" style="margin-bottom:24px"><h2 class="h3" style="margin-bottom:4px">Withdraw money</h2>' +
+      '<p class="muted small" style="margin-bottom:14px">Minimum ' + money(Core.MIN_PAYOUT) + '. ' + (approved ? '' : 'Complete KYC below first. ') + 'UPI and bank transfers land within two working days.</p>' +
+      '<div class="form-grid">' + field('w-amt', 'Amount (₹)', '<input id="w-amt" type="number" min="' + Core.MIN_PAYOUT + '" inputmode="decimal" value="' + Math.floor(Math.max(0, totalAvail)) + '">') +
+      field('w-method', 'Send it to', '<select id="w-method"><option value="UPI">UPI</option><option value="BANK">Bank transfer</option></select>') + '</div>' +
+      '<div id="w-upi">' + field('w-upiid', 'UPI ID', '<input id="w-upiid" placeholder="name@bank" autocomplete="off" value="' + esc(kyc && kyc.upi || '') + '">') + '</div>' +
+      '<div id="w-bank" hidden><div class="form-grid">' + field('w-bname', 'Bank name', '<input id="w-bname" autocomplete="off" placeholder="e.g. State Bank of India">') +
+      field('w-acct', 'Account number', '<input id="w-acct" inputmode="numeric" autocomplete="off" value="' + esc(kyc && kyc.account || '') + '">') + '</div>' +
+      field('w-ifsc', 'IFSC code', '<input id="w-ifsc" maxlength="11" autocomplete="off" placeholder="SBIN0001234" value="' + esc(kyc && kyc.ifsc || '') + '">') + '</div>' +
+      '<p class="err" id="w-err" style="color:var(--danger); font-size:.86rem; display:none; margin-top:8px"></p>' +
+      '<button class="btn btn--primary" id="w-go" style="margin-top:14px">Withdraw</button></div>';
+    var inner = '<div class="section__head"><h1 class="h1">Wallet &amp; KYC</h1><p class="lede">Your cashback rewards and your Share &amp; earn earnings, with one place to withdraw.</p></div>' +
+      '<div class="grid g-4" style="margin-bottom:24px">' +
+      '<div class="stat stat--accent"><span class="stat__k">Available in total</span><span class="stat__v">' + money(totalAvail) + '</span><span class="stat__sub">Minimum withdrawal ' + money(Core.MIN_PAYOUT) + '</span></div>' +
+      '<div class="stat"><span class="stat__k">Rewards</span><span class="stat__v">' + money(rt.available) + '</span><span class="stat__sub">' + money(rt.pending) + ' pending</span></div>' +
+      '<div class="stat"><span class="stat__k">Earnings</span><span class="stat__v">' + money(wal.available) + '</span><span class="stat__sub">' + (wal.asked ? money(wal.asked) + ' payout in process' : money(wal.pending) + ' on the way') + '</span></div>' +
+      '<div class="stat"><span class="stat__k">Earned to date</span><span class="stat__v">' + money(Number(wal.earned) + Number(rt.lifetime)) + '</span><span class="stat__sub">Rewards and earnings</span></div></div>' +
+      withdrawHtml +
+      '<div class="panel" style="margin-bottom:24px"><h2 class="h3" style="margin-bottom:12px">KYC for earnings payouts</h2>' + kycHtml + '</div>' +
+      withdrawalsHtml +
       '<h2 class="h3" style="margin-bottom:10px">Wallet activity</h2>' +
       (lines.length ? '<div class="panel panel--flush"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Date</th><th>What</th><th class="num">Amount</th></tr></thead><tbody>' +
         lines.map(function (e) {
@@ -721,7 +724,7 @@
           return '<tr><td>' + dt(e.at) + '</td><td>' + kind + (e.note ? '<div class="small muted">' + esc(e.note) + '</div>' : '') + '</td><td class="num" style="color:' + (amt < 0 ? 'var(--danger)' : 'inherit') + '"><strong>' + (amt < 0 ? '−' : '+') + money(Math.abs(amt)) + '</strong></td></tr>';
         }).join('') + '</tbody></table></div></div>' : '<p class="muted">Earnings appear here when your requests complete.</p>');
 
-    return { title: 'Wallet and payouts | Share & Earn | Card Crest', html: shell(w.location.hash.indexOf('#/dashboard/wallet') === 0 ? '/dashboard/wallet' : '/market/wallet', inner),
+    return { title: 'Wallet & KYC | Card Crest', html: shell(w.location.hash.indexOf('#/market/wallet') === 0 ? '/market/wallet' : '/rewards', inner),
       mount: function (root) {
         fresh(root); onChange(root, w.CC.Router.refresh);
         var kg = root.querySelector('#k-go');
@@ -734,13 +737,38 @@
             UI.toast('KYC submitted. We will review it shortly.'); w.CC.Router.refresh();
           });
         };
-        var pg = root.querySelector('#p-go');
-        if (pg) pg.onclick = function () {
-          var err = root.querySelector('#p-err'); err.style.display = 'none'; busy(pg, true);
-          M.do('requestPayout', { amount: root.querySelector('#p-amt').value }).then(function (r) {
-            busy(pg, false);
-            if (!r.ok) { err.textContent = r.error; err.style.display = 'block'; return; }
-            UI.toast('Payout requested'); w.CC.Router.refresh();
+        var amtIn = root.querySelector('#w-amt'), wg = root.querySelector('#w-go'), method = root.querySelector('#w-method');
+        method.onchange = function () {
+          root.querySelector('#w-upi').hidden = method.value !== 'UPI'; root.querySelector('#w-bank').hidden = method.value !== 'BANK';
+        };
+        if (kyc && !kyc.upi && kyc.account) { method.value = 'BANK'; method.onchange(); }
+        wg.onclick = function () {
+          var err = root.querySelector('#w-err'); err.style.display = 'none';
+          function bad(msg) { err.textContent = msg; err.style.display = 'block'; }
+          var amt = Math.round(Number(amtIn.value) * 100) / 100;
+          if (!(amt >= Core.MIN_PAYOUT)) return bad('The minimum withdrawal is ' + money(Core.MIN_PAYOUT) + '.');
+          if (amt > totalAvail) return bad('You have ' + money(totalAvail) + ' available.');
+          if (!approved) return bad('Complete KYC and wait for approval before your first withdrawal.');
+          var dest;
+          if (method.value === 'UPI') {
+            var upi = root.querySelector('#w-upiid').value.trim();
+            if (!/^[a-z0-9._-]{2,}@[a-z]{2,}$/i.test(upi)) return bad('That UPI ID does not look right.');
+            dest = upi;
+          } else {
+            var bn = UI.titleCase(root.querySelector('#w-bname').value).trim(), ac = root.querySelector('#w-acct').value.trim(), ifsc = root.querySelector('#w-ifsc').value.trim().toUpperCase();
+            if (bn.length < 2) return bad('Enter the bank name.');
+            if (!/^\d{9,18}$/.test(ac)) return bad('Enter the account number (9 to 18 digits).');
+            if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) return bad('Enter a valid IFSC code, like SBIN0001234.');
+            dest = bn + ' · A/c ' + ac + ' · ' + ifsc;
+          }
+          var fromRewards = Math.min(amt, Number(rt.available)), fromEarnings = Math.round((amt - fromRewards) * 100) / 100;
+          busy(wg, true);
+          var rewardRes = fromRewards > 0 ? RW.payout(u.id, fromRewards, method.value === 'UPI' ? 'UPI' : 'Bank transfer', dest, { part: true }) : { ok: true };
+          if (!rewardRes.ok) { busy(wg, false); return bad(rewardRes.error); }
+          (fromEarnings > 0 ? M.do('requestPayout', { amount: fromEarnings, part: true, method: method.value, destination: dest }) : Promise.resolve({ ok: true })).then(function (r) {
+            busy(wg, false);
+            if (!r.ok) return bad(r.error);
+            UI.toast('Withdrawal of ' + money(amt) + ' requested'); w.CC.Router.refresh();
           });
         };
       } };
@@ -763,7 +791,7 @@
     if (isBuyer) {
       if (r.status === 'CREATED') h = '<p class="muted">Pay into escrow so cardholders can see your request.</p><button class="btn btn--primary btn--block" data-act="pay">Pay ' + money(s.total) + ' (test)</button><button class="btn btn--ghost btn--block" style="margin-top:8px" data-act="cancel">Cancel request</button>';
       else if (r.status === 'PAID') h = '<p class="muted">Waiting for a cardholder. Open for <strong>' + left(r.acceptBy) + '</strong>. If nobody accepts, you are refunded automatically.</p><button class="btn btn--ghost btn--block" data-act="cancel">Cancel and refund</button>';
-      else if (r.status === 'ACCEPTED') h = '<p class="muted">The cardholder is on it and has until <strong>' + dt(r.fulfilBy) + '</strong> to upload proof. If they miss it you are refunded.</p><button class="btn btn--ghost btn--block" data-act="dispute">Raise a dispute</button>';
+      else if (r.status === 'ACCEPTED') h = '<p class="muted">The cardholder is on it and has until <strong>' + dt(Core.holdDeadline(r)) + '</strong> to upload proof. If they miss it you are refunded.</p><button class="btn btn--ghost btn--block" data-act="dispute">Raise a dispute</button>';
       else if (r.status === 'FULFILLED') {
         if (r.topupDue > 0) h += '<div class="note note--warn" style="margin-bottom:12px">The cardholder paid <strong>' + money(r.topupDue) + '</strong> more than estimated. Top up to release funds, or raise a dispute.</div><button class="btn btn--primary btn--block" data-act="topup">Top up ' + money(r.topupDue) + '</button>';
         else h += '<p class="muted">Check the proof. Confirm to release payment' + (r.module === 'MOVIE' ? ' (money is released after the show)' : '') + '. If you do nothing, it confirms automatically at <strong>' + dt(r.autoConfirmAt) + '</strong>.</p><button class="btn btn--primary btn--block" data-act="confirm">' + (r.module === 'LOUNGE' ? 'I got in. Confirm' : 'Everything is fine. Confirm') + '</button>';
@@ -865,7 +893,7 @@
       'If something looks wrong, message the buyer in the chat on this page, or contact support.'];
     return '<div class="deal">' +
       '<div class="panel"><div class="spread" style="gap:12px; flex-wrap:wrap; margin-bottom:14px"><h2 class="h3">Deal Timeline</h2>' +
-      (st === 'ACCEPTED' && r.fulfilBy ? '<div class="deal-timer"><span class="deal-timer__t" data-deadline="' + esc(r.fulfilBy) + '">--:--</span><span class="deal-timer__l">' + (pay ? 'To pay' : 'To enter order details') + '</span></div>' : '') + '</div>' + tl + '</div>' +
+      (st === 'ACCEPTED' && Core.holdDeadline(r) ? '<div class="deal-timer"><span class="deal-timer__t" data-deadline="' + esc(Core.holdDeadline(r)) + '">--:--</span><span class="deal-timer__l">' + (pay ? 'To pay' : 'To enter order details') + '</span></div>' : '') + '</div>' + tl + '</div>' +
       addr +
       '<div class="panel"><h2 class="h3" style="margin-bottom:10px">Instructions</h2><ul class="deal-bullets">' + instr.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul></div>' +
       '<div class="panel"><h2 class="h3" style="margin-bottom:10px">Payment details</h2>' +
@@ -875,9 +903,10 @@
       '<div class="panel"><div class="spread" style="margin-bottom:10px"><h2 class="h3">Offer details</h2><span class="deal-tag">Apply before paying</span></div>' +
         '<div class="deal-line"><span>' + esc(UI.sentence(x.offerWanted) || '') + '</span><strong class="deal-off">' + money(s.discount) + ' off</strong></div>' +
         '<div class="deal-chip">' + esc(UI.sentence(x.cardName) || bankName(x.bank)) + '</div></div>' +
+      (st === 'ACCEPTED' ? '<button type="button" class="deal-exit" data-exit-deal>Exit deal</button>' : '') +
       '<div class="panel"><h2 class="h3" style="margin-bottom:6px">Help &amp; FAQs</h2>' + DEAL_FAQ.map(function (f) {
         return '<details class="deal-faq"><summary>' + esc(f[0]) + '</summary><p class="muted">' + esc(f[1]) + '</p></details>'; }).join('') + '</div>' +
-      (st === 'ACCEPTED' ? '<button type="button" class="deal-exit" data-exit-deal>Exit deal</button>' : '') + '</div>';
+      '</div>';
   }
 
   w.CC.Pages.marketRequest = function (params) {
@@ -968,7 +997,11 @@
           (function tick() {
             if (!alive() || !tmr.isConnected) return;
             var ms = dl - Date.now();
-            if (ms <= 0) { tmr.textContent = 'Time is up'; return; }
+            if (ms <= 0) {
+              tmr.textContent = 'Time is up';
+              if (r.module === 'ORDER' || r.module === 'PAY') M.sweep().then(function () { UI.toast('Time is up. The request went back to the open requests.'); w.CC.Router.go('#/market/earn'); });
+              return;
+            }
             var sec = Math.floor(ms / 1000), h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s2 = sec % 60;
             function p2(n) { return (n < 10 ? '0' : '') + n; }
             tmr.textContent = (h ? h + ':' + p2(m) : p2(m)) + ':' + p2(s2);

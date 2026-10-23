@@ -37,7 +37,7 @@
   var ABROAD = { type: 'INTERNATIONAL', airport: 'DXB', terminal: 'T3' };
   function loungeD(extra) { return Object.assign({ type: 'DOMESTIC', airport: 'DEL', terminal: 'T3', dateTime: iso(T + 48 * H), flight: 'AI 101', guestName: 'Ayush Kumar' }, extra || {}); }
   function movieD(extra) { return Object.assign({ offer: 'FLAT_500_OFF_2_SEATS', movie: 'Test Movie', theatre: 'PVR Orion', city: 'Bengaluru', showTime: iso(T + 24 * H), seats: 'G7, G8', seatCount: 2, ticketTotal: 1200, platform: 'BookMyShow', bank: 'any' }, extra || {}); }
-  function orderD(extra) { return Object.assign({ url: 'https://www.amazon.in/dp/B0TEST', platform: 'Amazon', listPrice: 1000, expectedPrice: 900, offerWanted: '10% instant discount on HDFC cards', bank: 'any', address: { name: 'Ayush Kumar', line: '12 MG Road, Indiranagar', city: 'Bengaluru', pin: '560038' } }, extra || {}); }
+  function orderD(extra) { return Object.assign({ url: 'https://www.amazon.in/dp/B0TEST', platform: 'Amazon', listPrice: 1000, expectedPrice: 900, offerWanted: '10% instant discount on HDFC cards', bank: 'any', address: { name: 'Ayush Kumar', line: '12 MG Road, Indiranagar', city: 'Bengaluru', state: 'Karnataka', pin: '560038' } }, extra || {}); }
   function C(action, params, who) { return M.do(action, params, who || BUYER); }
   async function created(module, details) { var r = await C('create', { module: module, details: details }); ok(r.ok, r.error); return r.request; }
   async function paid(module, details) { var rq = await created(module, details); var p = await M.pay(rq.id); ok(p.ok, p.error); return M.request(rq.id); }
@@ -230,8 +230,16 @@
     var rq = await accepted('LOUNGE', loungeD());
     T += 48 * H; await M.sweep();
     eq(M.request(rq.id).status, 'REFUNDED');
-    eq(bal('holder:' + HOLDER), -100);
+    eq(bal('holder:' + HOLDER), -50);
     eq(M.quotaUsed('mkc-demo', 'LOUNGE_DOM', Core.quarterOf(iso(T0 + 48 * H))), 0);
+  });
+  test('order not paid within 30 minutes: back to open requests, 50 rupees taken, money stays held', async function () {
+    resetWorld();
+    var rq = await accepted('ORDER', orderD());
+    T += 31 * 60000; await M.sweep();
+    var r = M.request(rq.id);
+    eq(r.status, 'PAID'); ok(!r.cardholderId, 'cardholder cleared'); eq(bal('holder:' + HOLDER), -50);
+    ledgerBalanced();
   });
   test('auto-confirm after the window if there is no dispute', async function () {
     resetWorld();
@@ -283,14 +291,14 @@
     resetWorld();
     var bad = orderD(); delete bad.url; delete bad.address;
     ok(!(await C('create', { module: 'PAY', details: bad })).ok, 'a Pay & Earn request without a payment page link is refused');
-    var good = orderD(); delete good.url; delete good.address; good.payUrl = 'https://pay.example.com/checkout/abc123';
+    var good = orderD(); delete good.url; good.payUrl = 'https://pay.example.com/checkout/abc123';
     ok((await C('create', { module: 'PAY', details: good })).ok, 'with a payment page link only, it is accepted');
     var ord = orderD(); delete ord.url;
     ok(!(await C('create', { module: 'ORDER', details: ord })).ok, 'an Order & Earn request still needs the product link');
   });
   test('pay & earn settles the same way as order & earn', async function () {
     resetWorld();
-    var d = orderD(); delete d.url; delete d.address; d.payUrl = 'https://pay.example.com/checkout/abc123';
+    var d = orderD(); delete d.url; d.payUrl = 'https://pay.example.com/checkout/abc123';
     var rq = await fulfilled('PAY', d);
     await C('confirm', { id: rq.id });
     eq(M.request(rq.id).status, 'SETTLED');
@@ -302,7 +310,7 @@
     var o = M.openFor(HOLDER)[0];
     ok(o && !('address' in o.request.details), 'address must be hidden before acceptance');
     resetWorld();
-    var pd = orderD(); delete pd.url; delete pd.address; pd.payUrl = 'https://pay.example.com/checkout/abc123';
+    var pd = orderD(); delete pd.url; pd.payUrl = 'https://pay.example.com/checkout/abc123';
     await paid('PAY', pd);
     var op = M.openFor(HOLDER)[0];
     ok(op && !('payUrl' in op.request.details), 'the payment page link is hidden until a cardholder accepts');
@@ -414,10 +422,11 @@
     ok(!(await C('requestPayout', { amount: 200 }, HOLDER2)).ok, 'KYC pending');
     ok((await C('reviewKyc', { id: M.kyc(HOLDER2).id, status: 'APPROVED' }, ADMIN)).ok);
     ok(!(await C('requestPayout', { amount: 500 }, HOLDER2)).ok, 'above balance');
-    var pr = await C('requestPayout', { amount: 200 }, HOLDER2); ok(pr.ok, pr.error);
-    eq(M.wallet(HOLDER2).available, 50);
+    ok(!(await C('requestPayout', { amount: 200 }, HOLDER2)).ok, 'below the 250 minimum');
+    var pr = await C('requestPayout', { amount: 250 }, HOLDER2); ok(pr.ok, pr.error);
+    eq(M.wallet(HOLDER2).available, 0);
     ok((await C('processPayout', { id: pr.payout.id }, ADMIN)).ok);
-    eq(bal('holder:' + HOLDER2), 50);
+    eq(bal('holder:' + HOLDER2), 0);
     ledgerBalanced();
   });
 

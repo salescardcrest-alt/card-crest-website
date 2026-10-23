@@ -28,9 +28,9 @@
     /* DEMO PAYMENT SERVICE.
        This does not contact a bank, a UPI handle or a card network.
        It records the request and marks it processed locally. */
-    payout: function (userId, amount, method, destination) {
+    payout: function (userId, amount, method, destination, opts) {
       var bal = Rewards.balance(userId);
-      if (amount < MIN) {
+      if (amount < MIN && !(opts && opts.part)) {   // a part of one larger withdrawal may be under the minimum
         return { ok: false, error: 'The minimum redemption is ' + w.CC.UI.money(MIN) + '.' };
       }
       if (amount > bal.available) {
@@ -41,7 +41,7 @@
       }
       var row = {
         id: S.uid('rdm'), userId: userId, amount: amount, method: method,
-        destination: destination, status: 'processing',
+        destination: destination, status: 'processing', part: !!(opts && opts.part),
         createdAt: new Date().toISOString(),
         ref: 'CCR' + Math.random().toString(36).slice(2, 10).toUpperCase()
       };

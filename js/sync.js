@@ -17,7 +17,7 @@
   var SPEC = {
     transactions:  { table: 'transactions',  user: true,  fields: ['userId', 'storeId', 'offerId', 'amount', 'cashback', 'status', 'retailerUrl', 'createdAt', 'updatedAt'] },
     applications:  { table: 'applications',  user: true,  fields: ['userId', 'cardId', 'status', 'notes', 'createdAt', 'updatedAt'] },
-    redemptions:   { table: 'redemptions',   user: true,  fields: ['userId', 'amount', 'method', 'destination', 'status', 'ref', 'createdAt'] },
+    redemptions:   { table: 'redemptions',   user: true,  fields: ['userId', 'amount', 'method', 'destination', 'status', 'ref', 'createdAt', 'part'] },
     referrals:     { table: 'referrals',     user: true,  fields: ['userId', 'name', 'status', 'reward', 'createdAt'] },
     notifications: { table: 'notifications', user: true,  fields: ['userId', 'type', 'title', 'body', 'read', 'createdAt'] },
     tickets:       { table: 'tickets',       user: false, fields: ['userId', 'name', 'email', 'category', 'message', 'status', 'createdAt'] },

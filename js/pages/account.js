@@ -12,23 +12,7 @@
 
   /* ---------------- account shell ---------------- */
   function shell(active, title, inner) {
-    var items = [
-      ['/dashboard', 'Overview'],
-      ['/dashboard/cards', 'Add card'],
-      ['/dashboard/earn', 'Earn with my card'],
-      ['/dashboard/transactions', 'Transactions'],
-      ['/dashboard/applications', 'Applications'],
-      ['/rewards', 'Rewards wallet'],
-      ['/dashboard/wallet', 'Wallet and payouts'],
-      ['/refer', 'Refer and earn'],
-      ['/dashboard/notifications', 'Notifications'],
-      ['/profile', 'Profile and settings']
-    ];
-    return '<div class="wrap section--tight"><div class="dash">' +
-      '<nav class="side-nav" aria-label="Account">' +
-      items.map(function (i) {
-        return '<a href="#' + i[0] + '" class="' + (i[0] === active ? 'is-active' : '') + '">' + i[1] + '</a>';
-      }).join('') + '</nav><div>' + inner + '</div></div></div>';
+    return '<div class="wrap section--tight"><div class="dash">' + UI.sideNav(active) + '<div>' + inner + '</div></div></div>';
   }
 
   /* Sign-in / sign-up motion: shake on a failed attempt, fade the card out on success. */
@@ -410,88 +394,6 @@
           f.q = e.target.value; draw();
         }, 220));
         draw();
-      }
-    };
-  };
-
-  /* ---------------- /rewards ---------------- */
-  w.CC.Pages.rewards = function () {
-    if (!Auth.require()) return false;
-    var u = Auth.current();
-    var t = CB.totals(u.id);
-    var history = RW.redemptions(u.id);
-
-    var inner = '<div class="section__head"><h1 class="h1">Rewards wallet</h1>' +
-      '<p class="lede">Confirmed cashback and referral rewards, ready to take out.</p></div>' +
-      '<div class="grid g-4" style="margin-bottom:26px">' +
-        '<div class="stat stat--accent"><span class="stat__k">Available</span><span class="stat__v" data-count="' + t.available + '">' + UI.money(t.available) + '</span><span class="stat__sub">Ready to redeem</span></div>' +
-        '<div class="stat"><span class="stat__k">Pending</span><span class="stat__v">' + UI.money(t.pending) + '</span><span class="stat__sub">Not yet confirmed</span></div>' +
-        '<div class="stat"><span class="stat__k">Lifetime earned</span><span class="stat__v">' + UI.money(t.lifetime) + '</span><span class="stat__sub">Cashback and referrals</span></div>' +
-        '<div class="stat"><span class="stat__k">Already redeemed</span><span class="stat__v">' + UI.money(t.redeemed) + '</span><span class="stat__sub">' + history.length + ' redemptions</span></div>' +
-      '</div>' +
-      '<div class="panel" style="margin-bottom:26px"><div class="spread row--wrap" style="gap:14px">' +
-      '<div><h2 class="h3">Take your rewards out</h2>' +
-      '<p class="muted small" style="margin-top:4px">Minimum ' + UI.money(RW.MIN) + '. UPI and bank transfers land within two working days; gift cards are instant.</p></div>' +
-      '<button class="btn btn--primary" data-redeem' + (t.available < RW.MIN ? ' disabled' : '') + '>Redeem ' + UI.money(t.available) + '</button>' +
-      '</div>' + (t.available < RW.MIN ? '<div class="note note--warn" style="margin-top:16px">You need ' + UI.money(RW.MIN - t.available) + ' more in confirmed rewards before you can redeem.</div>' : '') + '</div>' +
-
-      '<h2 class="h2" style="margin-bottom:16px">Redemption history</h2>' +
-      '<div class="panel panel--flush"><div class="tbl-wrap"><table class="tbl">' +
-      '<thead><tr><th>Reference</th><th>Date</th><th>Method</th><th class="num">Amount</th><th>Status</th></tr></thead><tbody>' +
-      (history.length ? history.map(function (r) {
-        return '<tr><td class="mono small">' + r.ref + '</td><td class="muted">' + UI.date(r.createdAt) + '</td>' +
-          '<td>' + UI.esc(r.method) + '</td><td class="num"><strong>' + UI.money(r.amount) + '</strong></td>' +
-          '<td>' + UI.statusBadge(r.status) + '</td></tr>';
-      }).join('') : '<tr><td colspan="5" style="padding:40px; text-align:center" class="muted">No redemptions yet.</td></tr>') +
-      '</tbody></table></div></div>' +
-      '<p class="small muted" style="margin-top:16px">Demo mode — redemptions are recorded and marked processed locally. No real transfer is made to any UPI handle or bank account.</p>';
-
-    return {
-      title: 'Rewards wallet | Card Crest',
-      desc: 'Your confirmed cashback and referral rewards, and how to redeem them.',
-      html: shell('/rewards', 'Rewards', inner),
-      mount: function (root) {
-        var c = root.querySelector('[data-count]');
-        if (c) UI.countUp(c, Number(c.dataset.count), function (n) { return UI.money(n); });
-
-        var btn = root.querySelector('[data-redeem]');
-        if (btn) btn.onclick = function () {
-          UI.modal({
-            title: 'Redeem your rewards',
-            body: '<div class="field" style="margin-bottom:16px"><label for="r-amt">Amount</label>' +
-              '<input id="r-amt" type="number" min="' + RW.MIN + '" max="' + t.available + '" value="' + t.available + '">' +
-              '<span class="hint">Between ' + UI.money(RW.MIN) + ' and ' + UI.money(t.available) + '.</span></div>' +
-              '<div class="field" style="margin-bottom:16px"><label for="r-method">Send it to</label>' +
-              '<select id="r-method">' + RW.methods.map(function (m) { return '<option>' + m + '</option>'; }).join('') + '</select></div>' +
-              '<div class="field"><label for="r-dest" id="r-dest-l">UPI ID</label><input id="r-dest" type="text" placeholder="name@bank"></div>' +
-              '<div class="note" style="margin-top:16px">Demo mode — this records a redemption and marks it processed. No money moves.</div>',
-            foot: '<button class="btn btn--ghost" data-x>Cancel</button><button class="btn btn--primary" data-go>Confirm redemption</button>',
-            onMount: function (m) {
-              var method = m.querySelector('#r-method'), dest = m.querySelector('#r-dest'), lbl = m.querySelector('#r-dest-l');
-              method.onchange = function () {
-                var v = method.value;
-                lbl.textContent = v === 'UPI' ? 'UPI ID' : v === 'Bank transfer' ? 'Account number' : 'Email for the gift card';
-                dest.placeholder = v === 'UPI' ? 'name@bank' : v === 'Bank transfer' ? 'Account number' : 'you@example.com';
-                dest.value = '';
-              };
-              m.querySelector('[data-go]').onclick = function () {
-                var res = RW.payout(u.id, Number(m.querySelector('#r-amt').value), method.value, dest.value.trim());
-                if (!res.ok) return UI.toast(res.error, 'error');
-                UI.closeModal();
-                UI.modal({
-                  title: 'Redemption requested',
-                  body: '<div class="note" style="margin-bottom:16px">Demo redemption processed successfully.</div>' +
-                    '<div class="spread" style="padding:12px 0"><span class="muted small">Reference</span><code class="mono">' + res.redemption.ref + '</code></div>' +
-                    '<div class="spread" style="padding:12px 0; border-top:1px solid var(--line-soft)"><span class="muted small">Amount</span><strong>' + UI.money(res.redemption.amount) + '</strong></div>' +
-                    '<div class="spread" style="padding:12px 0; border-top:1px solid var(--line-soft)"><span class="muted small">Method</span><strong>' + UI.esc(res.redemption.method) + '</strong></div>' +
-                    '<p class="small muted" style="margin-top:14px">No real transfer has been made. In production this is where a payout API would be called.</p>',
-                  foot: '<button class="btn btn--primary" data-x>Done</button>'
-                });
-                setTimeout(function () { w.CC.Router.refresh(); }, 400);
-              };
-            }
-          });
-        };
       }
     };
   };

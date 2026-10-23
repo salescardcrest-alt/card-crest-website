@@ -107,7 +107,7 @@
       on('/offers/:id', P.offerDetail);
       on('/stores', P.stores);
       on('/stores/:id', P.storeDetail);
-      on('/rewards', P.rewards);
+      on('/rewards', P.marketWallet);
       on('/refer', P.refer);
       on('/dashboard', P.dashboard);
       on('/dashboard/cards', P.marketCards);
