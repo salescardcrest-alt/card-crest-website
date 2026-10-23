@@ -2,9 +2,8 @@
 -- Run in Supabase → SQL Editor. Safe to re-run.
 --
 -- A new member can type a friend's code at sign up (for example CC-RAVI-1A2B). The code travels in the sign-up data
--- as `referral_code`. This script finds the friend it belongs to, adds a "pending" row to the friend's Refer & earn
--- list, and sends the friend a notification. The row turns "successful" (and the reward is paid) when staff mark it,
--- the same as before.
+-- as `referral_code`. This script finds the friend it belongs to, adds a row to the friend's Refer & earn
+-- list, marks it successful with the reward (so it is in their balance at once), and sends the friend a notification.
 
 -- The code is CC-<first name, letters only, up to 6>-<last 4 characters of the member's id>, as built by the website.
 create or replace function public.cc_referrer_for(code text)
@@ -57,12 +56,12 @@ begin
     -- first name and the first letter of the last name, so a friend's full name is not shown
     fname := public.cc_short_name(new.raw_user_meta_data->>'name');
     insert into public.referrals (id, user_id, name, status, reward)
-    values ('ref-' || replace(gen_random_uuid()::text, '-', ''), ref, fname, 'pending', 0);
+    values ('ref-' || replace(gen_random_uuid()::text, '-', ''), ref, fname, 'successful', 100);
     insert into public.notifications (id, user_id, type, title, body)
     values (
       'ntf-' || replace(gen_random_uuid()::text, '-', ''),
-      ref, 'referral', 'A friend joined with your code',
-      fname || ' signed up with your referral code. Your reward is credited when their first card is approved.'
+      ref, 'referral', 'Referral reward credited',
+      fname || ' joined with your code. ₹100 has been added to your balance.'
     );
   end if;
   exception when others then null;
@@ -81,7 +80,7 @@ end $$;
 
 -- Catch up: friends who already signed up with a code before this script existed
 insert into public.referrals (id, user_id, name, status, reward)
-select 'ref-' || replace(gen_random_uuid()::text, '-', ''), r.ref, r.fname, 'pending', 0
+select 'ref-' || replace(gen_random_uuid()::text, '-', ''), r.ref, r.fname, 'successful', 100
 from (
   select u.id as uid, public.cc_referrer_for(u.raw_user_meta_data->>'referral_code') as ref,
          public.cc_short_name(u.raw_user_meta_data->>'name') as fname
@@ -90,3 +89,6 @@ from (
 ) r
 where r.ref is not null and r.ref <> r.uid
   and not exists (select 1 from public.referrals x where x.user_id = r.ref and x.name = r.fname);
+
+-- If an earlier version of this script already added "pending" rows, pay them now
+update public.referrals set status = 'successful', reward = 100 where status = 'pending' and id like 'ref-%' and reward = 0;

@@ -134,7 +134,7 @@
         '<div class="panel" style="background:linear-gradient(135deg,var(--crest),var(--crest-d)); border:0; color:#fff; padding:44px">' +
         '<div class="spread row--wrap" style="gap:24px">' +
         '<div style="max-width:52ch"><h2 class="h1" style="color:#fff; margin-bottom:12px">Refer a friend, <em style="color:#8fd3b4">both earn ₹100</em></h2>' +
-        '<p style="color:rgba(255,255,255,.78)">When someone signs up with your code and gets their first card approved through Card Crest, the reward lands for both of you.</p></div>' +
+        '<p style="color:rgba(255,255,255,.78)">When a friend signs up with your code, the reward lands in your balance straight away.</p></div>' +
         '<a class="btn btn--soft btn--lg" href="#/refer">Get my referral code</a></div></div>' +
       '</div></section>' +
 

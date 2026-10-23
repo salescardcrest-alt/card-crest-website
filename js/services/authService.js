@@ -183,6 +183,17 @@
       S.set('session', u.id);
       w.CC.Notifications.push(u.id, 'system', 'Welcome to Card Crest',
         'Start by checking which cards you are eligible for.');
+      /* a friend's code was used: the friend is paid at once (the live site does the same in the database) */
+      var used = String(data.referralCode || '').trim().toUpperCase();
+      if (used) {
+        var friend = S.where('users', function (x) { return x.id !== u.id && w.CC.Auth.referralCode(x) === used; })[0];
+        if (friend) {
+          var parts = u.name.split(' '), shortName = parts.length > 1 ? parts[0] + ' ' + parts[1].charAt(0).toUpperCase() + '.' : u.name;
+          S.insert('referrals', { id: S.uid('r'), userId: friend.id, name: shortName, status: 'successful', reward: w.CC.Referrals.REWARD, createdAt: new Date().toISOString() });
+          w.CC.Notifications.push(friend.id, 'referral', 'Referral reward credited',
+            shortName + ' joined with your code. ' + w.CC.UI.money(w.CC.Referrals.REWARD) + ' added to your balance.');
+        }
+      }
       return Promise.resolve({ ok: true, user: u });
     },
 

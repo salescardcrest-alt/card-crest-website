@@ -585,7 +585,7 @@
     ['Why did my cashback not track?','The most common causes are ad-blockers, coupon browser extensions, or opening the retailer in a different browser after activating. Always start the session from Card Crest and complete the purchase in the same session.'],
     ['When can I withdraw my rewards?','Once your confirmed balance reaches ₹250 you can request a withdrawal to UPI or a bank account, or take it as a gift card.'],
     ['Is Card Crest a bank or a lender?','No. We are a discovery and comparison platform. Every card is issued by the bank named on it, and approval, limits and pricing are entirely the bank’s decision.'],
-    ['How does Refer and Earn work?','Share your code. When someone signs up and gets their first card approved through Card Crest, you both receive a reward. Rewards stay pending until the bank confirms the approval.']
+    ['How does Refer and Earn work?','Share your code. When a friend signs up with it, the reward is added to your balance straight away and shows in the Refer and earn page.']
   ];
 
   w.CC = w.CC || {};

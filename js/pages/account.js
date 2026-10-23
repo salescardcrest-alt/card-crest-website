@@ -497,7 +497,7 @@
     var list = RF.forUser(u.id);
 
     var inner = '<div class="section__head"><h1 class="h1">Refer and <em>earn</em></h1>' +
-      '<p class="lede">When someone signs up with your code and gets their first card approved through Card Crest, you both get ' + UI.money(RF.REWARD) + '.</p></div>' +
+      '<p class="lede">When a friend signs up with your code, you earn ' + UI.money(RF.REWARD) + ' straight away. It shows here and in your rewards balance.</p></div>' +
       '<div class="panel" style="margin-bottom:24px">' +
       '<h2 class="h3" style="margin-bottom:12px">Your referral code</h2>' +
       '<div class="copy-box" style="margin-bottom:14px"><code>' + code + '</code>' +
@@ -523,11 +523,11 @@
           '<td>' + UI.statusBadge(r.status) + '</td><td class="num">' + (r.reward ? UI.money(r.reward) : '—') + '</td></tr>';
       }).join('') : '<tr><td colspan="4" style="padding:40px; text-align:center" class="muted">No referrals yet. Share your code to get started.</td></tr>') +
       '</tbody></table></div></div>' +
-      '<p class="small muted" style="margin-top:16px">Rewards stay pending until the bank confirms the approval, and are reversed if an application is cancelled. Demo mode — referral rewards are simulated.</p>';
+      '<p class="small muted" style="margin-top:16px">Each friend who joins with your code adds a reward to your balance at once. Demo mode — referral rewards are simulated.</p>';
 
     return {
       title: 'Refer and earn | Card Crest',
-      desc: 'Share your Card Crest code and earn when a friend gets their first card approved.',
+      desc: 'Share your Card Crest code and earn a reward every time a friend signs up with it.',
       html: shell('/refer', 'Refer', inner),
       mount: function (root) {
         root.querySelectorAll('[data-copy]').forEach(function (b) {
