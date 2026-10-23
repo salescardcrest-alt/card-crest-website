@@ -218,6 +218,27 @@
     };
   };
 
+
+  /* ---------------- email confirmed (where the link in the sign-up email lands) ---------------- */
+  w.CC.Pages.confirmed = function () {
+    var state = 'ok';
+    try { state = w.sessionStorage.getItem('cc.confirm') || 'ok'; } catch (e) {}
+    var bad = state.indexOf('error') === 0;
+    var tick = '<svg class="cf-tick" viewBox="0 0 80 80" aria-hidden="true"><circle class="cf-tick__ring" cx="40" cy="40" r="35"/>' +
+      '<path class="cf-tick__mark" d="M24 41l11 11 21-24"/></svg>';
+    var cross = '<svg class="cf-tick cf-tick--bad" viewBox="0 0 80 80" aria-hidden="true"><circle class="cf-tick__ring" cx="40" cy="40" r="35"/>' +
+      '<path class="cf-tick__mark" d="M28 28l24 24M52 28L28 52"/></svg>';
+    return {
+      title: (bad ? 'Link expired' : 'Email confirmed') + ' | Card Crest',
+      html: '<div class="wrap section"><div class="cf-card">' + (bad ? cross : tick) +
+        (bad
+          ? '<h1 class="h1">This link has expired</h1><p class="lede">The confirmation link was already used or is too old. Log in with your email and password. If that does not work, create the account again.</p>'
+          : '<h1 class="h1">Your email id confirmed!</h1><p class="lede">Please login now.</p>') +
+        '<div class="row" style="justify-content:center; flex-wrap:wrap; margin-top:22px">' +
+        '<a class="btn btn--primary" href="#/login">Log in</a>' + (bad ? '<a class="btn btn--ghost" href="#/signup">Sign up</a>' : '') + '</div></div></div>',
+      mount: function () { try { w.sessionStorage.removeItem('cc.confirm'); } catch (e) {} }
+    };
+  };
   /* ---------------- 404 ---------------- */
   w.CC.Pages.notFound = function () {
     return {

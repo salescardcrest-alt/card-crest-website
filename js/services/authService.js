@@ -24,8 +24,21 @@
   /* A password-reset link signs the person in and fires PASSWORD_RECOVERY. Remember it (the page may not be
      ready yet) and tell the app so it can ask for the new password instead of just landing on the home page. */
   var recovering = false;
+  var pending = false;
+  try { pending = w.sessionStorage.getItem('cc.confirm') === 'pending'; } catch (e) {}
+  if (pending) setTimeout(function () { pending = false; try { if (w.sessionStorage.getItem('cc.confirm') === 'pending') w.sessionStorage.removeItem('cc.confirm'); } catch (e) {} }, 15000);
   if (sb) sb.auth.onAuthStateChange(function (event) {
-    if (event === 'PASSWORD_RECOVERY') { recovering = true; w.dispatchEvent(new CustomEvent('cc:recovery')); }
+    if (event === 'PASSWORD_RECOVERY') {
+      pending = false; try { w.sessionStorage.removeItem('cc.confirm'); } catch (e) {}
+      recovering = true; w.dispatchEvent(new CustomEvent('cc:recovery'));
+    } else if (event === 'SIGNED_IN' && pending) {
+      /* the sign-up email link was opened: the email is confirmed, so show that and ask them to log in */
+      pending = false;
+      try { w.sessionStorage.setItem('cc.confirm', 'ok'); } catch (e) {}
+      setTimeout(function () {
+        sb.auth.signOut().then(function () { w.location.hash = '#/confirmed'; w.CC.App && w.CC.App.paintAuth && w.CC.App.paintAuth(); });
+      }, 0);
+    }
   });
   w.CC.Sync.init(sb);
   if (w.CC.Market) w.CC.Market.init(sb);
@@ -141,7 +154,7 @@
       if (sb) {
         return sb.auth.signUp({
           email: email, password: data.password,
-          options: { data: { name: w.CC.UI.titleCase(data.name).trim(), mobile: data.mobile } }
+          options: { data: { name: w.CC.UI.titleCase(data.name).trim(), mobile: data.mobile }, emailRedirectTo: location.origin + location.pathname }
         }).then(function (r) {
           if (r.error) return fail(friendly(r.error));
           // Supabase returns an empty identities list for an email that already exists.

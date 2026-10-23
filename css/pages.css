@@ -356,3 +356,17 @@ body:has(#cmpTray:not([hidden])) .toasts{bottom:100px}
 .deal-faq p{margin:8px 0 0}
 .deal-exit{width:100%; padding:16px; border:0; border-radius:14px; background:#fde8e6; color:#b3261e; font-weight:800; font-size:1rem; cursor:pointer}
 .deal-exit:hover{background:#fbd9d5}
+
+/* email confirmed page */
+.cf-card{max-width:520px; margin:0 auto; text-align:center; padding:44px 28px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--sh-2)}
+.cf-card .h1{margin:18px 0 8px}
+.cf-card .lede{margin:0 auto; max-width:40ch}
+.cf-tick{width:96px; height:96px; display:block; margin:0 auto; overflow:visible}
+.cf-tick__ring{fill:var(--leaf-soft); stroke:var(--leaf); stroke-width:4; stroke-dasharray:220; stroke-dashoffset:220; transform-origin:50% 50%; transform:rotate(-90deg); animation:cfRing .7s ease-out .1s forwards, cfPop .5s ease-out .75s}
+.cf-tick__mark{fill:none; stroke:var(--crest); stroke-width:6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:60; stroke-dashoffset:60; animation:cfDraw .45s ease-out .65s forwards}
+.cf-tick--bad .cf-tick__ring{fill:var(--danger-soft); stroke:var(--danger)}
+.cf-tick--bad .cf-tick__mark{stroke:var(--danger)}
+@keyframes cfRing{to{stroke-dashoffset:0}}
+@keyframes cfDraw{to{stroke-dashoffset:0}}
+@keyframes cfPop{0%{transform:rotate(-90deg) scale(1)}50%{transform:rotate(-90deg) scale(1.08)}100%{transform:rotate(-90deg) scale(1)}}
+@media (prefers-reduced-motion:reduce){.cf-tick__ring,.cf-tick__mark{animation:none; stroke-dashoffset:0}}

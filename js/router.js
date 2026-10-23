@@ -117,6 +117,7 @@
       on('/profile', P.profile);
       on('/login', P.login);
       on('/signup', P.signup);
+      on('/confirmed', P.confirmed);
       on('/help', P.help);
       on('/how-it-works', P.howItWorks);
       on('/legal/:doc', P.legal);
