@@ -197,7 +197,7 @@
   /* Last moment the cardholder can upload proof. */
   Core.fulfilBy = function (req, acceptedAtMs) {
     var ev = Core.eventTime(req);
-    return iso(ev ? new Date(ev).getTime() - 0.5 * H : acceptedAtMs + 48 * H);
+    return iso(ev ? new Date(ev).getTime() - 0.5 * H : acceptedAtMs + (req.module === 'ORDER' || req.module === 'PAY' ? 0.5 : 48) * H);
   };
   Core.autoConfirmAt = function (req, fulfilledAtMs) {
     var ev = Core.eventTime(req), base = fulfilledAtMs;

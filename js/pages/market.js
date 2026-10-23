@@ -262,7 +262,7 @@
       return '<div class="form-grid">' + (pay ? '' : field('f-url', 'Product link', '<input id="f-url" type="url" placeholder="https://www.amazon.in/…">')) +
         field('f-plat', pay ? 'Shopping site or merchant' : 'Shopping site', '<select id="f-plat"><option>Amazon</option><option>Flipkart</option><option>Myntra</option><option>Ajio</option><option>Croma</option><option>Other</option></select>') + '</div>' +
         (pay ? field('f-pay', 'Final payment link', '<input id="f-pay" placeholder="Paste the payment link" autocomplete="off">',
-          'The page where the payment is made, after the offer is applied. The cardholder opens it and pays with their own card. Only they see this link, after accepting. It needs to open for someone who is not signed in as you, like a pay-by-link or invoice link.') : '') +
+          'The cardholder opens this link and pays. It must open without signing in.') : '') +
         '<div class="form-grid">' + field('f-list', 'Listed price (₹)', '<input id="f-list" type="number" min="1" max="200000" inputmode="decimal">', 'Up to ₹2,00,000.') +
         field('f-exp', pay ? 'Amount to pay on that page (₹)' : 'Price after the card offer (₹)', '<input id="f-exp" type="number" min="1" max="200000" inputmode="decimal">', 'Must be less than the listed price.') + '</div>' +
         field('f-offer', 'Card offer you want', '<input id="f-offer" placeholder="10% instant discount on HDFC credit cards">') +
@@ -441,18 +441,23 @@
     var list = M.asBuyer(u.id).filter(function (r) { return r.module === 'PAY' || r.module === 'ORDER'; });
     function kv(k, v) { return v ? '<div class="deal-line"><span>' + k + '</span><strong>' + v + '</strong></div>' : ''; }
     function openLink(u2) { return '<a href="' + esc(openable(u2)) + '" target="_blank" rel="noopener noreferrer">Open</a> · <a href="#" data-copy-link="' + esc(u2) + '">Copy</a>'; }
-    var cards = list.map(function (r) {
+    var tasks = M.asHolder(u.id).filter(function (r) { return r.module === 'PAY' || r.module === 'ORDER'; });
+    function card(r, holder) {
       var x = r.details || {}, a = x.address, s = r.feeSnapshot || {};
+      var earn = holder ? Number(s.holderFee) : Number(s.saved);
       return '<div class="panel" style="margin-bottom:16px"><div class="spread" style="gap:12px; flex-wrap:wrap; margin-bottom:10px"><div><span class="badge badge--info">Order &amp; Earn</span> ' + badge(r.status) +
         '<h2 class="h3" style="margin-top:8px">' + esc(titleOf(r)) + '</h2></div><a class="btn btn--ghost btn--sm" href="#/market/r/' + r.id + '">Open request</a></div>' +
         kv('Shopping site', esc(x.platform)) + (x.url ? kv('Product link', openLink(x.url)) : '') + (x.payUrl ? kv('Payment link', openLink(x.payUrl)) : '') +
         kv('Card', esc(UI.sentence(x.cardName) || bankName(x.bank))) + kv('Offer wanted', esc(UI.sentence(x.offerWanted))) +
-        kv('Listed price', money(x.listPrice)) + kv('Amount to pay', money(x.expectedPrice)) + kv('You pay Card Crest', '<strong>' + money(s.total) + '</strong>') +
-        (a ? kv('Deliver to', esc(UI.titleCase(a.name) + ', ' + (a.state || a.city))) : '') +
+        kv('Listed price', money(x.listPrice)) + kv('Amount to pay', money(holder ? s.reimbursement : x.expectedPrice)) +
+        (holder ? '' : kv('You pay Card Crest', '<strong>' + money(s.total) + '</strong>')) +
+        (a ? kv('Deliver to', esc(holder ? UI.titleCase(a.name) + ', ' + a.line + (a.area ? ', ' + a.area : '') + ', ' + a.city + (a.state ? ', ' + a.state : '') + ' ' + a.pin : UI.titleCase(a.name) + ', ' + (a.state || a.city))) : '') +
         kv('Requested', dt(r.createdAt)) +
-        (Number(s.saved) > 0 ? '<div class="deal-get mk-earn"><span>You earn<small>Your discount on this request</small></span><strong>' + money(s.saved) + '</strong></div>' : '') + '</div>';
-    }).join('');
-    var inner = '<div class="spread section__head"><div><h1 class="h1">Pay &amp; Earn</h1><p class="lede">Your Order &amp; Earn requests with every detail: payment link, shopping site and delivery address.</p></div></div>' +
+        (earn > 0 ? '<div class="deal-get mk-earn"><span>You earn<small>' + (holder ? 'Your earning on this request' : 'Your discount on this request') + '</small></span><strong>' + money(earn) + '</strong></div>' : '') + '</div>';
+    }
+    var cards = (tasks.length ? '<h2 class="h2" style="margin-bottom:14px">Requests you accepted</h2>' + tasks.map(function (r) { return card(r, true); }).join('') : '') +
+      (list.length ? (tasks.length ? '<h2 class="h2" style="margin:24px 0 14px">Requests you made</h2>' : '') + list.map(function (r) { return card(r, false); }).join('') : '');
+    var inner = '<div class="spread section__head"><div><h1 class="h1">Pay &amp; Earn</h1><p class="lede">Requests you made and requests you accepted, with every detail: payment link, shopping site and delivery address.</p></div></div>' +
       (cards || UI.empty('No requests yet', 'Create an Order & Earn request and it shows up here with all its details.', 'Start a request', '#/market/new/pay'));
     return { title: 'Pay & Earn | Share & Earn | Card Crest', html: shell('/market/pay-earn', inner), mount: function (root) {
       fresh(root); onChange(root, w.CC.Router.refresh);
@@ -971,7 +976,7 @@
         function chatLeft() {
           var used = M.messages(r.id).filter(function (m) { return m.senderId === u.id; }).length, left = Math.max(0, CH.MAX_MESSAGES - used);
           var cl = root.querySelector('#chatLeft'), ci = root.querySelector('#chatIn'), cb = root.querySelector('#chatForm button');
-          if (cl && !staff) cl.textContent = left ? 'You can send ' + left + ' more message' + (left === 1 ? '' : 's') + ' (of ' + CH.MAX_MESSAGES + '). Share only the last ' + CH.MAX_DIGITS + ' digits of your card.' : 'You have used your ' + CH.MAX_MESSAGES + ' messages on this request.';
+          if (cl && !staff) cl.textContent = left ? 'Share only the last ' + CH.MAX_DIGITS + ' digits of your card.' : 'You have used your ' + CH.MAX_MESSAGES + ' messages on this request.';
           if (ci && !staff) { ci.disabled = !left; ci.placeholder = left ? 'Write a message (no numbers or contact details)' : 'You have used your messages'; if (cb) cb.disabled = !left; }
         }
         var chatIn0 = root.querySelector('#chatIn');

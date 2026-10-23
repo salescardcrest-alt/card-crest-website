@@ -1273,7 +1273,7 @@ begin
   perform public.mk_go(r.id, 'ACCEPTED', u::text, c.bank);
   ev := public.mk_event_time(r.details);
   update public.mk_requests set cardholder_id = u, card_id = c.id, accepted_at = t,
-    fulfil_by = coalesce(ev - interval '30 minutes', t + interval '48 hours') where id = r.id;
+    fulfil_by = coalesce(ev - interval '30 minutes', t + case when r.module in ('ORDER', 'PAY') then interval '30 minutes' else interval '48 hours' end) where id = r.id;
   if qkind is not null then
     insert into public.mk_quota_use (card_id, kind, quarter, request_id)
     values (c.id, qkind, public.mk_quarter((r.details->>'dateTime')::timestamptz), r.id);
