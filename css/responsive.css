@@ -170,7 +170,7 @@ h1, h2, h3, .h1, .h2, .h3, .h-display { overflow-wrap: break-word; }
 }
 
 /* overlap and clipping fixes found by the layout audit */
-.stage__hint { z-index: 6; pointer-events: none; background: rgba(255,255,255,.85); padding: 4px 10px; border-radius: 50px }
+.stage__hint { z-index: 6; pointer-events: none; background: var(--hdr-bg); padding: 4px 10px; border-radius: 50px }
 .ctile__reward b { white-space: normal; overflow-wrap: anywhere }
 @media (max-width: 380px) {
   .ctile__top { grid-template-columns: 96px minmax(0, 1fr); gap: 10px }

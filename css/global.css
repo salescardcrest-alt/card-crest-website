@@ -6,6 +6,9 @@
 :root{
   /* palette */
   --paper:#ffffff;
+  --surface:#ffffff;       /* cards, panels, inputs */
+  --hdr-bg:rgba(255,255,255,.9);
+  --leaf-g:#17a06a;        /* end of green gradients that carry white text */
   --mist:#f4f8f5;
   --mint:#e4f0e9;
   --line:#dde8e1;
@@ -116,7 +119,7 @@ ul{margin:0; padding:0; list-style:none}
 .demo-strip[hidden]{display:none}
 
 /* ---------- header ---------- */
-.hdr{position:sticky; top:0; z-index:80; background:rgba(255,255,255,.88); backdrop-filter:blur(14px); border-bottom:1px solid transparent; transition:border-color .25s, box-shadow .25s}
+.hdr{position:sticky; top:0; z-index:80; background:var(--hdr-bg); backdrop-filter:blur(14px); border-bottom:1px solid transparent; transition:border-color .25s, box-shadow .25s}
 .hdr.is-stuck{border-bottom-color:var(--line); box-shadow:var(--sh-1)}
 .hdr__in{display:flex; align-items:center; gap:16px; height:var(--hdr-h)}
 
@@ -146,10 +149,10 @@ ul{margin:0; padding:0; list-style:none}
   border-radius:var(--r-pill); background:var(--mist); font-size:.84rem; transition:border-color .18s, background .18s;
 }
 .search input[type=search]::placeholder{color:var(--muted)}
-.search input[type=search]:focus{outline:none; border-color:var(--leaf); background:#fff}
+.search input[type=search]:focus{outline:none; border-color:var(--leaf); background:var(--surface)}
 .search__panel{
   position:absolute; top:calc(100% + 8px); right:0; width:380px; max-height:60vh; overflow-y:auto;
-  background:#fff; border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--sh-3); padding:8px; z-index:90;
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--sh-3); padding:8px; z-index:90;
 }
 .search__panel[hidden]{display:none}
 .sr-group{padding:8px 10px 4px; font-size:.7rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
@@ -158,18 +161,18 @@ ul{margin:0; padding:0; list-style:none}
 .sr-item strong{font-weight:600; font-size:.9rem}
 .sr-item span{font-size:.78rem; color:var(--muted); margin-left:auto}
 
-.hdr__burger{display:none; width:40px; height:40px; border:1px solid var(--line); background:#fff; border-radius:var(--r-pill); cursor:pointer; flex-direction:column; align-items:center; justify-content:center; gap:4px}
+.hdr__burger{display:none; width:40px; height:40px; border:1px solid var(--line); background:var(--surface); border-radius:var(--r-pill); cursor:pointer; flex-direction:column; align-items:center; justify-content:center; gap:4px}
 .hdr__burger span{display:block; width:16px; height:1.8px; background:var(--ink); border-radius:2px}
 
 /* avatar + dropdown */
 .avatar{width:38px; height:38px; border-radius:50%; background:var(--crest); color:#fff; display:grid; place-items:center; font-weight:600; font-size:.85rem; border:0; cursor:pointer; flex-shrink:0; overflow:hidden; padding:0}
 .avatar img{width:100%; height:100%; object-fit:cover; display:block}
-.bell{position:relative; width:38px; height:38px; border-radius:50%; border:1px solid var(--line); background:#fff; display:grid; place-items:center; cursor:pointer}
+.bell{position:relative; width:38px; height:38px; border-radius:50%; border:1px solid var(--line); background:var(--surface); display:grid; place-items:center; cursor:pointer}
 .bell svg{width:18px; height:18px}
 .bell__count{position:absolute; top:-3px; right:-3px; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--danger); color:#fff; font-size:.66rem; font-weight:700; display:grid; place-items:center}
 .dropdown{position:relative}
 .dropdown__menu{
-  position:absolute; right:0; top:calc(100% + 10px); min-width:230px; background:#fff;
+  position:absolute; right:0; top:calc(100% + 10px); min-width:230px; background:var(--surface);
   border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--sh-3); padding:7px; z-index:95;
 }
 .dropdown__menu[hidden]{display:none}
@@ -184,7 +187,7 @@ ul{margin:0; padding:0; list-style:none}
 .sheet{position:fixed; inset:0; z-index:120; background:rgba(10,31,22,.42)}
 .sheet[hidden]{display:none}
 .sheet__panel{
-  position:absolute; right:0; top:0; bottom:0; width:min(340px,86vw); background:#fff;
+  position:absolute; right:0; top:0; bottom:0; width:min(340px,86vw); background:var(--surface);
   padding:20px; overflow-y:auto; animation:slideIn .26s cubic-bezier(.2,.7,.3,1);
 }
 @keyframes slideIn{from{transform:translateX(100%)}to{transform:none}}
@@ -205,7 +208,7 @@ ul{margin:0; padding:0; list-style:none}
 
 /* ---------- mobile tabbar ---------- */
 .tabbar{
-  display:none; position:fixed; left:0; right:0; bottom:0; z-index:70; background:rgba(255,255,255,.96);
+  display:none; position:fixed; left:0; right:0; bottom:0; z-index:70; background:var(--hdr-bg);
   backdrop-filter:blur(14px); border-top:1px solid var(--line);
   padding-bottom:env(safe-area-inset-bottom);
 }
@@ -215,20 +218,20 @@ ul{margin:0; padding:0; list-style:none}
 
 /* Share & Earn is the flagship product: it gets its own treatment in the header and the mobile menu */
 .hdr__nav a.nav-main{display:inline-flex; align-items:center; gap:8px; margin-right:6px; padding:8px 16px; font-weight:700; color:#fff;
-  background:linear-gradient(135deg,var(--crest) 0%,var(--leaf) 100%); box-shadow:0 4px 14px rgba(14,92,60,.28)}
+  background:linear-gradient(135deg,var(--crest) 0%,var(--leaf-g) 100%); box-shadow:0 4px 14px rgba(14,92,60,.28)}
 .hdr__nav a.nav-main:hover{background:linear-gradient(135deg,var(--crest-d) 0%,var(--crest) 100%); color:#fff; transform:translateY(-1px)}
 .hdr__nav a.nav-main.is-active{color:#fff; box-shadow:0 0 0 3px var(--leaf-soft), 0 4px 14px rgba(14,92,60,.28)}
 .nav-main__dot{width:8px; height:8px; border-radius:50%; background:#fff; box-shadow:0 0 0 0 rgba(255,255,255,.7); animation:navPulse 2s infinite; flex-shrink:0}
 @keyframes navPulse{70%{box-shadow:0 0 0 7px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
 .sheet__nav a.nav-main{display:flex; align-items:center; gap:10px; margin:2px 0 10px; padding:14px 16px; border:0; border-radius:var(--r);
-  color:#fff; font-weight:700; background:linear-gradient(135deg,var(--crest) 0%,var(--leaf) 100%)}
+  color:#fff; font-weight:700; background:linear-gradient(135deg,var(--crest) 0%,var(--leaf-g) 100%)}
 .sheet__nav a.nav-main small{margin-left:auto; font-size:.7rem; font-weight:600; letter-spacing:.05em; text-transform:uppercase; opacity:.85}
 @media (prefers-reduced-motion:reduce){.nav-main__dot{animation:none}}
 
 /* Share & Earn is the main product: it sits in the middle of the phone tab bar as a raised, highlighted button */
 .tabbar a.tab-main{position:relative; color:var(--crest); font-weight:800}
 .tab-main__i{display:grid; place-items:center; width:50px; height:50px; margin-top:-24px; border-radius:50%; color:#fff;
-  background:linear-gradient(135deg,var(--crest),var(--leaf)); box-shadow:0 6px 16px rgba(14,92,60,.38), 0 0 0 4px #fff}
+  background:linear-gradient(135deg,var(--crest),var(--leaf-g)); box-shadow:0 6px 16px rgba(14,92,60,.38), 0 0 0 4px var(--paper)}
 .tabbar a.tab-main svg{width:24px; height:24px; fill:none}
 .tabbar a.tab-main.is-active .tab-main__i{box-shadow:0 6px 16px rgba(14,92,60,.38), 0 0 0 4px var(--leaf-soft)}
 .tabbar a.tab-main span:last-child{white-space:nowrap}
@@ -320,3 +323,47 @@ ul{margin:0; padding:0; list-style:none}
 @media (prefers-reduced-motion: reduce) { .pay__card, .pay__chip, .pay__card img, .pay__shine, .pay__tick path, .pay__ring, .pay__d { animation: none; } .pay__tick path { stroke-dashoffset: 0; } }
 .boot { gap: 8px; }
 .pay { height: 100px; }
+
+/* ============================================================
+   Dark mode. html[data-theme="dark"] is set by js/theme.js (saved choice, else the device setting).
+   Everything reads the tokens above, so only the tokens and a few light-only spots change here.
+   ============================================================ */
+html[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#0b1410; --surface:#122019; --hdr-bg:rgba(11,20,16,.9);
+  --mist:#0f1a15; --mint:#1a2e25; --line:#25392f; --line-soft:#1b2c24;
+  --ink:#e9f3ed; --ink-2:#b6d0c3; --muted:#8dab9d;
+  --crest:#1b9462; --crest-d:#0e5c3c; --leaf:#3fd39a; --leaf-soft:#173a2b; --leaf-g:#117a51;
+  --gold:#e0b04f; --gold-soft:#2c2512;
+  --danger:#ff7f76; --danger-soft:#3a1d1b; --warn:#e6ad3c; --warn-soft:#32280f; --info:#8aa9ff; --info-soft:#18233f;
+  --sh-1:0 1px 2px rgba(0,0,0,.4); --sh-2:0 4px 18px rgba(0,0,0,.4); --sh-3:0 18px 48px rgba(0,0,0,.55);
+}
+html[data-theme="dark"] body{background:var(--paper); color:var(--ink)}
+/* surfaces that used --ink as a dark fill must stay dark */
+html[data-theme="dark"] .toast, html[data-theme="dark"] .tray, html[data-theme="dark"] .admin-hd{background:#1e3a2e; color:#fff}
+html[data-theme="dark"] .demo-strip{background:#0a2a1d}
+html[data-theme="dark"] .btn--primary{color:#fff}
+html[data-theme="dark"] .brand__word{color:var(--ink)}
+html[data-theme="dark"] .brand__word em{background:linear-gradient(90deg,#2fbf85 0%,#6fe8b9 100%); -webkit-background-clip:text; background-clip:text}
+html[data-theme="dark"] .brand__mark{filter:drop-shadow(0 3px 10px rgba(63,211,154,.35))}
+html[data-theme="dark"] .hdr__nav a:not(.nav-main):hover, html[data-theme="dark"] .hdr__nav a.is-active:not(.nav-main){background:var(--mint)}
+/* light pastel chips and tiles */
+html[data-theme="dark"] .mk-tile__i--lounge{background:#17284a; color:#8db2ff}
+html[data-theme="dark"] .mk-tile__i--movie{background:#43182c; color:#ff8ab4}
+html[data-theme="dark"] .mk-tile__i--order{background:#3b2d0e; color:#f0b84f}
+html[data-theme="dark"] .mk-tile__i--pay{background:#123a29; color:#4fdc9d}
+html[data-theme="dark"] img.avatar{background:var(--crest)}
+html[data-theme="dark"] .skeleton, html[data-theme="dark"] .shimmer{background:linear-gradient(90deg,#16251d,#1d3027,#16251d); background-size:200% 100%}
+
+/* the theme button */
+.theme-btn{width:38px; height:38px; flex-shrink:0; border-radius:50%; border:1px solid var(--line); background:var(--surface); color:var(--ink-2); display:grid; place-items:center; cursor:pointer; transition:transform .2s, background .2s, color .2s}
+.theme-btn:hover{color:var(--crest); transform:rotate(-12deg) scale(1.06)}
+.theme-btn svg{width:18px; height:18px}
+.theme-btn .i-sun{display:none}
+html[data-theme="dark"] .theme-btn .i-sun{display:block}
+html[data-theme="dark"] .theme-btn .i-moon{display:none}
+html[data-theme="dark"] .theme-btn{color:#f0c14b}
+@media (max-width:380px){.theme-btn{width:34px; height:34px}}
+.sheet__head .theme-btn{margin-left:auto; margin-right:10px}
+html[data-theme="dark"] input[type=range]{filter:brightness(.62) saturate(1.3)}
+@media (max-width:340px){.hdr__act > .theme-btn{display:none}}   /* the menu has its own theme button */

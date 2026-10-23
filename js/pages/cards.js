@@ -691,7 +691,7 @@
             '<div class="calc__line"><span class="k">Annual fee</span><span class="v">' + (v.fee ? '−' + UI.money(v.fee) : 'None') + '</span></div>' +
             '<div class="calc__net"><span class="k">Net annual value</span><span class="v" id="netV">' + UI.money(v.net) + '</span>' +
             '<span class="k">on ' + UI.money(v.spend) + ' of annual spend</span></div>' +
-            '<a class="btn btn--ghost btn--block" href="#/cards/' + card.id + '" style="margin-top:18px; background:#fff">Open ' + UI.esc(card.name) + '</a>';
+            '<a class="btn btn--ghost btn--block" href="#/cards/' + card.id + '" style="margin-top:18px; background:var(--surface)">Open ' + UI.esc(card.name) + '</a>';
 
           var netEl = out.querySelector('#netV');
           UI.countUp(netEl, v.net, function (n) { return UI.money(n); });

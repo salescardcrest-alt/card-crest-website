@@ -113,7 +113,7 @@
       .concat(mk.map(function (r) { return { at: r.createdAt, what: userName(r.buyerId) + ' made a ' + String(r.module).toLowerCase() + ' request (' + money(r.feeSnapshot.total) + ')', tag: r.status.toLowerCase() }; }))
       .sort(function (a, b) { return new Date(b.at) - new Date(a.at); }).slice(0, 8);
 
-    return '<div class="panel" style="margin-bottom:20px; background:linear-gradient(135deg,var(--crest),var(--leaf)); color:#fff; border:0">' +
+    return '<div class="panel" style="margin-bottom:20px; background:linear-gradient(135deg,var(--crest),var(--leaf-g)); color:#fff; border:0">' +
         '<div class="spread" style="gap:14px; flex-wrap:wrap"><div><div style="opacity:.8; font-size:.8rem">Welcome back, ' + esc(me ? me.name.split(' ')[0] : 'team') + '</div>' +
         '<h3 class="h2" style="color:#fff; margin-top:2px">' + (todo ? todo + ' things need your attention' : 'You are all caught up') + '</h3></div>' +
         '<a class="btn btn--sm" style="background:#fff; color:var(--crest)" href="#/admin/approvals">Open reward approvals</a></div></div>' +
