@@ -367,5 +367,34 @@
     if (m) m.setAttribute('content', desc);
   };
 
+
+  /* Show/hide eye on every password box (sign in, sign up, reset, change password), including ones added later. */
+  var EYE = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var EYE_OFF = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.9 17.9A10.9 10.9 0 0 1 12 19C5.6 19 2 12 2 12a18.4 18.4 0 0 1 5.1-5.9M9.9 5.2A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a18.5 18.5 0 0 1-2.2 3.2M1 1l22 22"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+  function addPwEyes(scope) {
+    [].forEach.call((scope || d).querySelectorAll('input[type="password"]:not([data-eye])'), function (input) {
+      input.setAttribute('data-eye', '1');
+      var wrap = input.parentNode;
+      if (!wrap.classList || !wrap.classList.contains('pw-wrap')) {
+        wrap = d.createElement('div'); wrap.className = 'pw-wrap';
+        input.parentNode.insertBefore(wrap, input); wrap.appendChild(input);
+      }
+      var b = d.createElement('button');
+      b.type = 'button'; b.className = 'pw-eye'; b.setAttribute('aria-label', 'Show password'); b.innerHTML = EYE;
+      b.onclick = function () {
+        var show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        b.innerHTML = show ? EYE_OFF : EYE;
+        b.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+      };
+      wrap.appendChild(b);
+    });
+  }
+  UI.addPwEyes = addPwEyes;
+  function watchPwEyes() {
+    addPwEyes(d);
+    if (w.MutationObserver) new w.MutationObserver(function () { addPwEyes(d); }).observe(d.body, { childList: true, subtree: true });
+  }
+  if (d.readyState === 'loading') d.addEventListener('DOMContentLoaded', watchPwEyes); else watchPwEyes();
   w.CC.UI = UI;
 })(window, document);

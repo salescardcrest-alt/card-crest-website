@@ -375,3 +375,9 @@ table.tbl{width:100%; border-collapse:collapse; font-size:.89rem}
 .notif-ask__t span{font-size:.84rem; color:var(--ink-2); line-height:1.45}
 .notif-ask__b{grid-column:1 / -1; display:flex; gap:10px; justify-content:flex-end; margin-top:6px}
 @media (max-width:768px){ .notif-ask{left:16px; right:16px; width:auto; bottom:78px} }
+
+/* show / hide eye on password boxes */
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:46px}
+.pw-eye{position:absolute; right:6px; top:50%; transform:translateY(-50%); display:grid; place-items:center; width:34px; height:34px; background:none; border:0; border-radius:8px; color:var(--muted, #6c7b73); cursor:pointer}
+.pw-eye:hover,.pw-eye:focus-visible{color:var(--crest); background:var(--leaf-soft, rgba(23,160,106,.1))}

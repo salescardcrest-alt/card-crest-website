@@ -56,7 +56,7 @@
         '<input id="l-email" type="email" autocomplete="email" placeholder="you@example.com"><span class="err">Enter the email you signed up with.</span></div>' +
         '<div class="field" style="margin-bottom:14px"><label for="l-pw">Password</label>' +
         '<div class="pw-wrap"><input id="l-pw" type="password" autocomplete="current-password" placeholder="Your password">' +
-        '<button type="button" class="pw-toggle" data-pw="l-pw">Show</button></div><span class="err">Enter your password.</span></div>' +
+        '</div><span class="err">Enter your password.</span></div>' +
         '<div class="spread" style="margin-bottom:22px">' +
         '<label class="check"><input type="checkbox" id="l-remember" checked> Keep me signed in</label>' +
         '<button type="button" class="btn btn--link small" data-forgot>Forgot password?</button></div>' +
@@ -67,11 +67,6 @@
         '<p class="auth-alt">New to Card Crest? <a href="#/signup" style="color:var(--crest); font-weight:600">Create an account</a></p>' +
         '</div></div>',
       mount: function (root) {
-        root.querySelector('[data-pw]').onclick = function () {
-          var i = root.querySelector('#l-pw');
-          i.type = i.type === 'password' ? 'text' : 'password';
-          this.textContent = i.type === 'password' ? 'Show' : 'Hide';
-        };
         root.querySelector('[data-forgot]').onclick = function () {
           UI.modal({
             title: 'Reset your password',
@@ -134,7 +129,7 @@
         '<div class="field" style="margin-bottom:14px"><label for="s-email">Email address</label><input id="s-email" type="email" autocomplete="email"><span class="err">Enter a valid email address.</span></div>' +
         '<div class="field" style="margin-bottom:14px"><label for="s-mobile">Mobile number</label><input id="s-mobile" type="tel" inputmode="numeric" maxlength="10" autocomplete="tel-national" placeholder="10 digits"><span class="err">Enter a 10-digit mobile number.</span></div>' +
         '<div class="field" style="margin-bottom:14px"><label for="s-pw">Password</label>' +
-        '<div class="pw-wrap"><input id="s-pw" type="password" autocomplete="new-password"><button type="button" class="pw-toggle" data-pw="s-pw">Show</button></div>' +
+        '<div class="pw-wrap"><input id="s-pw" type="password" autocomplete="new-password"></div>' +
         '' + UI.pwMeterHtml() + '<span class="err">Use 8+ characters with upper and lower case letters, a number and a symbol.</span></div>' +
         '<div class="field" style="margin-bottom:18px"><label for="s-pw2">Confirm password</label><input id="s-pw2" type="password" autocomplete="new-password"><span class="err">Both passwords need to match.</span></div>' +
         '<label class="check" style="margin-bottom:20px"><input type="checkbox" id="s-terms"> I agree to the <a href="#/legal/terms" style="color:var(--crest)">terms</a> and <a href="#/legal/privacy" style="color:var(--crest)">privacy policy</a>.</label>' +
@@ -143,11 +138,6 @@
         '<p class="auth-alt">Already have an account? <a href="#/login" style="color:var(--crest); font-weight:600">Sign in</a></p>' +
         '</div></div>',
       mount: function (root) {
-        root.querySelector('[data-pw]').onclick = function () {
-          var i = root.querySelector('#s-pw');
-          i.type = i.type === 'password' ? 'text' : 'password';
-          this.textContent = i.type === 'password' ? 'Show' : 'Hide';
-        };
         UI.pwBind(root.querySelector('#s-pw'), root);
         root.querySelector('#s-mobile').addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 10); });
         root.querySelector('#signupForm').addEventListener('submit', function (e) {
