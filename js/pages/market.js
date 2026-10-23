@@ -12,10 +12,10 @@
 
   /* ---------------- shared bits ---------------- */
   var MODS = {
-    LOUNGE: { slug: 'lounge', title: 'Lounge access', short: 'Airport lounge', icon: '✈', blurb: 'Walk into an airport lounge using a cardholder’s guest access. Pay ₹500 for domestic or ₹1,000 for international, instead of the usual ₹1,500 or ₹2,500.' },
+    LOUNGE: { slug: 'lounge', title: 'Lounge access', short: 'Airport lounge', icon: '✈', blurb: 'Enter an airport lounge for ₹500 domestic or ₹1,000 international.' },
     MOVIE:  { slug: 'movie', title: 'Movie offers', short: 'Movie offer', icon: '▶', blurb: 'Get buy-one-get-one or ₹500 off on 2 seats using a card that carries the offer.' },
-    ORDER:  { slug: 'order', title: 'Order & Earn', short: 'Order & Earn', icon: '▣', blurb: 'A cardholder places your order with their card offer. Get a share of the card offer discount off your price.' },
-    PAY:    { slug: 'pay', title: 'Pay & Earn', short: 'Pay & Earn', icon: '✓', blurb: 'You get to the final payment page and share its link. A cardholder opens it and pays with their own card at the offer price. Get a share of the offer discount off your price.' }
+    ORDER:  { slug: 'order', title: 'Order & Earn', short: 'Order & Earn', icon: '▣', blurb: 'A cardholder orders for you with their card offer. You get a discount.' },
+    PAY:    { slug: 'pay', title: 'Pay & Earn', short: 'Pay & Earn', icon: '✓', blurb: 'Share your payment page link. A cardholder pays with their card. You get a discount.' }
   };
   var SLUG = { lounge: 'LOUNGE', movie: 'MOVIE', order: 'ORDER', pay: 'PAY' };
 
