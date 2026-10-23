@@ -131,8 +131,10 @@
       on('/market/requests', P.marketRequests);
       on('/market/pay-earn', P.marketPayEarn);
       on('/market/earn', P.marketEarn);
+      on('/dashboard/earn', P.marketEarn);
       on('/market/cards', P.marketCards);
       on('/market/wallet', P.marketWallet);
+      on('/dashboard/wallet', P.marketWallet);
       on('/market/r/:id', P.marketRequest);
 
       w.addEventListener('hashchange', render);

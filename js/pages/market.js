@@ -55,10 +55,10 @@
   }
 
   /* the Add card page opens from the account menu too: keep that menu when it was opened from there */
-  var ACCOUNT_ITEMS = [['/dashboard', 'Overview'], ['/dashboard/cards', 'Add card'], ['/dashboard/transactions', 'Transactions'], ['/dashboard/applications', 'Applications'],
-    ['/rewards', 'Rewards wallet'], ['/refer', 'Refer and earn'], ['/dashboard/notifications', 'Notifications'], ['/profile', 'Profile and settings']];
+  var ACCOUNT_ITEMS = [['/dashboard', 'Overview'], ['/dashboard/cards', 'Add card'], ['/dashboard/earn', 'Earn with my card'], ['/dashboard/transactions', 'Transactions'], ['/dashboard/applications', 'Applications'],
+    ['/rewards', 'Rewards wallet'], ['/dashboard/wallet', 'Wallet and payouts'], ['/refer', 'Refer and earn'], ['/dashboard/notifications', 'Notifications'], ['/profile', 'Profile and settings']];
   function shell(active, inner) {
-    var fromAccount = active === '/dashboard/cards';
+    var fromAccount = active.indexOf('/dashboard/') === 0;
     var items = fromAccount ? ACCOUNT_ITEMS : [
       ['/market', 'Overview'], ['/market/requests', 'My requests'], ['/market/pay-earn', 'Pay & Earn'], ['/market/earn', 'Earn with my card'],
       ['/market/cards', 'Add card'], ['/market/wallet', 'Wallet and payouts']
@@ -507,7 +507,7 @@
       (tab === 'open' ? openHtml : requestList(mine, UI.empty('No tasks yet', 'Accepted requests show up here.'), false));
 
     return {
-      title: 'Earn with my card | Share & Earn | Card Crest', html: shell('/market/earn', inner),
+      title: 'Earn with my card | Share & Earn | Card Crest', html: shell(w.location.hash.indexOf('#/dashboard/earn') === 0 ? '/dashboard/earn' : '/market/earn', inner),
       mount: function (root) {
         fresh(root); onChange(root, w.CC.Router.refresh);
         /* live alerts: sound switch, desktop alert permission, and a gentle refresh as a safety net */
@@ -549,7 +549,7 @@
             M.load().then(function () { if (alive() && dataSig() !== before) w.CC.Router.refresh(); });
           }, 20000);
         }
-        root.querySelectorAll('[data-tab]').forEach(function (b) { b.onclick = function () { w.CC.Router.go('#/market/earn?t=' + b.dataset.tab); }; });
+        root.querySelectorAll('[data-tab]').forEach(function (b) { b.onclick = function () { w.CC.Router.go((w.location.hash.indexOf('#/dashboard/earn') === 0 ? '#/dashboard/earn' : '#/market/earn') + '?t=' + b.dataset.tab); }; });
         root.querySelectorAll('.mk-job [data-accept]').forEach(function (b) {
           b.onclick = function () {
             var card = b.closest('.mk-job'), id = card.dataset.id; busy(b, true, 'Accepting…');
@@ -721,7 +721,7 @@
           return '<tr><td>' + dt(e.at) + '</td><td>' + kind + (e.note ? '<div class="small muted">' + esc(e.note) + '</div>' : '') + '</td><td class="num" style="color:' + (amt < 0 ? 'var(--danger)' : 'inherit') + '"><strong>' + (amt < 0 ? '−' : '+') + money(Math.abs(amt)) + '</strong></td></tr>';
         }).join('') + '</tbody></table></div></div>' : '<p class="muted">Earnings appear here when your requests complete.</p>');
 
-    return { title: 'Wallet and payouts | Share & Earn | Card Crest', html: shell('/market/wallet', inner),
+    return { title: 'Wallet and payouts | Share & Earn | Card Crest', html: shell(w.location.hash.indexOf('#/dashboard/wallet') === 0 ? '/dashboard/wallet' : '/market/wallet', inner),
       mount: function (root) {
         fresh(root); onChange(root, w.CC.Router.refresh);
         var kg = root.querySelector('#k-go');

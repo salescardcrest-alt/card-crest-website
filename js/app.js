@@ -42,8 +42,9 @@
         '<div class="dropdown__menu" id="userMenu" hidden>' +
           '<div class="dropdown__head"><strong>' + UI.esc(u.name) + '</strong><span>' + UI.esc(u.email) + '</span></div>' +
           '<a href="#/dashboard">Dashboard</a>' +
-          '<a href="#/market/cards">Add card</a>' +
+          '<a href="#/dashboard/cards">Add card</a>' +
           '<a href="#/rewards">My rewards</a>' +
+          '<a href="#/dashboard/wallet">Wallet and payouts</a>' +
           '<a href="#/dashboard/transactions">Transactions</a>' +
           '<a href="#/dashboard/applications">Applications</a>' +
           '<a href="#/refer">Referrals</a>' +

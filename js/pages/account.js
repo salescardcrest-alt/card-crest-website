@@ -15,9 +15,11 @@
     var items = [
       ['/dashboard', 'Overview'],
       ['/dashboard/cards', 'Add card'],
+      ['/dashboard/earn', 'Earn with my card'],
       ['/dashboard/transactions', 'Transactions'],
       ['/dashboard/applications', 'Applications'],
       ['/rewards', 'Rewards wallet'],
+      ['/dashboard/wallet', 'Wallet and payouts'],
       ['/refer', 'Refer and earn'],
       ['/dashboard/notifications', 'Notifications'],
       ['/profile', 'Profile and settings']
@@ -203,13 +205,14 @@
     var apps = AP.forUser(u.id).slice(0, 3);
     var saved = C.saved(u.id);
     var hour = new Date().getHours();
-    var greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    function greeting() { var h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; }
+    var greet = greeting();
 
     var recCards = C.recommend(C.profileFor(u), {}).slice(0, 2);
     var recOffers = O.query({ section: 'top' }).slice(0, 3);
 
     var inner =
-      '<div class="dash__hi"><h1 class="h1">' + greet + ', <em>' + UI.esc(u.name.split(' ')[0]) + '</em></h1>' +
+      '<div class="dash__hi"><h1 class="h1"><span data-greet>' + greet + '</span>, <em>' + UI.esc(u.name.split(' ')[0]) + '</em></h1>' +
       '<p class="lede">' + (t.pending > 0
         ? UI.money(t.pending) + ' of cashback is on its way. Here is where everything stands.'
         : 'Here is where everything stands.') + '</p></div>' +
@@ -273,6 +276,12 @@
         w.CC.Render.bindOfferActions(root);
         var c = root.querySelector('[data-count]');
         if (c) UI.countUp(c, Number(c.dataset.count), function (n) { return UI.money(n); });
+        /* the greeting follows the clock while the page stays open */
+        var g = root.querySelector('[data-greet]'), gen = w.CC.Router.gen;
+        if (g) var tick = setInterval(function () {
+          if (w.CC.Router.gen !== gen || !g.isConnected) return clearInterval(tick);
+          var now = greeting(); if (g.textContent !== now) g.textContent = now;
+        }, 30000);
       }
     };
   };
