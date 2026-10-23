@@ -204,6 +204,12 @@
       /* Order & Earn requests stay open 3 hours; saved pricing that still has the old 12 or 24 hours is moved to it */
       if (cur && (f.module === 'ORDER' || f.module === 'PAY') && (cur.acceptHours === 12 || cur.acceptHours === 24)) S.update('mkFees', cur.id, { acceptHours: 3 });
     });
+    /* requests already open with the old 12 or 24 hour window now close 3 hours after they were paid (a reopened request has a shorter window, so it is left alone) */
+    col('mkRequests').forEach(function (r) {
+      if (r.status === 'PAID' && (r.module === 'ORDER' || r.module === 'PAY') && r.paidAt && r.acceptBy &&
+          new Date(r.acceptBy).getTime() - new Date(r.paidAt).getTime() >= 11 * 3600000)
+        S.update('mkRequests', r.id, { acceptBy: new Date(new Date(r.paidAt).getTime() + 3 * 3600000).toISOString() });
+    });
     S.commit();
     /* a built-in test cardholder so one person can walk the whole flow alone */
     if (!col('mkCards').filter(function (c) { return c.ownerId === DEMO_HOLDER; }).length) {

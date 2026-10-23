@@ -495,6 +495,9 @@ create index if not exists mk_requests_holder_idx on public.mk_requests(cardhold
 create index if not exists mk_requests_status_idx on public.mk_requests(status);
 create unique index if not exists mk_requests_order_idx on public.mk_requests(gateway_order_id) where gateway_order_id is not null;
 create unique index if not exists mk_requests_topup_idx on public.mk_requests(topup_order_id)   where topup_order_id is not null;
+-- Requests already open with the old 12 or 24 hour window now close 3 hours after they were paid.
+update public.mk_requests set accept_by = paid_at + interval '3 hours'
+  where status = 'PAID' and module in ('ORDER', 'PAY') and paid_at is not null and accept_by - paid_at >= interval '11 hours';
 
 create table if not exists public.mk_quota_use (
   id         uuid primary key default gen_random_uuid(),
