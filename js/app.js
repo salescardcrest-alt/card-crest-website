@@ -305,7 +305,7 @@
       var refParam = new URLSearchParams(w.location.search).get('ref');
       if (refParam && /^CC-[A-Za-z]{0,6}-[A-Za-z0-9]{4}$/.test(refParam)) w.localStorage.setItem('cc_ref', refParam.toUpperCase());
       if (/^\/join\/?$/.test(w.location.pathname) || refParam) {
-        w.history.replaceState(null, '', '/' + (w.location.hash || ''));
+        w.history.replaceState(null, '', w.location.pathname.replace(/\/join\/?$/, '/') + (w.location.hash || ''));   // keep the site's own folder (GitHub Pages serves it under /card-crest-website/)
         if (!w.location.hash || w.location.hash === '#/') w.location.hash = '#/signup';
       }
     } catch (e) { /* storage or history blocked: the person can still type the code */ }
