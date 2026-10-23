@@ -23,6 +23,8 @@
   /* ---------- names: first letter of every word capital ----------
      "ayush kumar" and "AYUSH KUMAR" become "Ayush Kumar". A word that already mixes cases ("McDonald", "DeSouza")
      keeps its capitals and only gets a capital first letter. Words are split at spaces, hyphens and apostrophes. */
+  /* sentence case for text people type in: first letter capital, the rest as typed */
+  UI.sentence = function (s) { s = String(s == null ? "" : s).trim(); return s.charAt(0).toUpperCase() + s.slice(1); };
   UI.titleCase = function (s) {
     return String(s == null ? '' : s).replace(/\s+/g, ' ').replace(/[^\s\-'’.]+/g, function (w) {
       var letters = w.replace(/[^A-Za-z\u00C0-\u024F]/g, '');

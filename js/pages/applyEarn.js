@@ -37,7 +37,7 @@
         return '<div class="panel ae-tile" data-b="' + c.bank + '" data-q="' + UI.esc((c.name + ' ' + (bank ? bank.name : '')).toLowerCase()) + '">' +
           '<div class="row" style="gap:12px">' + UI.bankLogo(bank, 'bank-logo--md') + '<div><strong>' + UI.esc(c.name) + '</strong><div class="small muted">' + UI.esc(bank ? bank.name : '') + '</div></div></div>' +
           '<div class="ae-tile__r"><span class="small muted">You earn when approved</span><b>' + UI.money(c.reward) + '</b></div>' +
-          '<button class="btn btn--primary btn--block" data-card="' + c.id + '">Apply &amp; earn ' + UI.money(c.reward) + '</button></div>';
+          '<button class="btn btn--primary btn--block" data-card="' + c.id + '">Apply &amp; Earn ' + UI.money(c.reward) + '</button></div>';
       }).join('') + '</div>' +
       '<div id="aeNone" class="empty" hidden style="margin-top:20px"><div class="empty__t">No card matches</div><p class="empty__d">Try another bank or clear the search.</p></div>' +
 

@@ -15,7 +15,7 @@
     LOUNGE: { slug: 'lounge', title: 'Lounge access', short: 'Airport lounge', icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15.5 13.5 11V5.5a1.5 1.5 0 0 0-3 0V11L3 15.5V17l7.5-2v3.5L9 20v1.2l3-.8 3 .8V20l-1.5-1.5V15L21 17z"/></svg>', blurb: 'Enter an airport lounge for ₹500 domestic or ₹1,000 international.' },
     MOVIE:  { slug: 'movie', title: 'Movie offers', short: 'Movie offer', icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="6.5" r="4"/><circle cx="7.5" cy="6.5" r="1"/><circle cx="16" cy="6.5" r="4"/><circle cx="16" cy="6.5" r="1"/><rect x="2.5" y="11.5" width="14" height="9" rx="1.8"/><path d="M16.5 14.5 21.5 12v8l-5-2.5"/></svg>', blurb: 'Get buy-one-get-one or ₹500 off on 2 seats using a card that carries the offer.' },
     ORDER:  { slug: 'order', title: 'Order & Earn', short: 'Order & Earn', icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="6.4"/><path d="M9.6 9.2h4.8M9.6 11.4h4.8M10 9.2c3.2 0 3.2 4.4 0 4.4h-.4l3.4 2.2"/></svg>', blurb: 'A cardholder orders for you with their card offer. You get a discount.' },
-    PAY:    { slug: 'pay', title: 'Pay & Earn', short: 'Pay & Earn', icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6.5" width="19" height="11" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 12h.01M18 12h.01"/></svg>', blurb: 'Share your payment page link. A cardholder pays with their card. You get a discount.' }
+    PAY:    { slug: 'pay', title: 'Order & Earn', short: 'Order & Earn', icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6.5" width="19" height="11" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 12h.01M18 12h.01"/></svg>', blurb: 'Share the shopping site, your payment link and delivery address. A cardholder pays with their card. You get a discount.' }
   };
   var SLUG = { lounge: 'LOUNGE', movie: 'MOVIE', order: 'ORDER', pay: 'PAY' };
 
@@ -45,7 +45,7 @@
     var x = r.details || {};
     if (r.module === 'LOUNGE') return x.airport + ' ' + x.terminal + ' · ' + String(x.type || '').toLowerCase() + ' lounge';
     if (r.module === 'MOVIE') return x.movie + ' · ' + (x.offer === 'BOGO' ? 'Buy one get one' : '₹500 off on 2 seats');
-    return (r.module === 'ORDER' ? 'Order' : 'Pay') + ' on ' + x.platform + ' · ' + x.offerWanted;
+    return (r.module === 'ORDER' ? 'Order' : 'Pay') + ' on ' + x.platform + ' · ' + UI.sentence(x.offerWanted);
   }
   function subOf(r) {
     var x = r.details || {};
@@ -56,7 +56,7 @@
 
   function shell(active, inner) {
     var items = [
-      ['/market', 'Overview'], ['/market/requests', 'My requests'], ['/market/earn', 'Earn with my card'],
+      ['/market', 'Overview'], ['/market/requests', 'My requests'], ['/market/pay-earn', 'Pay & Earn'], ['/market/earn', 'Earn with my card'],
       ['/market/cards', 'My benefit cards'], ['/market/wallet', 'Wallet and payouts']
     ];
     return '<div class="wrap section--tight"><div class="dash">' +
@@ -169,11 +169,12 @@
 
       '<h2 class="h2" style="margin-bottom:14px">I want a benefit</h2>' +
       '<div class="grid g-4" style="margin-bottom:34px">' +
-      Object.keys(MODS).map(function (k) {
+      Object.keys(MODS).filter(function (k) { return k !== 'ORDER'; }).map(function (k) { /* Order & Earn is now part of Pay & Earn */
         var m = MODS[k];
         return '<a class="panel mk-tile" href="#/market/new/' + m.slug + '"><span class="mk-tile__i mk-tile__i--' + m.slug + '">' + m.icon + '</span>' +
           '<strong>' + m.title + '</strong><span class="muted small">' + m.blurb + '</span><span class="mk-tile__go">Start a request →</span></a>';
-      }).join('') + '</div>' +
+      }).join('') +
+      '<a class="panel mk-tile" href="#/market/pay-earn"><span class="mk-tile__i mk-tile__i--order">' + MODS.ORDER.icon + '</span><strong>Pay & Earn</strong><span class="muted small">See your Order & Earn requests with the payment link, shopping site and delivery address.</span><span class="mk-tile__go">Open →</span></a></div>' +
 
       '<h2 class="h2" style="margin-bottom:14px">I have a card</h2>' +
       '<div class="grid g-3" style="margin-bottom:34px">' +
@@ -236,6 +237,7 @@
     return t.toISOString().slice(0, 16);
   }
 
+  var STATES = ['Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Andaman and Nicobar Islands', 'Chandigarh', 'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry'];
   var FORMS = {
     LOUNGE: function () {
       return '<div class="field"><label>Lounge type</label><div class="chip-row" id="f-type"></div><span class="hint">Pick this first. The airport list changes to match.</span></div>' +
@@ -259,15 +261,15 @@
     ORDER: function (pay) {
       return '<div class="form-grid">' + (pay ? '' : field('f-url', 'Product link', '<input id="f-url" type="url" placeholder="https://www.amazon.in/…">')) +
         field('f-plat', pay ? 'Shopping site or merchant' : 'Shopping site', '<select id="f-plat"><option>Amazon</option><option>Flipkart</option><option>Myntra</option><option>Ajio</option><option>Croma</option><option>Other</option></select>') + '</div>' +
-        (pay ? field('f-pay', 'Final payment page link', '<input id="f-pay" type="url" placeholder="https://…">',
+        (pay ? field('f-pay', 'Final payment link', '<input id="f-pay" placeholder="Paste the payment link" autocomplete="off">',
           'The page where the payment is made, after the offer is applied. The cardholder opens it and pays with their own card. Only they see this link, after accepting. It needs to open for someone who is not signed in as you, like a pay-by-link or invoice link.') : '') +
         '<div class="form-grid">' + field('f-list', 'Listed price (₹)', '<input id="f-list" type="number" min="1" max="200000" inputmode="decimal">', 'Up to ₹2,00,000.') +
         field('f-exp', pay ? 'Amount to pay on that page (₹)' : 'Price after the card offer (₹)', '<input id="f-exp" type="number" min="1" max="200000" inputmode="decimal">', 'Must be less than the listed price.') + '</div>' +
         field('f-offer', 'Card offer you want', '<input id="f-offer" placeholder="10% instant discount on HDFC credit cards">') +
-        field('f-bank', 'Card', '<select id="f-bank">' + bankOptions() + '</select>') +
-        (pay ? '' : '<h3 class="h3" style="margin:6px 0 10px">Delivery address</h3><div class="form-grid">' + field('f-an', 'Full name', '<input id="f-an" data-name autocomplete="name">') + field('f-apin', 'PIN code', '<input id="f-apin" maxlength="6" inputmode="numeric" autocomplete="postal-code">') + '</div>' +
-          field('f-aline', 'Address', '<input id="f-aline" autocomplete="street-address" placeholder="House, street, area">') + field('f-acity', 'City', '<input id="f-acity" autocomplete="address-level2">') +
-          '<p class="muted small">Only the cardholder who accepts your request sees the address.</p>');
+        field('f-bank', 'Card', '<select id="f-bank">' + bankOptions() + '<option value="other">Other card (type which one)</option></select><input id="f-cardname" placeholder="Which card? e.g. SBI Cashback" maxlength="60" autocomplete="off" style="margin-top:8px" hidden>') +
+        '<h3 class="h3" style="margin:6px 0 10px">Delivery address</h3><div class="form-grid">' + field('f-an', 'Full name', '<input id="f-an" data-name autocomplete="name">') + field('f-apin', 'PIN code', '<input id="f-apin" maxlength="6" inputmode="numeric" autocomplete="postal-code">', '<span id="f-apinHint">Enter the PIN code and the city, state and area fill in by themselves.</span>') + '</div>' +
+          field('f-aarea', 'Area', '<select id="f-aarea"><option value="">Enter the PIN code first</option></select>') + field('f-aline', 'Address', '<input id="f-aline" autocomplete="street-address" placeholder="House, street, area">') + '<div class="form-grid">' + field('f-acity', 'City', '<input id="f-acity" autocomplete="address-level2">') + field('f-astate', 'State', '<select id="f-astate" autocomplete="address-level1"><option value="">Choose state</option>' + STATES.map(function (s) { return '<option>' + s + '</option>'; }).join('') + '</select>') + '</div>' +
+          '<p class="muted small">Only the cardholder who accepts your request sees the payment link and address.</p>';
     }
   };
 
@@ -299,8 +301,8 @@
             return { offer: $('f-offer').value, movie: $('f-movie').value, theatre: $('f-theatre').value, city: $('f-city').value, showTime: $('f-show').value,
               seats: $('f-seats').value, seatCount: Number($('f-count').value), ticketTotal: Number($('f-total').value), platform: $('f-plat').value, bank: $('f-bank').value };
           }
-          var o = { url: module === 'ORDER' ? $('f-url').value : '', platform: $('f-plat').value, listPrice: Number($('f-list').value), expectedPrice: Number($('f-exp').value), offerWanted: $('f-offer').value, bank: $('f-bank').value };
-          if (module === 'ORDER') o.address = { name: UI.titleCase($('f-an').value).trim(), line: $('f-aline').value, city: $('f-acity').value, pin: $('f-apin').value };
+          var o = { url: module === 'ORDER' ? $('f-url').value : '', platform: $('f-plat').value, listPrice: Number($('f-list').value), expectedPrice: Number($('f-exp').value), offerWanted: UI.sentence($('f-offer').value), bank: $('f-bank').value === 'other' ? 'any' : $('f-bank').value, cardOther: $('f-bank').value === 'other', cardName: $('f-bank').value === 'other' ? UI.sentence($('f-cardname').value) : '' };
+          o.address = { name: UI.titleCase($('f-an').value).trim(), line: $('f-aline').value, area: $('f-aarea').value, city: $('f-acity').value, state: $('f-astate').value, pin: $('f-apin').value };
           if (module === 'PAY') o.payUrl = $('f-pay').value;
           return o;
         }
@@ -353,7 +355,27 @@
           drawType(); drawAirports();
         }
         root.querySelectorAll('#mkForm input, #mkForm select').forEach(function (el) { el.addEventListener('input', quoteNow); el.addEventListener('change', quoteNow); });
-        var pin = $('f-apin'); if (pin) pin.addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 6); });
+        var bsel = $('f-bank'), bnm = $('f-cardname'); if (bsel && bnm) bsel.addEventListener('change', function () { bnm.hidden = bsel.value !== 'other'; });
+        var pin = $('f-apin');
+        if (pin) pin.addEventListener('input', function () {
+          this.value = this.value.replace(/\D/g, '').slice(0, 6);
+          var hint = $('f-apinHint'), area = $('f-aarea');
+          if (this.value.length < 6) { if (hint) hint.textContent = ''; return; }
+          var want = this.value;
+          if (hint) hint.textContent = 'Looking up the PIN code…';
+          fetch('https://api.postalpincode.in/pincode/' + want).then(function (r) { return r.json(); }).then(function (j) {
+            if (pin.value !== want) return;
+            var list = j && j[0] && j[0].Status === 'Success' ? j[0].PostOffice || [] : [];
+            if (!list.length) { hint.textContent = 'PIN code not found. Enter the city and state yourself.'; return; }
+            $('f-acity').value = list[0].District || list[0].Block || '';
+            var st = Array.prototype.find.call($('f-astate').options, function (o) { return o.value.toLowerCase() === String(list[0].State || '').toLowerCase(); });
+            if (st) $('f-astate').value = st.value;
+            area.innerHTML = '<option value="">Choose area</option>' + list.map(function (p) { return '<option>' + esc(p.Name) + '</option>'; }).join('');
+            if (list.length === 1) area.value = list[0].Name;
+            hint.textContent = 'Found: ' + list[0].District + ', ' + list[0].State + '. Pick your area below.';
+            quoteNow();
+          }).catch(function () { if (hint) hint.textContent = 'Could not look up the PIN code. Enter the city and state yourself.'; });
+        });
 
         /* money boxes: only digits (and up to 2 decimals), and nothing above the limit can be typed */
         function limitMoney(id, max) {
@@ -412,6 +434,34 @@
     return { title: 'My requests | Share & Earn | Card Crest', html: shell('/market/requests', inner), mount: function (root) { fresh(root); onChange(root, w.CC.Router.refresh); } };
   };
 
+  /* ---------------- Pay & Earn: every Order & Earn request you made, with all its details ---------------- */
+  w.CC.Pages.marketPayEarn = function () {
+    if (!Auth.require()) return false;
+    var u = Auth.current();
+    var list = M.asBuyer(u.id).filter(function (r) { return r.module === 'PAY' || r.module === 'ORDER'; });
+    function kv(k, v) { return v ? '<div class="deal-line"><span>' + k + '</span><strong>' + v + '</strong></div>' : ''; }
+    function openLink(u2) { return '<a href="' + esc(openable(u2)) + '" target="_blank" rel="noopener noreferrer">Open</a> · <a href="#" data-copy-link="' + esc(u2) + '">Copy</a>'; }
+    var cards = list.map(function (r) {
+      var x = r.details || {}, a = x.address, s = r.feeSnapshot || {};
+      return '<div class="panel" style="margin-bottom:16px"><div class="spread" style="gap:12px; flex-wrap:wrap; margin-bottom:10px"><div><span class="badge badge--info">Order &amp; Earn</span> ' + badge(r.status) +
+        '<h2 class="h3" style="margin-top:8px">' + esc(titleOf(r)) + '</h2></div><a class="btn btn--ghost btn--sm" href="#/market/r/' + r.id + '">Open request</a></div>' +
+        kv('Shopping site', esc(x.platform)) + (x.url ? kv('Product link', openLink(x.url)) : '') + (x.payUrl ? kv('Payment link', openLink(x.payUrl)) : '') +
+        kv('Card', esc(UI.sentence(x.cardName) || bankName(x.bank))) + kv('Offer wanted', esc(UI.sentence(x.offerWanted))) +
+        kv('Listed price', money(x.listPrice)) + kv('Amount to pay', money(x.expectedPrice)) + kv('You pay Card Crest', '<strong>' + money(s.total) + '</strong>') +
+        (a ? kv('Deliver to', esc(UI.titleCase(a.name) + ', ' + (a.state || a.city))) : '') +
+        kv('Requested', dt(r.createdAt)) +
+        (Number(s.saved) > 0 ? '<div class="deal-get mk-earn"><span>You earn<small>Your discount on this request</small></span><strong>' + money(s.saved) + '</strong></div>' : '') + '</div>';
+    }).join('');
+    var inner = '<div class="spread section__head"><div><h1 class="h1">Pay &amp; Earn</h1><p class="lede">Your Order &amp; Earn requests with every detail: payment link, shopping site and delivery address.</p></div></div>' +
+      (cards || UI.empty('No requests yet', 'Create an Order & Earn request and it shows up here with all its details.', 'Start a request', '#/market/new/pay'));
+    return { title: 'Pay & Earn | Share & Earn | Card Crest', html: shell('/market/pay-earn', inner), mount: function (root) {
+      fresh(root); onChange(root, w.CC.Router.refresh);
+      root.querySelectorAll('[data-copy-link]').forEach(function (b) {
+        b.addEventListener('click', function (e) { e.preventDefault(); var t = b.getAttribute('data-copy-link'); try { navigator.clipboard.writeText(t); UI.toast('Link copied'); } catch (err) { UI.toast('Could not copy', 'error'); } });
+      });
+    } };
+  };
+
   /* ---------------- earn ---------------- */
   w.CC.Pages.marketEarn = function (params, q) {
     if (!Auth.require()) return false;
@@ -427,7 +477,7 @@
         return '<div class="panel mk-job' + (o.eligible ? '' : ' is-off') + '" data-id="' + r.id + '">' +
           '<div class="spread" style="align-items:flex-start; gap:18px; flex-wrap:wrap"><div style="flex:1; min-width:240px"><span class="badge badge--info">' + MODS[r.module].short + '</span>' +
           '<h3 class="h3" style="margin:8px 0 4px">' + esc(titleOf(r)) + '</h3><div class="small muted">' + esc(subOf(r)) + '</div>' +
-          (r.module !== 'LOUNGE' ? '<div class="small muted" style="margin-top:4px">Card: ' + esc(bankName(r.details.bank)) + '</div>' : '') +
+          (r.module !== 'LOUNGE' ? '<div class="small muted" style="margin-top:4px">Card: ' + esc(UI.sentence(r.details.cardName) || bankName(r.details.bank)) + '</div>' : '') +
           '<div class="small muted" style="margin-top:4px">Open for ' + left(r.acceptBy) + '</div></div>' +
           '<div style="text-align:right"><div class="muted small">You earn</div><div style="font-size:1.5rem; font-weight:800">' + money(s.holderFee) + '</div>' +
           (s.reimbursement ? '<div class="small muted">plus ' + money(s.reimbursement) + ' reimbursed</div>' : '') + '</div></div>' +
@@ -715,7 +765,7 @@
           '<p class="err" id="u-err" style="color:var(--danger); font-size:.86rem; display:none"></p>' +
           '<button class="btn btn--primary btn--block" data-act="fulfil">Upload proof</button><button class="btn btn--ghost btn--block" style="margin-top:8px" data-act="release">Step back from this request</button>';
         if (r.module === 'PAY' && xd.payUrl) h = '<div class="note" style="margin-bottom:14px"><strong>Final payment page</strong><div class="small" style="margin:6px 0 10px">Pay exactly <strong>' + money(s.reimbursement) + '</strong> here with your own card. The link was added automatically when you accepted.</div>' +
-          '<a class="btn btn--primary btn--block" href="' + esc(xd.payUrl) + '" target="_blank" rel="noopener noreferrer">Open the final payment page</a>' +
+          '<a class="btn btn--primary btn--block" href="' + esc(openable(xd.payUrl)) + '" target="_blank" rel="noopener noreferrer">Open the final payment page</a>' +
           '<button type="button" class="btn btn--ghost btn--block" style="margin-top:8px" data-copy-pay="' + esc(xd.payUrl) + '">Copy link</button></div>' + h;
       } else if (r.status === 'FULFILLED') h = '<p class="muted">Proof sent. Waiting for the buyer to confirm' + (r.topupDue > 0 ? ' (they need to top up ' + money(r.topupDue) + ' first)' : '') + '. It confirms by itself at <strong>' + dt(r.autoConfirmAt) + '</strong>.</p>';
       else if (r.status === 'CONFIRMED') h = '<p class="muted">Confirmed. Your payment is released at <strong>' + dt(r.settleAt) + '</strong>.</p>';
@@ -748,6 +798,12 @@
     ['What if I accept a deal and change my mind?', 'Use Exit deal before you place the order. The request goes back to other cardholders. Stepping back can lower your trust score a little.'],
     ['How long do I have?', 'The countdown at the top shows the time left to place the order and send proof.']
   ];
+  /* payment links can be pasted in any form: add https:// when no scheme was typed, never open other schemes */
+  function openable(u) {
+    u = String(u || '').trim();
+    if (/^https?:\/\//i.test(u)) return u;
+    return /^[a-z][a-z0-9+.-]*:/i.test(u) ? '#' : 'https://' + u;
+  }
   function copyRow(label, value) {
     if (value === undefined || value === null || value === '') return '';
     return '<div class="deal-copy"><div><span class="deal-copy__k">' + esc(label) + '</span><span class="deal-copy__v">' + esc(value) + '</span></div>' +
@@ -772,7 +828,7 @@
       if (i === 2 && st === 'ACCEPTED') {
         var link = pay ? x.payUrl : x.url;
         body = '<p class="muted small">' + (pay ? 'Open the payment page and pay exactly ' + money(s.reimbursement) + ' with your own card.' : 'Open ' + esc(site) + ' in a window next to this page. Use your card offer and the address below.') + '</p>' +
-          (link ? '<button type="button" class="btn btn--primary btn--sm" data-open-store="' + esc(link) + '">' + (pay ? 'Open payment page' : 'Open ' + esc(site)) + ' in a window</button>' : '');
+          (link ? '<button type="button" class="btn btn--primary btn--sm" data-open-store="' + esc(pay ? openable(link) : link) + '">' + (pay ? 'Open payment page' : 'Open ' + esc(site)) + ' in a window</button>' : '');
       } else if (i === 3 && st === 'ACCEPTED') {
         body = '<p class="muted small">When you have ' + (pay ? 'paid' : 'placed the order') + ', add the ' + (pay ? 'payment' : 'order') + ' ID, the amount and a screenshot in <a href="#actions" data-jump>What next</a>.</p>';
       }
@@ -781,11 +837,11 @@
     }).join('') + '</ul>';
 
     var a = x.address;
-    var addr = (!pay && a) ? '<div class="panel"><h2 class="h3" style="margin-bottom:10px">Delivery address</h2>' +
-      copyRow('Name', a.name) + copyRow('Address', a.line) + copyRow('City', a.city) + copyRow('Pincode', a.pin) +
-      copyRow('Full address', a.name + ', ' + a.line + ', ' + a.city + ' ' + a.pin) + '</div>' : '';
+    var addr = a ? '<div class="panel"><h2 class="h3" style="margin-bottom:10px">Delivery address</h2>' +
+      copyRow('Name', a.name) + copyRow('Address', a.line) + copyRow('Area', a.area) + copyRow('City', a.city) + copyRow('State', a.state) + copyRow('Pincode', a.pin) +
+      copyRow('Full address', a.name + ', ' + a.line + (a.area ? ', ' + a.area : '') + ', ' + a.city + (a.state ? ', ' + a.state : '') + ' ' + a.pin) + '</div>' : '';
     var instr = ['Accept only if you can finish within the time shown above.',
-      pay ? 'Pay only on the payment page the buyer shared, and only the amount shown below.' : 'You will place the order on ' + esc(site) + '. The delivery address is below, with Copy buttons.',
+      pay ? 'Pay only on the payment page the buyer shared, and only the amount shown below. The delivery address is below, with Copy buttons.' : 'You will place the order on ' + esc(site) + '. The delivery address is below, with Copy buttons.',
       'Pay with your own card only. Never share your card number, CVV or OTP with anyone, including the buyer.',
       'Pay the full amount due on your card as usual, so the offer is not reversed.',
       'The ' + (pay ? 'payment' : 'order') + ' ID you enter must match what you actually placed. A mismatch can lead to cancellation' + (s.penalty ? ' and a penalty of ' + money(s.penalty) : '') + '.',
@@ -800,8 +856,8 @@
         '<div class="deal-get"><span>Amount you get</span><strong>' + money(Number(s.reimbursement) + Number(s.holderFee)) + '</strong></div>' +
         row('Reimbursement', money(s.reimbursement)) + row('Your earning', money(s.holderFee), true) + '</div>' +
       '<div class="panel"><div class="spread" style="margin-bottom:10px"><h2 class="h3">Offer details</h2><span class="deal-tag">Apply before paying</span></div>' +
-        '<div class="deal-line"><span>' + esc(x.offerWanted || '') + '</span><strong class="deal-off">' + money(s.discount) + ' off</strong></div>' +
-        '<div class="deal-chip">' + esc(bankName(x.bank)) + '</div></div>' +
+        '<div class="deal-line"><span>' + esc(UI.sentence(x.offerWanted) || '') + '</span><strong class="deal-off">' + money(s.discount) + ' off</strong></div>' +
+        '<div class="deal-chip">' + esc(UI.sentence(x.cardName) || bankName(x.bank)) + '</div></div>' +
       '<div class="panel"><h2 class="h3" style="margin-bottom:6px">Help &amp; FAQs</h2>' + DEAL_FAQ.map(function (f) {
         return '<details class="deal-faq"><summary>' + esc(f[0]) + '</summary><p class="muted">' + esc(f[1]) + '</p></details>'; }).join('') + '</div>' +
       (st === 'ACCEPTED' ? '<button type="button" class="deal-exit" data-exit-deal>Exit deal</button>' : '') + '</div>';
@@ -820,9 +876,9 @@
     var detailRows = '';
     if (r.module === 'LOUNGE') detailRows = row('Airport', esc(x.airport + ' ' + x.terminal)) + row('Lounge', esc(x.type === 'INTERNATIONAL' ? 'International' : 'Domestic')) + row('Flight', esc(x.flight)) + row('When', dt(x.dateTime)) + (x.guestName ? row('Guest name', esc(UI.titleCase(x.guestName))) : '');
     else if (r.module === 'MOVIE') detailRows = row('Movie', esc(x.movie)) + row('Theatre', esc(x.theatre + (x.city ? ', ' + x.city : ''))) + row('Showtime', dt(x.showTime)) + row('Seats', esc(x.seats + ' (' + x.seatCount + ')')) + row('Offer', x.offer === 'BOGO' ? 'Buy one get one' : '₹500 off on 2 seats') + row('Card', esc(bankName(x.bank))) + row('Booking site', esc(x.platform));
-    else detailRows = row('Site', esc(x.platform)) + (x.url ? row('Product', '<a href="' + esc(x.url) + '" target="_blank" rel="noopener noreferrer">Open link</a>') : '') + row('Offer wanted', esc(x.offerWanted)) + row('Card', esc(bankName(x.bank))) +
-      (x.address && (isBuyer || isHolder || admin) ? row('Deliver to', esc(UI.titleCase(x.address.name) + ', ' + x.address.line + ', ' + x.address.city + ' ' + x.address.pin)) : '') +
-      (x.payUrl && (isHolder || isBuyer || admin) ? row('Payment page', '<a href="' + esc(x.payUrl) + '" target="_blank" rel="noopener noreferrer">Open payment page</a>') : '');
+    else detailRows = row('Site', esc(x.platform)) + (x.url ? row('Product', '<a href="' + esc(x.url) + '" target="_blank" rel="noopener noreferrer">Open link</a>') : '') + row('Offer wanted', esc(UI.sentence(x.offerWanted))) + row('Card', esc(bankName(x.bank))) +
+      (x.address && (isBuyer || isHolder || admin) ? row('Deliver to', esc(UI.titleCase(x.address.name) + ', ' + x.address.line + (x.address.area ? ', ' + x.address.area : '') + ', ' + x.address.city + (x.address.state ? ', ' + x.address.state : '') + ' ' + x.address.pin)) : '') +
+      (x.payUrl && (isHolder || isBuyer || admin) ? row('Payment page', '<a href="' + esc(openable(x.payUrl)) + '" target="_blank" rel="noopener noreferrer">Open payment page</a>') : '');
     if (r.cardholderId) detailRows += row('Cardholder', esc(M.nameOf(r.cardholderId)) + ' · trust ' + M.trust(r.cardholderId)) + (r.cardId && M.card(r.cardId) ? row('Using', esc(bankName(M.card(r.cardId).bank) + ' ' + M.card(r.cardId).variant)) : '');
     if (!isBuyer) detailRows += row('Buyer', esc(M.nameOf(r.buyerId)) + ' · trust ' + M.trust(r.buyerId));
     if (r.ref) detailRows += row('Reference', esc(r.ref));

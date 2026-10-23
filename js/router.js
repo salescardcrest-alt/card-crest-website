@@ -129,6 +129,7 @@
       on('/market', P.market);
       on('/market/new/:module', P.marketNew);
       on('/market/requests', P.marketRequests);
+      on('/market/pay-earn', P.marketPayEarn);
       on('/market/earn', P.marketEarn);
       on('/market/cards', P.marketCards);
       on('/market/wallet', P.marketWallet);

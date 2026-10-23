@@ -9,7 +9,7 @@
   var Core = {};
 
   Core.MODULES = ['LOUNGE', 'MOVIE', 'ORDER', 'PAY'];
-  Core.MODULE_LABEL = { LOUNGE: 'Lounge access', MOVIE: 'Movie offer', ORDER: 'Order & Earn', PAY: 'Pay & Earn' };
+  Core.MODULE_LABEL = { LOUNGE: 'Lounge access', MOVIE: 'Movie offer', ORDER: 'Order & Earn (old)', PAY: 'Order & Earn' };
 
   /* ---------- state machine ---------- */
   Core.TRANSITIONS = {
@@ -495,18 +495,21 @@
               platform: s(d.platform) || 'BookMyShow', bank: s(d.bank) || 'any' };
     } else if (module === 'ORDER' || module === 'PAY') {
       if (module === 'ORDER' && !V.url(s(d.url))) return { error: 'Paste the full product link (starting with https://).' };
-      if (module === 'PAY' && !V.url(s(d.payUrl))) return { error: 'Paste the link of the final payment page (starting with https://).' };
+      if (module === 'PAY' && s(d.payUrl).length < 4) return { error: 'Enter the payment link.' };
       if (s(d.platform).length < 2) return { error: 'Choose the shopping site.' };
       if (s(d.offerWanted).length < 3) return { error: 'Describe the card offer you want.' };
       out = { url: module === 'ORDER' ? s(d.url) : '', platform: s(d.platform), listPrice: Number(d.listPrice), expectedPrice: Number(d.expectedPrice),
               offerWanted: s(d.offerWanted), bank: s(d.bank) || 'any' };
-      if (module === 'PAY') out.payUrl = s(d.payUrl);
-      else {
-        var a = d.address || {};
-        if (s(a.name).length < 3 || s(a.line).length < 8 || s(a.city).length < 2) return { error: 'Enter the full delivery address.' };
-        if (!V.pin(a.pin)) return { error: 'Enter a 6-digit PIN code.' };
-        out.address = { name: s(a.name), line: s(a.line), city: s(a.city), pin: s(a.pin) };
+      if (d.cardOther) {
+        if (s(d.cardName).length < 2) return { error: 'Type which card you want the cardholder to use.' };
+        out.cardName = s(d.cardName).slice(0, 60);
       }
+      if (module === 'PAY') out.payUrl = s(d.payUrl);
+      var a = d.address || {};
+      if (s(a.name).length < 3 || s(a.line).length < 8 || s(a.city).length < 2) return { error: 'Enter the full delivery address.' };
+      if (s(a.state).length < 2) return { error: 'Choose the state.' };
+      if (!V.pin(a.pin)) return { error: 'Enter a 6-digit PIN code.' };
+      out.address = { name: s(a.name), line: s(a.line), area: s(a.area).slice(0, 60), city: s(a.city), state: s(a.state), pin: s(a.pin) };
     } else return { error: 'Unknown request type.' };
     return { details: out };
   };

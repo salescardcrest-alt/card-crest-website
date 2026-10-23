@@ -579,7 +579,7 @@
   /* ---------------- FAQs and static copy ---------------- */
   var FAQS = [
     ['Does Card Crest charge me anything?','No. Card Crest is free for users. We earn a commission from banks and merchants when an application is approved or a purchase is tracked, and we pass part of that back to you as rewards.'],
-    ['What is the Card Value Score?','It is our estimate, from 0 to 100, of how much value a card returns relative to what it costs. It weighs the reward rate, fees, welcome benefits, lounge and travel perks and how easily points convert to rupees. It is an estimate, not a guarantee.'],
+    ['What is the card value score?','It is our estimate, from 0 to 100, of how much value a card returns relative to what it costs. It weighs the reward rate, fees, welcome benefits, lounge and travel perks and how easily points convert to rupees. It is an estimate, not a guarantee.'],
     ['Will checking my eligibility affect my credit score?','The eligibility check on Card Crest is an estimate based on the details you enter. It is not a credit bureau enquiry and does not affect your score. A hard enquiry only happens when a bank processes an actual application.'],
     ['How long does cashback take to confirm?','Most merchants confirm within 30 to 90 days, after their return window closes. Travel bookings usually confirm after the travel date. You can watch the status change in your transactions.'],
     ['Why did my cashback not track?','The most common causes are ad-blockers, coupon browser extensions, or opening the retailer in a different browser after activating. Always start the session from Card Crest and complete the purchase in the same session.'],

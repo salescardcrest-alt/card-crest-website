@@ -71,7 +71,7 @@
 
       /* ---- highest value ---- */
       '<section class="section"><div class="wrap">' +
-        '<div class="spread section__head"><div><div class="eyebrow">Card value score</div>' +
+        '<div class="spread section__head"><div><div class="eyebrow">Card Value Score</div>' +
         '<h2 class="h1">The cards that <em>return the most</em></h2>' +
         '<p class="lede">Scored out of 100 on net return, fee efficiency, benefits, welcome value and how easily the points convert to rupees.</p></div>' +
         '<a class="btn btn--ghost" href="#/cards">See all cards</a></div>' +

@@ -932,22 +932,26 @@ begin
       'platform', coalesce(nullif(trim(d->>'platform'), ''), 'BookMyShow'), 'bank', coalesce(nullif(trim(d->>'bank'), ''), 'any'));
   elsif m in ('ORDER', 'PAY') then
     if m = 'ORDER' and coalesce(d->>'url', '') !~* '^https?://[^ ]+\.[^ ]+' then raise exception 'Paste the full product link (starting with https://).'; end if;
-    if m = 'PAY' and coalesce(d->>'payUrl', '') !~* '^https?://[^ ]+\.[^ ]+' then raise exception 'Paste the link of the final payment page (starting with https://).'; end if;
+    if m = 'PAY' and length(trim(coalesce(d->>'payUrl', ''))) < 4 then raise exception 'Enter the payment link.'; end if;
     if length(trim(coalesce(d->>'platform', ''))) < 2 then raise exception 'Choose the shopping site.'; end if;
     if length(trim(coalesce(d->>'offerWanted', ''))) < 3 then raise exception 'Describe the card offer you want.'; end if;
     out := jsonb_build_object('url', case when m = 'ORDER' then trim(d->>'url') else '' end, 'platform', trim(d->>'platform'),
       'listPrice', (d->>'listPrice')::numeric, 'expectedPrice', (d->>'expectedPrice')::numeric,
       'offerWanted', trim(d->>'offerWanted'), 'bank', coalesce(nullif(trim(d->>'bank'), ''), 'any'));
+    if coalesce((d->>'cardOther')::boolean, false) then
+      if length(trim(coalesce(d->>'cardName', ''))) < 2 then raise exception 'Type which card you want the cardholder to use.'; end if;
+      out := out || jsonb_build_object('cardName', left(trim(d->>'cardName'), 60));
+    end if;
     if m = 'PAY' then
       out := out || jsonb_build_object('payUrl', trim(d->>'payUrl'));
-    else
-      a := coalesce(d->'address', '{}');
-      if length(trim(coalesce(a->>'name', ''))) < 3 or length(trim(coalesce(a->>'line', ''))) < 8 or length(trim(coalesce(a->>'city', ''))) < 2 then
-        raise exception 'Enter the full delivery address.'; end if;
-      if coalesce(a->>'pin', '') !~ '^\d{6}$' then raise exception 'Enter a 6-digit PIN code.'; end if;
-      out := out || jsonb_build_object('address', jsonb_build_object('name', trim(a->>'name'), 'line', trim(a->>'line'),
-        'city', trim(a->>'city'), 'pin', a->>'pin'));
     end if;
+    a := coalesce(d->'address', '{}');
+    if length(trim(coalesce(a->>'state', ''))) < 2 then raise exception 'Choose the state.'; end if;
+    if length(trim(coalesce(a->>'name', ''))) < 3 or length(trim(coalesce(a->>'line', ''))) < 8 or length(trim(coalesce(a->>'city', ''))) < 2 then
+      raise exception 'Enter the full delivery address.'; end if;
+    if coalesce(a->>'pin', '') !~ '^\d{6}$' then raise exception 'Enter a 6-digit PIN code.'; end if;
+    out := out || jsonb_build_object('address', jsonb_build_object('name', trim(a->>'name'), 'line', trim(a->>'line'),
+      'area', left(trim(coalesce(a->>'area', '')), 60), 'city', trim(a->>'city'), 'state', trim(a->>'state'), 'pin', a->>'pin'));
   else
     raise exception 'Unknown request type.';
   end if;

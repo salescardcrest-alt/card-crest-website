@@ -26,7 +26,7 @@
       : r.module === 'MOVIE' ? x.movie + ' (' + (x.offer === 'BOGO' ? 'BOGO' : '₹500 off') + ')' : r.module.charAt(0) + r.module.slice(1).toLowerCase() + ' on ' + x.platform;
   }
   var KEY_LABEL = { 'LOUNGE / DOMESTIC': 'Lounge · Domestic', 'LOUNGE / INTERNATIONAL': 'Lounge · International', 'MOVIE / BOGO': 'Movie · Buy one get one',
-    'MOVIE / FLAT_500_OFF_2_SEATS': 'Movie · ₹500 off on 2 seats', ORDER: 'Order & Earn', PAY: 'Pay & Earn' };
+    'MOVIE / FLAT_500_OFF_2_SEATS': 'Movie · ₹500 off on 2 seats', ORDER: 'Order & Earn (old)', PAY: 'Order & Earn' };
   function keyLabel(k) { return KEY_LABEL[k] || k; }
   function stat(k, v, sub) { return '<div class="stat"><span class="stat__k">' + k + '</span><span class="stat__v">' + v + '</span><span class="stat__sub">' + sub + '</span></div>'; }
 

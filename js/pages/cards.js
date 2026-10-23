@@ -251,7 +251,7 @@
           (pr ? '<div class="reward-box"><span>Apply through Card Crest</span><b>Earn ' + UI.money(pr) + ' when approved</b></div>' : '') +
           '<div class="note" style="margin-top:18px"><strong>Fees and benefits.</strong> They are set by ' + UI.esc(pb ? pb.name : 'the bank') + ' and can change, so check the bank&rsquo;s page before you apply.</div></div>' +
           '<aside class="panel" style="align-self:start"><div style="margin-bottom:16px">' + UI.plastic(card) + '</div>' +
-          '<button class="btn btn--primary btn--block" data-apply>Apply &amp; earn ' + UI.money(pr) + '</button>' +
+          '<button class="btn btn--primary btn--block" data-apply>Apply &amp; Earn ' + UI.money(pr) + '</button>' +
           '<a class="btn btn--ghost btn--block" href="#/apply-earn" style="margin-top:10px">All Apply &amp; Earn cards</a></aside></div></div>',
         mount: function (root) {
           root.querySelector('[data-apply]').addEventListener('click', function () { w.CC.Render.applyForCard(card); });
@@ -353,7 +353,7 @@
             (C.rewardFor(card) ? '<div class="reward-box"><span>Apply through Card Crest and earn</span><b>' + UI.money(C.rewardFor(card)) + '</b><small>paid into your rewards wallet when the bank approves your application</small></div>' : '') +
             '<div class="stack" style="margin-top:18px">' +
               '<a class="btn ' + (C.rewardFor(card) ? 'btn--ghost' : 'btn--primary') + ' btn--block" href="#/eligibility?card=' + card.id + '">Check my eligibility</a>' +
-              '<button class="btn ' + (C.rewardFor(card) ? 'btn--primary' : 'btn--ghost') + ' btn--block" data-apply>' + (C.rewardFor(card) ? 'Apply &amp; earn ' + UI.money(C.rewardFor(card)) : 'Apply for this card') + '</button>' +
+              '<button class="btn ' + (C.rewardFor(card) ? 'btn--primary' : 'btn--ghost') + ' btn--block" data-apply>' + (C.rewardFor(card) ? 'Apply &amp; Earn ' + UI.money(C.rewardFor(card)) : 'Apply for this card') + '</button>' +
               '<div class="row"><button class="btn btn--soft btn--sm" data-cmp-btn style="flex:1">Compare</button>' +
               '<button class="btn btn--soft btn--sm" data-save style="flex:1">' + (saved ? 'Saved' : 'Save card') + '</button></div>' +
             '</div>' +
@@ -364,7 +364,7 @@
 
     return {
       title: card.name + ' | Card Crest',
-      desc: card.name + ' from ' + (bank ? bank.name : '') + ' — fees, rewards, lounge access and an estimated card value score.',
+      desc: card.name + ' from ' + (bank ? bank.name : '') + ' — fees, rewards, lounge access and an estimated Card Value Score.',
       html: html,
       mount: function (root) {
         root.querySelector('[data-apply]').addEventListener('click', function () {
@@ -408,7 +408,7 @@
     }
 
     var ROWS = [
-      ['Card value score', function (c) { return C.score(c).total + ' / 100'; }, 'high'],
+      ['Card Value Score', function (c) { return C.score(c).total + ' / 100'; }, 'high'],
       ['Reward for applying via Card Crest', function (c) { var r = C.rewardFor(c); return r ? UI.money(r) : '2014'; }, 'high'],
       ['Annual fee', function (c) { return c.annualFee === 0 ? 'None' : UI.money(c.annualFee); }, 'low'],
       ['Joining fee', function (c) { return c.joiningFee === 0 ? 'None' : UI.money(c.joiningFee); }, 'low'],

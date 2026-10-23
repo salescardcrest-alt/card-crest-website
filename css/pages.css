@@ -347,6 +347,9 @@ body:has(#cmpTray:not([hidden])) .toasts{bottom:100px}
 .deal-off{color:var(--leaf)}
 .deal-get{display:flex; align-items:center; justify-content:space-between; margin:10px 0; padding:12px 14px; border-radius:12px; background:#e6ecfb; font-weight:700}
 .deal-get strong{font-size:1.2rem}
+.mk-earn{background:#dcf5e8; color:#0b6b43}
+.mk-earn small{display:block; font-weight:500; font-size:.78rem; opacity:.85}
+html[data-theme="dark"] .mk-earn{background:#123a29; color:#4fdc9d}
 .deal-tag{font-size:.74rem; font-weight:700; color:#b4541a; background:#ffebd6; padding:4px 10px; border-radius:50px}
 .deal-chip{margin-top:10px; padding:12px 14px; border:1px solid var(--line); border-radius:12px; font-weight:600}
 .deal-faq{border-top:1px solid var(--line-soft); padding:12px 0}

@@ -220,7 +220,7 @@
       ok(ktT && !/when approved/.test(ktT), 'a card from a bank with no reward shows none');
       ok(icT && /Earn ₹250 when approved/.test(icT), 'a bank with two reward levels shows the lower one (never more than we pay)');
       await go('#/cards/hdfc-infinia');
-      ok(!!q('.reward-box') && /₹1,300/.test(q('.reward-box').innerText) && /Apply & earn ₹1,300/.test(q('[data-apply]').innerText), 'the card page shows the reward and an Apply & earn button');
+      ok(!!q('.reward-box') && /₹1,300/.test(q('.reward-box').innerText) && /Apply & Earn ₹1,300/.test(q('[data-apply]').innerText), 'the card page shows the reward and an Apply & Earn button');
       await go('#/cards/kotak-811'); ok(!q('.reward-box') && /Apply for this card/.test(q('[data-apply]').innerText), 'a card with no reward keeps the plain Apply button');
       cw.CC.Store.set('session', 'u-000'); cw.CC.App.paintAuth();
       /* a partner card (Apply & Earn) can be saved and opened without errors */
