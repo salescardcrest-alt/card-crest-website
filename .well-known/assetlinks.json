@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.cardcrest.app",
+      "sha256_cert_fingerprints": [
+        "00:58:68:C6:D7:63:B2:DC:A5:B5:A2:83:63:92:A8:7C:7A:9D:9C:19:4B:9C:CF:13:77:F6:C3:FD:97:C6:88:BC"
+      ]
+    }
+  }
+]

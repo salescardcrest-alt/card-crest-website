@@ -30,7 +30,8 @@
     link: function (user) {
       /* the address the site is really served from (set CC_CONFIG.SITE_URL to https://cardcrest.in/ once that domain serves it) */
       var base = (w.CC_CONFIG && w.CC_CONFIG.SITE_URL) || (w.location.origin + w.location.pathname.replace(/\/join\/?$/, '/'));
-      return base.replace(/\/?$/, '/') + '?ref=' + w.CC.Auth.referralCode(user);
+      /* /join?ref=CODE: opens the Card Crest app directly on a phone that has it, and the sign up page otherwise */
+      return base.replace(/\/?$/, '/') + 'join?ref=' + w.CC.Auth.referralCode(user);
     },
     setStatus: function (id, status) {
       var r = S.find('referrals', id);
