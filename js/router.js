@@ -110,7 +110,7 @@
       on('/rewards', P.rewards);
       on('/refer', P.refer);
       on('/dashboard', P.dashboard);
-      on('/dashboard/cards', P.myCards);
+      on('/dashboard/cards', P.marketCards);
       on('/dashboard/applications', P.applications);
       on('/dashboard/transactions', P.transactions);
       on('/dashboard/notifications', P.notifications);

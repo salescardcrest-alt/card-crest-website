@@ -14,7 +14,7 @@
   function shell(active, title, inner) {
     var items = [
       ['/dashboard', 'Overview'],
-      ['/market/cards', 'Add card'],
+      ['/dashboard/cards', 'Add card'],
       ['/dashboard/transactions', 'Transactions'],
       ['/dashboard/applications', 'Applications'],
       ['/rewards', 'Rewards wallet'],

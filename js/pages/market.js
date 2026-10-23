@@ -54,8 +54,12 @@
     return 'Price after offer ' + money(x.expectedPrice) + ' (listed ' + money(x.listPrice) + ')';
   }
 
+  /* the Add card page opens from the account menu too: keep that menu when it was opened from there */
+  var ACCOUNT_ITEMS = [['/dashboard', 'Overview'], ['/dashboard/cards', 'Add card'], ['/dashboard/transactions', 'Transactions'], ['/dashboard/applications', 'Applications'],
+    ['/rewards', 'Rewards wallet'], ['/refer', 'Refer and earn'], ['/dashboard/notifications', 'Notifications'], ['/profile', 'Profile and settings']];
   function shell(active, inner) {
-    var items = [
+    var fromAccount = active === '/dashboard/cards';
+    var items = fromAccount ? ACCOUNT_ITEMS : [
       ['/market', 'Overview'], ['/market/requests', 'My requests'], ['/market/pay-earn', 'Pay & Earn'], ['/market/earn', 'Earn with my card'],
       ['/market/cards', 'Add card'], ['/market/wallet', 'Wallet and payouts']
     ];
@@ -658,7 +662,7 @@
           '<div class="row"><a class="btn btn--ghost btn--xs" href="#/cards/' + x.card.id + '">Benefits</a><button class="btn btn--danger btn--xs" data-unsave>Remove</button></div></div></div>';
       }).join('') + '</div>' : '<p class="muted">Nothing saved yet. Use "Save card" on any card page.</p>');
     inner += savedHtml;
-    return { title: 'Add card | Share & Earn | Card Crest', html: shell('/market/cards', inner),
+    return { title: 'Add card | Share & Earn | Card Crest', html: shell(w.location.hash.indexOf('#/dashboard/cards') === 0 ? '/dashboard/cards' : '/market/cards', inner),
       mount: function (root) {
         fresh(root);
         root.querySelector('#addCard').onclick = function () { cardEditor(null); };
