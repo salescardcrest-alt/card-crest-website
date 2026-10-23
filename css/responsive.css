@@ -197,3 +197,20 @@ h1, h2, h3, .h1, .h2, .h3, .h-display { overflow-wrap: break-word; }
   .brand__word { display: none; }       /* logo mark only; the page title still names the site */
 }
 .otile, .stile, .ctile, .mk-tile { min-width: 0; overflow-wrap: anywhere; }
+
+/* wide laptops and monitors: the larger text made the header too wide, so Sign up was cut off */
+@media (min-width:1500px) and (max-width:1799px){
+  .hdr__in{gap:12px}
+  .hdr__nav a{padding:8px 9px; font-size:.82rem}
+  .hdr__nav a.nav-main{padding:8px 14px; margin-right:2px}
+  .hdr__nav a[href="#/how-it-works"]{display:none}   /* still in the footer and the mobile menu */
+  .search{width:170px}
+}
+
+/* just above the point where the menu collapses (1260px): squeeze the logo and search so every button fits */
+@media (min-width:1261px) and (max-width:1340px){
+  .brand__mark{width:40px; height:40px}
+  .brand__word{font-size:1.15rem; letter-spacing:.03em}
+  .search{width:104px}
+  .hdr__in{gap:8px}
+}
