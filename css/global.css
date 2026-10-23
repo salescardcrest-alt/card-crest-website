@@ -127,7 +127,7 @@ ul{margin:0; padding:0; list-style:none}
 .brand__word{font-family:var(--display); font-size:1.4rem; font-weight:800; color:var(--ink); letter-spacing:.05em; text-transform:uppercase; white-space:nowrap; line-height:1}
 .brand__word em{font-style:normal; margin-left:.12em; background:linear-gradient(90deg,var(--crest) 0%,#27c488 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:var(--leaf)}
 .brand__tag{display:none; font-size:.54rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--muted,#6c7b73); white-space:nowrap; line-height:1}
-@media (min-width:1280px){.brand__tag{display:block}}
+@media (min-width:1400px){.brand__tag{display:block}}
 @keyframes crestGlow{0%,100%{filter:drop-shadow(0 3px 6px rgba(23,160,106,.22))}50%{filter:drop-shadow(0 5px 15px rgba(23,160,106,.55))}}
 @media (prefers-reduced-motion:reduce){.brand__mark{animation:none; transition:none}}
 
