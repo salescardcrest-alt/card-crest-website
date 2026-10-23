@@ -856,7 +856,7 @@
       '</div><aside class="detail__side"><div class="stack">' +
       '<div class="panel" id="actions"><h2 class="h3" style="margin-bottom:12px">What next</h2>' + (admin && !isBuyer && !isHolder ? '<p class="muted">You are viewing as staff. Manage this from the admin panel.</p><a class="btn btn--soft btn--sm" href="#/admin/market">Open admin</a>' : actionBox(r, u)) + '</div>' +
       (r.cardholderId && (isBuyer || isHolder || admin) ? '<div class="panel" id="chat"><h2 class="h3" style="margin-bottom:10px">Chat</h2><div class="mk-chat" id="chatLog"></div>' +
-        (['REFUNDED', 'CANCELLED', 'EXPIRED'].indexOf(r.status) < 0 ? '<form class="row" id="chatForm" style="margin-top:10px; gap:8px"><input id="chatIn" maxlength="500" placeholder="Write a message" autocomplete="off" style="flex:1"><button class="btn btn--primary btn--sm">Send</button></form><p class="small" id="chatLeft" style="margin-top:8px; font-weight:600"></p><div class="note note--warn" style="margin-top:8px"><strong>Never share personal or contact details.</strong> No phone numbers, emails, home addresses, card numbers, CVV, OTP or bank details, and nothing with more than 4 digits. Each person can send 2 messages. Card Crest will never ask you for these.</div>' : '') + '</div>' : '') +
+        (['REFUNDED', 'CANCELLED', 'EXPIRED'].indexOf(r.status) < 0 ? '<form class="row" id="chatForm" style="margin-top:10px; gap:8px"><input id="chatIn" maxlength="500" placeholder="Write a message" autocomplete="off" style="flex:1"><button class="btn btn--primary btn--sm">Send</button></form><p class="small" id="chatLeft" style="margin-top:8px; font-weight:600"></p><div class="note note--warn" style="margin-top:8px"><strong>Never share personal or contact details.</strong> No phone numbers, emails, home addresses, card numbers, CVV, OTP or bank details, and never more than the last 4 digits of a card. Each person can send 2 messages. Card Crest will never ask you for these.</div>' : '') + '</div>' : '') +
       localHelper(r) + '</div></aside></div></div>';
 
     return {
@@ -915,14 +915,14 @@
         function chatLeft() {
           var used = M.messages(r.id).filter(function (m) { return m.senderId === u.id; }).length, left = Math.max(0, CH.MAX_MESSAGES - used);
           var cl = root.querySelector('#chatLeft'), ci = root.querySelector('#chatIn'), cb = root.querySelector('#chatForm button');
-          if (cl && !staff) cl.textContent = left ? 'You can send ' + left + ' more message' + (left === 1 ? '' : 's') + ' (of ' + CH.MAX_MESSAGES + '). Up to ' + CH.MAX_DIGITS + ' digits in a message.' : 'You have used your ' + CH.MAX_MESSAGES + ' messages on this request.';
+          if (cl && !staff) cl.textContent = left ? 'You can send ' + left + ' more message' + (left === 1 ? '' : 's') + ' (of ' + CH.MAX_MESSAGES + '). Share only the last ' + CH.MAX_DIGITS + ' digits of your card.' : 'You have used your ' + CH.MAX_MESSAGES + ' messages on this request.';
           if (ci && !staff) { ci.disabled = !left; ci.placeholder = left ? 'Write a message (no numbers or contact details)' : 'You have used your messages'; if (cb) cb.disabled = !left; }
         }
         var chatIn0 = root.querySelector('#chatIn');
         if (chatIn0 && !staff) chatIn0.addEventListener('input', function () {
           var n = 0, out = '';
           for (var i = 0; i < chatIn0.value.length; i++) { var ch = chatIn0.value.charAt(i); if (/\d/.test(ch)) { n++; if (n > CH.MAX_DIGITS) continue; } out += ch; }
-          if (out !== chatIn0.value) { chatIn0.value = out; UI.toast('A message can have at most ' + CH.MAX_DIGITS + ' digits.', 'error'); }
+          if (out !== chatIn0.value) { chatIn0.value = out; UI.toast('Share only the last ' + CH.MAX_DIGITS + ' digits of your card.', 'error'); }
         });
         /* chat */
         var chatKey = '';
