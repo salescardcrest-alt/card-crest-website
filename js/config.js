@@ -7,8 +7,8 @@
    ============================================================ */
 // Add ?demo=1 to the address (for example http://localhost:3000/?demo=1) to run fully offline in local demo mode.
 window.CC_CONFIG = /[?&]demo=1/.test(location.search) ? {} : {
-  // Where the site is served from. Friend (referral) links start with this. Change to 'https://cardcrest.in/' once that domain serves the site.
-  SITE_URL: 'https://salescardcrest-alt.github.io/card-crest-website/',
+  // Where the site is served from. Friend (referral) links start with this. The live site is on https://www.cardcrest.in/ (cardcrest.in redirects there).
+  SITE_URL: 'https://www.cardcrest.in/',
   SUPABASE_URL: 'https://bkedgkarjwihipegloia.supabase.co',
   SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrZWRna2FyandpaGlwZWdsb2lhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMTU2NTEsImV4cCI6MjEwNzg5MTY1MX0.4gVOuOTSe5cv-NrvYzVICYDV7KA-pKaUbOINQl4I2O4'
 };
