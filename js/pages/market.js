@@ -14,8 +14,8 @@
   var MODS = {
     LOUNGE: { slug: 'lounge', title: 'Lounge access', short: 'Airport lounge', icon: '✈', blurb: 'Walk into an airport lounge using a cardholder’s guest access. Pay ₹500 for domestic or ₹1,000 for international, instead of the usual ₹1,500 or ₹2,500.' },
     MOVIE:  { slug: 'movie', title: 'Movie offers', short: 'Movie offer', icon: '▶', blurb: 'Get buy-one-get-one or ₹500 off on 2 seats using a card that carries the offer.' },
-    ORDER:  { slug: 'order', title: 'Order & Earn', short: 'Order & Earn', icon: '▣', blurb: 'A cardholder places your order with their card offer. The discount is shared: 40% to you, 30% to the cardholder, 30% to Card Crest.' },
-    PAY:    { slug: 'pay', title: 'Pay & Earn', short: 'Pay & Earn', icon: '✓', blurb: 'You get to the final payment page and share its link. A cardholder opens it and pays with their own card at the offer price. That is all they do. The discount is shared 40% you, 30% cardholder, 30% Card Crest.' }
+    ORDER:  { slug: 'order', title: 'Order & Earn', short: 'Order & Earn', icon: '▣', blurb: 'A cardholder places your order with their card offer. Get a share of the card offer discount off your price.' },
+    PAY:    { slug: 'pay', title: 'Pay & Earn', short: 'Pay & Earn', icon: '✓', blurb: 'You get to the final payment page and share its link. A cardholder opens it and pays with their own card at the offer price. Get a share of the offer discount off your price.' }
   };
   var SLUG = { lounge: 'LOUNGE', movie: 'MOVIE', order: 'ORDER', pay: 'PAY' };
 
@@ -118,15 +118,15 @@
     var out = '', sp = q.split;
     if (sp && who === 'holder') {
       if (q.reimbursement) out += row('Ticket amount you pay and get back in full', money(q.reimbursement));
-      out += row('Your ' + sp.holderPct + '% share of the saving', '+' + money(q.holderFee));
+      out += row('Your earning', '+' + money(q.holderFee));
     } else if (sp && module === 'LOUNGE') {
       out += row('Usual lounge entry price', money(q.original));
-      out += row('Your ' + sp.buyerPct + '% share of the saving', '−' + money(sp.buyerShare));
+      out += row('Your discount', '−' + money(sp.buyerShare));
     } else if (sp) {
       out += row('Listed price', money(q.original));
       out += row('Card offer discount', '−' + money(q.discount));
       out += row('Price after the offer (paid by the cardholder)', money(q.reimbursement));
-      out += row('Cardholder and Card Crest share (' + (100 - sp.buyerPct) + '% of the saving)', '+' + money(q.fee));
+      out += row('Service fee', '+' + money(q.fee));
     } else if (module === 'LOUNGE' && who === 'holder') {
       out += row('Your share of the lounge fee', '+' + money(q.holderFee));
     } else if (module === 'LOUNGE') {
@@ -145,7 +145,6 @@
     if (who !== 'holder' && q.saved !== null && q.saved !== undefined) {
       out += '<div class="mk-save">You save ' + money(q.saved) + ' compared with paying full price</div>';
     }
-    if (sp) out += '<p class="muted small" style="margin-top:12px">The saving of ' + money(q.discount) + ' is shared: buyer ' + sp.buyerPct + '%, cardholder ' + sp.holderPct + '%, Card Crest ' + sp.platformPct + '%.</p>';
     return out;
   }
 
