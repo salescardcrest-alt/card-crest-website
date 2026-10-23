@@ -132,6 +132,7 @@
         '<div class="pw-wrap"><input id="s-pw" type="password" autocomplete="new-password"></div>' +
         '' + UI.pwMeterHtml() + '<span class="err">Use 8+ characters with upper and lower case letters, a number and a symbol.</span></div>' +
         '<div class="field" style="margin-bottom:18px"><label for="s-pw2">Confirm password</label><input id="s-pw2" type="password" autocomplete="new-password"><span class="err">Both passwords need to match.</span></div>' +
+        '<div class="field" style="margin-bottom:18px"><label for="s-ref">Referral code <span class="muted">(optional)</span></label><input id="s-ref" type="text" autocomplete="off" maxlength="16" placeholder="CC-RAVI-1A2B" style="text-transform:uppercase"><span class="err">That does not look like a Card Crest code. It looks like CC-RAVI-1A2B, or leave it blank.</span></div>' +
         '<label class="check" style="margin-bottom:20px"><input type="checkbox" id="s-terms"> I agree to the <a href="#/legal/terms" style="color:var(--crest)">terms</a> and <a href="#/legal/privacy" style="color:var(--crest)">privacy policy</a>.</label>' +
         '<button class="btn btn--primary btn--block" type="submit">Create account</button>' +
         '</form>' +
@@ -140,13 +141,19 @@
       mount: function (root) {
         UI.pwBind(root.querySelector('#s-pw'), root);
         root.querySelector('#s-mobile').addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 10); });
+        /* a friend's link (cardcrest.in/join?ref=CODE) leaves its code here; it fills the box */
+        var refBox = root.querySelector('#s-ref');
+        try { refBox.value = (w.localStorage.getItem('cc_ref') || '').toUpperCase(); } catch (e0) {}
+        refBox.addEventListener('input', function () { this.value = this.value.toUpperCase(); });
         root.querySelector('#signupForm').addEventListener('submit', function (e) {
           e.preventDefault();
           var f = {
             name: root.querySelector('#s-name'), email: root.querySelector('#s-email'),
-            mobile: root.querySelector('#s-mobile'), pw: root.querySelector('#s-pw'), pw2: root.querySelector('#s-pw2')
+            mobile: root.querySelector('#s-mobile'), pw: root.querySelector('#s-pw'), pw2: root.querySelector('#s-pw2'),
+            ref: root.querySelector('#s-ref')
           };
           var checks = [
+            [f.ref, !f.ref.value.trim() || /^CC-[A-Z]{0,6}-[A-Z0-9]{4}$/.test(f.ref.value.trim().toUpperCase())],
             [f.name, f.name.value.trim().length > 1],
             [f.email, /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email.value.trim())],
             [f.mobile, /^\d{10}$/.test(f.mobile.value.replace(/\D/g, ''))],
@@ -166,12 +173,13 @@
           btn.disabled = true; btn.textContent = 'Creating account…';
           Auth.signup({
             name: f.name.value, email: f.email.value,
-            mobile: f.mobile.value.replace(/\D/g, ''), password: f.pw.value
+            mobile: f.mobile.value.replace(/\D/g, ''), password: f.pw.value, referralCode: f.ref.value.trim().toUpperCase()
           }).then(function (res) {
             if (!res.ok) {
               btn.disabled = false; btn.textContent = 'Create account';
               UI.toast(res.error, 'error'); return shake(root);
             }
+            try { w.localStorage.removeItem('cc_ref'); } catch (e1) {}
             btn.textContent = 'Account created';
             if (res.confirmEmail) {
               UI.toast('Check your inbox to confirm your email, then sign in');

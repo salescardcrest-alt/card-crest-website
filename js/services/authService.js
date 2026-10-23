@@ -152,9 +152,11 @@
     signup: function (data) {
       var email = data.email.trim().toLowerCase();
       if (sb) {
+        var meta = { name: w.CC.UI.titleCase(data.name).trim(), mobile: data.mobile };
+        if (data.referralCode) meta.referral_code = String(data.referralCode).trim().toUpperCase();   // matched to the referrer by the database
         return sb.auth.signUp({
           email: email, password: data.password,
-          options: { data: { name: w.CC.UI.titleCase(data.name).trim(), mobile: data.mobile }, emailRedirectTo: location.origin + location.pathname }
+          options: { data: meta, emailRedirectTo: location.origin + location.pathname }
         }).then(function (r) {
           if (r.error) return fail(friendly(r.error));
           // Supabase returns an empty identities list for an email that already exists.

@@ -955,20 +955,42 @@
     S.get('notifications').unshift(n); S.commit();            // direct push: S.insert would write it back to Supabase
     w.dispatchEvent(new CustomEvent('cc:notify'));
     if (String(n.type).indexOf('market') === 0) Market.load().then(function () { w.dispatchEvent(new CustomEvent('cc:market')); });
+    if (/^(referral|reward)/.test(String(n.type))) refreshReferrals();
     announce(n);
+  }
+  /* Referrals change on the server (a friend joined, or their first card was approved): reload them and redraw the page. */
+  var refTimer = null;
+  function refreshReferrals() {
+    if (refTimer) w.clearTimeout(refTimer);
+    refTimer = w.setTimeout(function () {
+      refTimer = null;
+      if (!w.CC.Sync || !w.CC.Sync.refresh) return;
+      var sig = function () { return JSON.stringify((S.get('referrals') || []).map(function (r) { return r.id + r.status + r.reward; })); };
+      var before = sig();
+      w.CC.Sync.refresh(['referrals']).then(function () {
+        if (sig() === before) return;                        // nothing new: leave the page alone
+        w.dispatchEvent(new CustomEvent('cc:referrals'));
+        var h = w.location.hash || '';
+        if (/^#\/(refer|rewards|dashboard)/.test(h) && w.CC.Router && w.CC.Router.refresh) w.CC.Router.refresh();
+      });
+    }, 250);
   }
   function startLive(u) {
     if (!sb || !sb.channel || (live && liveUser === u.id)) return;
     stopLive(); liveUser = u.id;
     live = sb.channel('cc-notify-' + u.id).on('postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + u.id },
-      function (p) { takeNotification(camel(p.new || {})); }).subscribe();
+      function (p) { takeNotification(camel(p.new || {})); })
+      /* a referral was added, or turned successful: reload referrals and rewards and redraw the page you are on */
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'referrals', filter: 'user_id=eq.' + u.id }, function () { refreshReferrals(); })
+      .subscribe();
     poll = setInterval(function () {
       if (w.document.hidden || liveUser !== u.id) return;
       sb.from('notifications').select('*').eq('user_id', u.id).order('created_at', { ascending: false }).limit(10).then(function (r) {
         if (r.error || !r.data) return;
         r.data.slice().reverse().forEach(function (row) { takeNotification(camel(row)); });
       }, function () {});
+      refreshReferrals();                               // safety net if a live message was missed
     }, 15000);
   }
   function stopLive() {

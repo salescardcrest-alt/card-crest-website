@@ -300,6 +300,15 @@
   });
   /* ---------------- boot ---------------- */
   App.start = function () {
+    /* A friend's link, https://cardcrest.in/join?ref=CC-RAVI-1A2B, opens sign up with the code already in place. */
+    try {
+      var refParam = new URLSearchParams(w.location.search).get('ref');
+      if (refParam && /^CC-[A-Za-z]{0,6}-[A-Za-z0-9]{4}$/.test(refParam)) w.localStorage.setItem('cc_ref', refParam.toUpperCase());
+      if (/^\/join\/?$/.test(w.location.pathname) || refParam) {
+        w.history.replaceState(null, '', '/' + (w.location.hash || ''));
+        if (!w.location.hash || w.location.hash === '#/') w.location.hash = '#/signup';
+      }
+    } catch (e) { /* storage or history blocked: the person can still type the code */ }
     d.getElementById('yr').textContent = new Date().getFullYear();
     initStrip();
     initSticky();

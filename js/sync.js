@@ -98,6 +98,18 @@
       return Promise.all(jobs).catch(function () {});
     },
 
+    /* Reload just some collections from Supabase (for example referrals), so live changes show without a page reload. */
+    refresh: function (cols) {
+      if (!sb) return Promise.resolve();
+      return Promise.all((cols || []).map(function (col) {
+        var spec = SPEC[col]; if (!spec) return null;
+        return sb.from(spec.table).select('*').then(function (r) {
+          if (r.error) return;
+          S.set(col, r.data.map(function (row) { return fromDb(spec, row); }));
+        });
+      })).catch(function () {});
+    },
+
     /* On sign-out: drop the previous user's rows from this browser. */
     clear: function () {
       if (!sb) return;
