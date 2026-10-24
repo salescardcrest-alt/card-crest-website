@@ -33,6 +33,77 @@
   }
 
   /* ---------------- section renderers ---------------- */
+  /* ---------- charts: inline SVG, colours from the validated palette (see css/pages.css .viz) ---------- */
+  var VIZ_SLOTS = ['var(--viz-1)', 'var(--viz-2)', 'var(--viz-3)', 'var(--viz-4)'];
+  function compactMoney(n) {
+    n = Math.round(n);
+    if (n >= 10000000) return '\u20B9' + (n / 10000000).toFixed(1).replace(/\.0$/, '') + 'Cr';
+    if (n >= 100000) return '\u20B9' + (n / 100000).toFixed(1).replace(/\.0$/, '') + 'L';
+    if (n >= 1000) return '\u20B9' + (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+    return '\u20B9' + n;
+  }
+  function niceMax(v) {
+    if (v <= 0) return 100;
+    var p = Math.pow(10, Math.floor(Math.log10(v))), m = v / p;
+    return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p;
+  }
+  /* grouped columns: labels [m], series [{name, values[]}] */
+  function groupedBars(labels, series) {
+    var W = 560, H = 250, L = 52, R = 10, T = 12, B = 30, pw = W - L - R, ph = H - T - B;
+    var max = niceMax(Math.max.apply(null, [1].concat.apply([], series.map(function (s) { return s.values; }))));
+    var y = function (v) { return T + ph - (v / max) * ph; };
+    var out = '<svg class="viz__svg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Revenue and rewards shared by month">';
+    for (var g = 0; g <= 4; g++) {
+      var gv = (max / 4) * g, gy = y(gv);
+      out += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + gy + '" y2="' + gy + '" class="viz__grid"/>' +
+        '<text x="' + (L - 8) + '" y="' + (gy + 4) + '" text-anchor="end" class="viz__tick">' + compactMoney(gv) + '</text>';
+    }
+    var slot = pw / labels.length, barW = Math.min(24, (slot - 16) / series.length - 2);
+    labels.forEach(function (lb, i) {
+      var groupW = series.length * barW + (series.length - 1) * 2, x0 = L + slot * i + (slot - groupW) / 2;
+      series.forEach(function (s, k) {
+        var v = s.values[i], h = Math.max(0, (v / max) * ph), x = x0 + k * (barW + 2), top = T + ph - h, r = Math.min(4, h);
+        var tip = lb + ' \u00B7 ' + s.name + ' \u00B7 ' + UI.money(v);
+        /* square at the baseline, 4px rounded at the data end */
+        out += '<path d="M' + x + ' ' + (T + ph) + 'V' + (top + r) + 'Q' + x + ' ' + top + ' ' + (x + r) + ' ' + top + 'H' + (x + barW - r) +
+          'Q' + (x + barW) + ' ' + top + ' ' + (x + barW) + ' ' + (top + r) + 'V' + (T + ph) + 'Z" fill="' + VIZ_SLOTS[k] + '" class="viz__mark" data-tip="' + UI.esc(tip) + '"' + (h ? '' : ' opacity="0"') + '/>';
+      });
+      out += '<text x="' + (L + slot * i + slot / 2) + '" y="' + (H - 9) + '" text-anchor="middle" class="viz__tick">' + UI.esc(lb) + '</text>';
+    });
+    return out + '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + (T + ph) + '" y2="' + (T + ph) + '" class="viz__axis"/></svg>';
+  }
+  /* pie: slices [{name, value}] drawn with a 2px surface gap between neighbours */
+  function pieChart(slices) {
+    var total = slices.reduce(function (a, s) { return a + s.value; }, 0);
+    if (!(total > 0)) return '<p class="muted small" style="margin:40px 0; text-align:center">Nothing to show yet.</p>';
+    var cx = 100, cy = 100, r = 92, a0 = -Math.PI / 2, out = '<svg class="viz__pie" viewBox="0 0 200 200" role="img" aria-label="Where the money goes">';
+    var live = slices.filter(function (s) { return s.value > 0; });
+    live.forEach(function (s) {
+      var idx = slices.indexOf(s), pct = s.value / total, tip = s.name + ' \u00B7 ' + UI.money(s.value) + ' \u00B7 ' + Math.round(pct * 100) + '%';
+      if (live.length === 1) {
+        out += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + VIZ_SLOTS[idx] + '" class="viz__mark" data-tip="' + UI.esc(tip) + '"/>';
+        return;
+      }
+      var a1 = a0 + pct * Math.PI * 2, large = pct > 0.5 ? 1 : 0;
+      out += '<path d="M' + cx + ' ' + cy + 'L' + (cx + r * Math.cos(a0)) + ' ' + (cy + r * Math.sin(a0)) + 'A' + r + ' ' + r + ' 0 ' + large + ' 1 ' +
+        (cx + r * Math.cos(a1)) + ' ' + (cy + r * Math.sin(a1)) + 'Z" fill="' + VIZ_SLOTS[idx] + '" class="viz__slice viz__mark" data-tip="' + UI.esc(tip) + '"/>';
+      a0 = a1;
+    });
+    return out + '</svg>';
+  }
+  /* one tooltip for every chart: the mark carries its own text; values come from our own numbers, set with textContent */
+  (function tooltip() {
+    var tip = null;
+    function el() { if (!tip) { tip = d.createElement('div'); tip.className = 'viz-tip'; tip.hidden = true; d.body.appendChild(tip); } return tip; }
+    d.addEventListener('pointermove', function (e) {
+      var m = e.target.closest && e.target.closest('[data-tip]'), t = el();
+      if (!m) { t.hidden = true; return; }
+      t.textContent = m.getAttribute('data-tip'); t.hidden = false;
+      t.style.left = Math.min(w.innerWidth - t.offsetWidth - 8, e.clientX + 14) + 'px'; t.style.top = (e.clientY + 16) + 'px';
+    });
+    d.addEventListener('pointerleave', function () { if (tip) tip.hidden = true; });
+  })();
+
   var views = {};
 
   views.overview = function () {
@@ -54,13 +125,67 @@
     });
     var peak = Math.max.apply(null, byMonth.concat([1]));
 
+    /* how many people registered and how many are really using the site (opened it in the last 30 days) */
+    var DAY = 86400000, nowMs = Date.now();
+    var seen = function (u, days) { return u.lastSeen && nowMs - new Date(u.lastSeen).getTime() <= days * DAY; };
+    var activeUsers = users.filter(function (u) { return u.active && seen(u, 30); }).length;
+    var activeToday = users.filter(function (u) { return u.active && seen(u, 1); }).length;
+    var newWeek = users.filter(function (u) { return u.joined && nowMs - new Date(u.joined).getTime() <= 7 * DAY; }).length;
+    var switchedOff = users.filter(function (u) { return !u.active; }).length;
+
+    /* money in and out: what the platform keeps, and what is shared back to users */
+    var M = w.CC.Market, ledger = (M && M.ledgerAll) ? M.ledgerAll() : [];
+    var refOk = refs.filter(function (r) { return r.status === 'successful'; });
+    var referralTotal = refOk.reduce(function (a, r) { return a + Number(r.reward || 0); }, 0);
+    var marketRevenue = ledger.filter(function (e) { return e.account === 'platform'; }).reduce(function (a, e) { return a + Number(e.credit) - Number(e.debit); }, 0);
+    var holderEarnings = ledger.filter(function (e) { return e.kind === 'CARDHOLDER_EARNING'; }).reduce(function (a, e) { return a + Number(e.credit); }, 0);
+    var totalRevenue = revenue + marketRevenue, sharedTotal = pt.confirmed + referralTotal + holderEarnings;
+    var nowD = new Date(), monthLabels = [], revByMonth = [], rewByMonth = [];
+    for (var mi = 5; mi >= 0; mi--) {
+      (function (back) {
+        var from = new Date(nowD.getFullYear(), nowD.getMonth() - back, 1).getTime(), to = new Date(nowD.getFullYear(), nowD.getMonth() - back + 1, 1).getTime();
+        var inM = function (iso) { var t = new Date(iso).getTime(); return t >= from && t < to; };
+        var cash = CB.all().filter(function (t) { return t.status === 'confirmed' && inM(t.createdAt); }).reduce(function (a, t) { return a + t.cashback; }, 0);
+        var refM = refOk.filter(function (r) { return inM(r.createdAt); }).reduce(function (a, r) { return a + Number(r.reward || 0); }, 0);
+        var mkRev = ledger.filter(function (e) { return e.account === 'platform' && inM(e.at); }).reduce(function (a, e) { return a + Number(e.credit) - Number(e.debit); }, 0);
+        var hold = ledger.filter(function (e) { return e.kind === 'CARDHOLDER_EARNING' && inM(e.at); }).reduce(function (a, e) { return a + Number(e.credit); }, 0);
+        monthLabels.push(new Date(from).toLocaleString('en-IN', { month: 'short' }));
+        revByMonth.push(Math.round(cash * 0.6 + mkRev)); rewByMonth.push(Math.round(cash + refM + hold));
+      })(mi);
+    }
+    var pieSlices = [{ name: 'Platform revenue', value: totalRevenue }, { name: 'Cashback rewards', value: pt.confirmed },
+      { name: 'Refer & earn rewards', value: referralTotal }, { name: 'Cardholder earnings', value: holderEarnings }];
+    var pieTotal = pieSlices.reduce(function (a, s) { return a + s.value; }, 0) || 1;
+
     return '<div class="grid g-4" style="margin-bottom:20px">' +
-      stat('Total users', users.length, users.filter(function (u) { return u.active; }).length + ' active') +
+      stat('Registered users', users.length, 'Everyone who signed up, staff excluded', true) +
+      stat('Active users', activeUsers, activeToday + ' seen today, last 30 days') +
+      stat('New this week', newWeek, 'Joined in the last 7 days') +
+      stat('Switched off', switchedOff, 'Accounts an admin disabled') +
+      '</div>' +
+      '<div class="grid g-4" style="margin-bottom:20px">' +
+      stat('Total revenue', UI.money(totalRevenue), UI.money(revenue) + ' cashback model + ' + UI.money(marketRevenue) + ' Share &amp; Earn', true) +
+      stat('Rewards shared', UI.money(pt.confirmed), 'Confirmed cashback credited to users') +
+      stat('Refer &amp; earn rewards', UI.money(referralTotal), refOk.length + ' successful referrals') +
+      stat('Total shared with users', UI.money(sharedTotal), 'Cashback, referrals and cardholder earnings') +
+      '</div>' +
+      '<div class="grid g-2" style="margin-bottom:26px">' +
+        '<div class="panel viz"><h3 class="h3">Revenue and rewards by month</h3>' +
+        '<p class="small muted" style="margin:4px 0 12px">Last 6 months. Revenue is what we keep, rewards is what we share back.</p>' +
+        '<div class="viz__legend"><span><i style="background:' + VIZ_SLOTS[0] + '"></i>Revenue</span><span><i style="background:' + VIZ_SLOTS[1] + '"></i>Rewards shared</span></div>' +
+        groupedBars(monthLabels, [{ name: 'Revenue', values: revByMonth }, { name: 'Rewards shared', values: rewByMonth }]) +
+        '<details class="viz__table"><summary>View as a table</summary><table class="tbl"><thead><tr><th>Month</th><th class="num">Revenue</th><th class="num">Rewards shared</th></tr></thead><tbody>' +
+          monthLabels.map(function (m, i) { return '<tr><td>' + m + '</td><td class="num">' + UI.money(revByMonth[i]) + '</td><td class="num">' + UI.money(rewByMonth[i]) + '</td></tr>'; }).join('') +
+        '</tbody></table></details></div>' +
+        '<div class="panel viz"><h3 class="h3">Where the money goes</h3>' +
+        '<p class="small muted" style="margin:4px 0 12px">Share of everything the platform earned or paid out.</p>' +
+        '<div class="viz__pie-wrap">' + pieChart(pieSlices) + '<ul class="viz__list">' + pieSlices.map(function (s, i) {
+          return '<li><i style="background:' + VIZ_SLOTS[i] + '"></i><span>' + s.name + '</span><strong>' + UI.money(s.value) + '</strong><em>' + Math.round(s.value / pieTotal * 100) + '%</em></li>';
+        }).join('') + '</ul></div></div>' +
+      '</div>' +
+      '<div class="grid g-3" style="margin-bottom:26px">' +
       stat('Transactions', pt.count, UI.money(pt.gross) + ' gross value') +
       stat('Confirmed cashback', UI.money(pt.confirmed), UI.money(pt.pending) + ' still pending') +
-      stat('Platform revenue', UI.money(revenue), 'After user payouts', true) +
-      '</div>' +
-      '<div class="grid g-4" style="margin-bottom:26px">' +
       stat('Applications', apps.length, approved + ' approved') +
       stat('Approval rate', conv + '%', 'Across all applications') +
       stat('Redemptions', reds.length, UI.money(reds.reduce(function (a, r) { return a + r.amount; }, 0)) + ' paid out') +

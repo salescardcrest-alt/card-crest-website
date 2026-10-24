@@ -81,6 +81,8 @@
         avatar: p.avatar_url || '',
         active: p.active !== false
       };
+      row.lastSeen = new Date().toISOString();
+      sb.from('profiles').update({ last_seen: row.lastSeen }).eq('id', authUser.id).then(function () {}, function () {});   // quietly; the column comes from supabase/07_user_activity.sql
       var existing = S.find('users', row.id);
       var user = existing ? S.update('users', row.id, row) : S.insert('users', row);
       return user;
@@ -145,6 +147,7 @@
       if (!u) return Promise.resolve(fail('No account found with that email address.'));
       if (u.password !== password) return Promise.resolve(fail('That password does not match our records.'));
       if (!u.active) return Promise.resolve(fail('This account has been disabled. Contact support to reopen it.'));
+      S.update('users', u.id, { lastSeen: new Date().toISOString() });
       S.set('session', u.id);
       return Promise.resolve({ ok: true, user: u });
     },

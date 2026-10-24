@@ -13,6 +13,8 @@
   App.paintAuth = function () {
     var slot = d.getElementById('authSlot');
     var u = Auth.current();
+    var sheetAdmin = d.getElementById('sheetAdmin');   // the mobile menu link is only for staff
+    if (sheetAdmin) sheetAdmin.hidden = !(u && u.role === 'admin');
 
     if (!u) {
       slot.innerHTML =
