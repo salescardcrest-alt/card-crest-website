@@ -165,8 +165,8 @@
       '<div class="grid g-4" style="margin-bottom:34px">' +
       ['LOUNGE', 'MOVIE', 'PAY', 'ORDER'].map(function (k) {
         var m = MODS[k];
-        return '<a class="panel mk-tile" href="#/market/new/' + m.slug + '" data-service="' + m.slug + '"><span class="mk-tile__i mk-tile__i--' + m.slug + '">' + m.icon + '</span>' +
-          '<strong>' + m.title + '</strong><span class="muted small">' + m.blurb + '</span><span class="mk-tile__go">Start a request →</span></a>';
+        return '<a class="panel mk-tile" href="' + (k === 'PAY' ? '#/market/pay-earn' : '#/market/new/' + m.slug) + '" data-service="' + m.slug + '"><span class="mk-tile__i mk-tile__i--' + m.slug + '">' + m.icon + '</span>' +
+          '<strong>' + m.title + '</strong><span class="muted small">' + (k === 'PAY' ? 'See the open requests you can pay with your own card, and earn on each one.' : m.blurb) + '</span><span class="mk-tile__go">' + (k === 'PAY' ? 'See open requests →' : 'Start a request →') + '</span></a>';
       }).join('') + '</div>' +
 
       '<h2 class="h2" style="margin-bottom:14px">I have a card</h2>' +
@@ -455,7 +455,7 @@
       ? UI.empty('Add a card to start earning', 'Tell us which cards you hold (bank and variant only, never the card number). We then show the requests you can pay with your own card.', 'Add a card', '#/market/cards')
       : open.length ? '<div class="stack">' + open.map(jobCard).join('') + '</div>' : UI.empty('No requests to fulfil right now', 'New Pay & Earn and Order & Earn requests appear here as buyers pay. Check back soon.');
     var taskHtml = tasks.length ? tasks.map(function (r) { return card(r, true); }).join('') : UI.empty('Nothing accepted yet', 'Requests you accept show up here with the payment link, shopping site and delivery address.');
-    var inner = '<div class="spread section__head"><div><h1 class="h1">Pay &amp; Earn</h1><p class="lede">Requests you can fulfil by paying with your own card. You pay, get reimbursed, and earn on top. Requests you made yourself are under <a href="#/market/requests">My requests</a>.</p></div></div>' +
+    var inner = '<div class="spread section__head"><div><h1 class="h1">Pay &amp; Earn</h1><p class="lede">Requests you can fulfil by paying with your own card. You pay, get reimbursed, and earn on top. Requests you made yourself are under <a href="#/market/requests">My requests</a>.</p></div><a class="btn btn--ghost btn--sm" href="#/market/new/pay">Need something paid? Create a request</a></div>' +
       '<div class="tabs"><button class="' + (tab === 'open' ? 'is-on' : '') + '" data-tab="open">Requests to fulfil (' + fit + ')</button>' +
       '<button class="' + (tab === 'tasks' ? 'is-on' : '') + '" data-tab="tasks">Accepted by me (' + tasks.length + ')</button></div>' +
       (tab === 'open' ? openHtml : taskHtml);
