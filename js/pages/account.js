@@ -420,6 +420,14 @@
       '<a class="btn btn--ghost btn--sm" target="_blank" rel="noopener" href="https://wa.me/?text=' +
         encodeURIComponent('I use Card Crest to find credit cards that actually pay back. Sign up with my code ' + code + ' and we both earn a reward: ' + link) + '">WhatsApp</a>' +
       '</div></div>' +
+      (u.referredBy ? '' :
+        '<div class="panel" style="margin-bottom:24px">' +
+        '<h2 class="h3" style="margin-bottom:6px">Have a friend’s code?</h2>' +
+        '<p class="small muted" style="margin-bottom:12px">Joined without one? Add it now and your friend earns their reward. You can use one code, once. It works the same in the Card Crest app.</p>' +
+        '<form id="useCode" class="row row--wrap" style="gap:10px" novalidate>' +
+        '<input id="useCodeBox" type="text" autocomplete="off" maxlength="16" placeholder="CC-RAVI-1A2B" style="flex:1; min-width:180px; text-transform:uppercase" aria-label="A friend’s referral code">' +
+        '<button class="btn btn--primary btn--sm" type="submit">Use code</button></form>' +
+        '<p class="small" id="useCodeMsg" role="status" style="margin-top:10px; display:none"></p></div>') +
       '<div class="grid g-4" style="margin-bottom:26px">' +
         '<div class="stat"><span class="stat__k">Total referrals</span><span class="stat__v">' + s.total + '</span></div>' +
         '<div class="stat"><span class="stat__k">Successful</span><span class="stat__v">' + s.successful + '</span></div>' +
@@ -434,7 +442,8 @@
           '<td>' + UI.statusBadge(r.status) + '</td><td class="num">' + (r.reward ? UI.money(r.reward) : '—') + '</td></tr>';
       }).join('') : '<tr><td colspan="4" style="padding:40px; text-align:center" class="muted">No referrals yet. Share your code to get started.</td></tr>') +
       '</tbody></table></div></div>' +
-      '<p class="small muted" style="margin-top:16px">Each friend who joins with your code adds a reward to your balance at once. Demo mode — referral rewards are simulated.</p>';
+      '<p class="small muted" style="margin-top:16px">Each friend who joins with your code adds a reward to your balance at once, whether they join on the website or in the Card Crest app.' +
+      ((w.CC_CONFIG && w.CC_CONFIG.SUPABASE_URL) ? '' : ' Demo mode — referral rewards are simulated.') + '</p>';
 
     return {
       title: 'Refer and earn | Card Crest',
@@ -447,6 +456,30 @@
             UI.toast(b.dataset.copy.indexOf('http') === 0 ? 'Referral link copied' : 'Referral code copied');
           };
         });
+        /* friends who joined in the app (or on another device) show up as soon as the page opens */
+        if (w.CC.Sync && w.CC.Sync.refresh) {
+          var sig = function () { return JSON.stringify((w.CC.Store.get('referrals') || []).map(function (r) { return r.id + r.status + r.reward; })); };
+          var before = sig();
+          w.CC.Sync.refresh(['referrals']).then(function () { if (sig() !== before && w.CC.Router.refresh) w.CC.Router.refresh(); });
+        }
+        var codeForm = root.querySelector('#useCode');
+        if (codeForm) {
+          var box = root.querySelector('#useCodeBox'), msg = root.querySelector('#useCodeMsg');
+          try { box.value = (w.localStorage.getItem('cc_ref') || '').toUpperCase(); } catch (e2) {}
+          box.addEventListener('input', function () { this.value = this.value.toUpperCase(); });
+          codeForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var btn = codeForm.querySelector('button'); btn.disabled = true;
+            Auth.applyReferral(box.value).then(function (res) {
+              btn.disabled = false;
+              msg.style.display = 'block';
+              if (!res.ok) { msg.style.color = 'var(--danger)'; msg.textContent = res.error; return; }
+              try { w.localStorage.removeItem('cc_ref'); } catch (e3) {}
+              UI.toast('Code added. Your friend has been rewarded.');
+              w.CC.Router.refresh();
+            });
+          });
+        }
         root.querySelector('[data-share]').onclick = function () {
           var payload = { title: 'Card Crest', text: 'Find a credit card that actually pays back. Use my code ' + code + '.', url: link };
           if (navigator.share) navigator.share(payload).catch(function () {});

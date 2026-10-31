@@ -79,7 +79,8 @@
         credit: Number(p.credit) || 0,
         joined: p.joined || String(authUser.created_at || '').slice(0, 10),
         avatar: p.avatar_url || '',
-        active: p.active !== false
+        active: p.active !== false,
+        referredBy: p.referred_by || ''   // set by the database when a friend's code was used (supabase/08_referrals_app.sql)
       };
       row.lastSeen = new Date().toISOString();
       sb.from('profiles').update({ last_seen: row.lastSeen }).eq('id', authUser.id).then(function () {}, function () {});   // quietly; the column comes from supabase/07_user_activity.sql
@@ -337,6 +338,36 @@
       }
       if (u.password !== oldPw) return Promise.resolve(fail('Your current password is not correct.'));
       S.update('users', u.id, { password: newPw });
+      return Promise.resolve({ ok: true });
+    },
+
+    /* Add a friend's code after sign up, the same as the app's "Have a friend's code?" box. The friend is paid once,
+       and a member can only ever use one code (the database checks it, so the app and the website agree). */
+    applyReferral: function (code) {
+      var u = Auth.current();
+      code = String(code || '').trim().toUpperCase();
+      if (!u) return Promise.resolve(fail('Sign in first.'));
+      if (!/^CC-[A-Z]{0,6}-[A-Z0-9]{4}$/.test(code)) return Promise.resolve(fail('That does not look like a Card Crest code. It looks like CC-RAVI-1A2B.'));
+      if (u.referredBy) return Promise.resolve(fail('You have already used a referral code.'));
+      if (code === Auth.referralCode(u)) return Promise.resolve(fail('You cannot use your own code.'));
+      if (sb) {
+        return sb.rpc('apply_referral_code', { p: { code: code } }).then(function (r) {
+          if (r.error) {
+            var m = r.error.message || '';
+            if (/could not find the function|apply_referral_code/i.test(m) && /find|schema cache/i.test(m)) m = 'Referral codes are not switched on for this project yet. Run supabase/08_referrals_app.sql in Supabase.';
+            return fail(m || 'Could not use that code. Try again.');
+          }
+          S.update('users', u.id, { referredBy: code });
+          return { ok: true };
+        }, function () { return fail('Could not reach the server. Try again.'); });
+      }
+      var friend = S.where('users', function (x) { return x.id !== u.id && Auth.referralCode(x) === code; })[0];
+      if (!friend) return Promise.resolve(fail('We could not find that code. Check it and try again.'));
+      var parts = String(u.name || '').split(' '), shortName = parts.length > 1 ? parts[0] + ' ' + parts[1].charAt(0).toUpperCase() + '.' : u.name;
+      S.insert('referrals', { id: S.uid('r'), userId: friend.id, name: shortName, status: 'successful', reward: w.CC.Referrals.REWARD, createdAt: new Date().toISOString() });
+      w.CC.Notifications.push(friend.id, 'referral', 'Referral reward credited',
+        shortName + ' joined with your code. ' + w.CC.UI.money(w.CC.Referrals.REWARD) + ' added to your balance.');
+      S.update('users', u.id, { referredBy: friend.id });
       return Promise.resolve({ ok: true });
     },
 
