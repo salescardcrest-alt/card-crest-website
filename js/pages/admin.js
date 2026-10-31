@@ -234,16 +234,20 @@
       table(['User', 'City', 'Status', 'Lifetime rewards', 'Transactions', ''], rows, 'No users found.');
   };
 
+  function trackerLink(cardId) { var r = w.CC.Trackers && w.CC.Trackers.row('card', cardId); return r ? r.url : ''; }
+
   views.cards = function () {
     var rows = C.allIncludingInactive().map(function (c) {
       var bank = C.bank(c.bank);
-      return '<tr><td><div class="row" style="gap:10px"><div style="width:52px">' + UI.plastic(c, true) + '</div>' +
+      return '<tr><td style="min-width:220px"><div class="row" style="gap:10px"><div style="width:52px; flex:none">' + UI.plastic(c, true) + '</div>' +
         '<div><strong>' + UI.esc(c.name) + '</strong><div class="small muted">' + UI.esc(bank ? bank.name : '') + '</div></div></div></td>' +
         '<td class="num">' + (c.annualFee ? UI.money(c.annualFee) : 'Free') + '</td>' +
         '<td class="num">' + UI.pct(c.rewardRate) + '</td>' +
+        '<td><div class="row" style="gap:4px"><input type="number" min="0" max="100" step="0.1" data-card-offer="' + c.id + '" value="' + (c.cashback || 0) + '" aria-label="Offer percentage for ' + UI.esc(c.name) + '" style="width:76px; height:36px; font-size:.86rem; text-align:right"><span class="muted">%</span></div></td>' +
+        '<td style="min-width:300px"><div class="row" style="gap:6px; flex-wrap:nowrap"><input type="url" data-card-link="' + c.id + '" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://… (backlink)" value="' + UI.esc(trackerLink(c.id)) + '" aria-label="Backlink for ' + UI.esc(c.name) + '" style="flex:1; min-width:0; height:36px; font-size:.86rem"><button class="btn btn--xs btn--primary" data-card-save="' + c.id + '">Save</button></div></td>' +
         '<td class="num">' + C.score(c).total + '</td>' +
         '<td>' + UI.statusBadge(c.active === false ? 'disabled' : 'active') + '</td>' +
-        '<td><div class="row" style="gap:6px">' +
+        '<td><div class="row" style="gap:6px; flex-wrap:nowrap">' +
         '<button class="btn btn--xs btn--ghost" data-card-edit="' + c.id + '">Edit</button>' +
         '<button class="btn btn--xs btn--soft" data-card-toggle="' + c.id + '">' + (c.active === false ? 'Activate' : 'Deactivate') + '</button>' +
         '<button class="btn btn--xs btn--danger" data-card-del="' + c.id + '">Delete</button>' +
@@ -251,7 +255,8 @@
     });
     return '<div class="mkt__bar"><input type="search" data-filter="cards" placeholder="Search cards" style="flex:1">' +
       '<button class="btn btn--primary btn--sm" data-card-new>Add a card</button></div>' +
-      table(['Card', 'Annual fee', 'Reward rate', 'Value score', 'Status', ''], rows, 'No cards yet.');
+      '<div class="note" style="margin-bottom:14px">Set each card’s <b>offer percentage</b> (the top cashback users see on the card) and its <b>backlink</b> (where Apply sends the applicant), then press <b>Save</b> on that row. Leave the backlink empty to use the bank’s default link or the built-in one. <code>{click}</code>, <code>{ref}</code> and <code>{user}</code> can be used inside a link.</div>' +
+      table(['Card', 'Annual fee', 'Reward rate', 'Offer %', 'Backlink', 'Value score', 'Status', ''], rows, 'No cards yet.');
   };
 
   views.stores = function () {
@@ -670,6 +675,25 @@
         if (nc) nc.onclick = function () { cardEditor(null); };
         root.querySelectorAll('[data-card-edit]').forEach(function (b) {
           b.onclick = function () { cardEditor(C.byId(b.dataset.cardEdit)); };
+        });
+        root.querySelectorAll('[data-card-save]').forEach(function (b) {
+          b.onclick = function () {
+            var id = b.dataset.cardSave, tr = b.closest('tr'), T = w.CC.Trackers;
+            var off = tr.querySelector('[data-card-offer]').value, link = tr.querySelector('[data-card-link]').value.trim();
+            var pct = Number(off);
+            if (off === '' || !(pct >= 0 && pct <= 100)) return UI.toast('Offer percentage must be between 0 and 100', 'error');
+            if (link && !/^https?:\/\/[^\s]+$/i.test(link)) return UI.toast('The backlink must start with https://', 'error');
+            b.disabled = true;
+            (T ? T.save('card', id, link, '') : Promise.resolve({ ok: true })).then(function (res) {
+              b.disabled = false;
+              if (!res.ok) return UI.toast(res.error, 'error');
+              C.update(id, { cashback: pct });
+              UI.toast('Card saved');
+            });
+          };
+        });
+        root.querySelectorAll('[data-card-link]').forEach(function (i) {
+          i.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); i.closest('tr').querySelector('[data-card-save]').click(); } };
         });
         root.querySelectorAll('[data-card-toggle]').forEach(function (b) {
           b.onclick = function () {
