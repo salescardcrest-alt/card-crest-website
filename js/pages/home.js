@@ -26,6 +26,67 @@
   ];
 
 
+  /* ---- the app screen on the phone in the hero picture ----
+     The picture is a low-resolution render, so its own screen text is soft. This draws the same screen as real text and
+     icons (sharp at any size) and lays it over the phone using the four corners of the phone's screen in the picture. */
+  var PHONE = { w: 390, h: 750, quad: [[527, 53], [853, 55], [791, 722], [423, 712]], imgW: 1307 };   // picture pixels: top-left, top-right, bottom-right, bottom-left
+  function icon(path, extra) { return '<svg viewBox="0 0 24 24" aria-hidden="true"' + (extra || '') + '>' + path + '</svg>'; }
+  function phoneApp(name) {
+    var stroke = ' fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
+    var plane = '<path d="M21 15.5 13.5 11V5.5a1.5 1.5 0 0 0-3 0V11L3 15.5V17l7.5-2v3.5L9 20v1.2l3-.8 3 .8V20l-1.5-1.5V15L21 17z" fill="currentColor"/>';
+    var nav = [
+      ['Home', '<path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" fill="currentColor"/>', true],
+      ['Cards', '<rect x="3" y="5" width="18" height="14" rx="2.5"' + stroke + '/><path d="M3 10h18M7 15h4"' + stroke + '/>'],
+      ['Earn', '<circle cx="12" cy="12" r="9"' + stroke + '/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1.1.9-1.1 1.7M12 17h.01"' + stroke + '/>'],
+      ['Rewards', '<rect x="4" y="9" width="16" height="11" rx="2"' + stroke + '/><path d="M12 9v11M4 13h16M12 9c-3 0-4.5-2-3.4-3.4S12 5 12 9zM12 9c3 0 4.5-2 3.4-3.4S12 5 12 9z"' + stroke + '/>'],
+      ['Profile', '<circle cx="12" cy="8" r="4"' + stroke + '/><path d="M4.5 20c.8-3.6 3.8-5.5 7.5-5.5s6.7 1.9 7.5 5.5"' + stroke + '/>']
+    ];
+    return '<div class="ph3">' +
+      '<span class="ph3__notch"></span>' +
+      '<span class="ph3__time">9:41</span>' +
+      '<span class="ph3__sys"><svg viewBox="0 0 20 14" aria-hidden="true"><rect x="0" y="9" width="3" height="5" rx="1"/><rect x="5" y="6" width="3" height="8" rx="1"/><rect x="10" y="3" width="3" height="11" rx="1"/><rect x="15" y="0" width="3" height="14" rx="1"/></svg>' +
+        '<svg viewBox="0 0 20 14" aria-hidden="true"><path d="M10 13.2 7.4 10.4a3.7 3.7 0 0 1 5.2 0zM4.7 7.8a7.5 7.5 0 0 1 10.6 0M1.7 4.7a11.8 11.8 0 0 1 16.6 0" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>' +
+        '<i class="ph3__bat"><b></b></i></span>' +
+      '<div class="ph3__brand"><img src="assets/logo-mark.png?v=2" width="40" height="40" alt=""><span>CARD<em>CREST</em></span>' +
+        '<span class="ph3__bell">' + icon('<path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8M13.7 21a2 2 0 0 1-3.4 0"' + stroke + '/>') + '<i></i></span></div>' +
+      '<h3 class="ph3__hi">Hey, ' + UI.esc(name) + ' <span aria-hidden="true">👋</span></h3>' +
+      '<p class="ph3__sub">Turn your card spending into rewards.</p>' +
+      '<div class="ph3__search">' + icon('<circle cx="11" cy="11" r="6.5"' + stroke + '/><path d="m16 16 4 4"' + stroke + '/>') + '<span>Search lounges, offers, movies...</span></div>' +
+      '<div class="ph3__q">' +
+        '<span><i>' + icon('<g transform="rotate(45 12 12)">' + plane + '</g>', ' style="color:#fff"') + '</i>Lounge</span>' +
+        '<span><i><svg viewBox="0 0 24 24" aria-hidden="true"><defs><clipPath id="pk"><path d="M5.5 9.5h13L17 21H7z"/></clipPath></defs><circle cx="8" cy="7" r="2.6" fill="#fff3cf"/><circle cx="12" cy="5.6" r="2.9" fill="#ffe9a8"/><circle cx="16" cy="7" r="2.6" fill="#fff3cf"/><g clip-path="url(#pk)"><rect x="5" y="9" width="14" height="13" fill="#fff"/><rect x="5.3" y="9" width="2.6" height="13" fill="#e5384a"/><rect x="10.7" y="9" width="2.6" height="13" fill="#e5384a"/><rect x="16.1" y="9" width="2.6" height="13" fill="#e5384a"/></g></svg></i>Movies</span>' +
+        '<span><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" fill="#2fbf85"/><rect x="3.5" y="5" width="17" height="4.5" rx="2" fill="#17a06a"/><path d="M9.5 14.5l1.6 1.6 3.4-3.6" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></i>Pay &amp; Earn</span>' +
+        '<span><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 8.5V7a3.5 3.5 0 0 1 7 0v1.5" fill="none" stroke="#c98d1e" stroke-width="1.8" stroke-linecap="round"/><rect x="4.5" y="8" width="15" height="13" rx="3" fill="#f5b73c"/><path d="M12 12.5v5M9.6 12.5 12 15l2.4-2.5" fill="none" stroke="#7a4a00" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i>Order &amp; Earn</span>' +
+      '</div>' +
+      '<div class="ph3__offer"><small>Featured Offer</small>' +
+        '<div class="ph3__row"><i>' + icon('<g transform="rotate(45 12 12)">' + plane + '</g>', ' style="color:#fff"') + '</i>' +
+        '<span><b>Airport Lounge Access</b><strong>₹500 Off</strong></span>' +
+        '<u>' + icon('<path d="m9 6 6 6-6 6"' + stroke + '/>') + '</u></div></div>' +
+      '<div class="ph3__nav">' + nav.map(function (n) { return '<span' + (n[2] ? ' class="on"' : '') + '>' + icon(n[1]) + n[0] + '</span>'; }).join('') + '</div>' +
+      '</div>';
+  }
+  /* maps the app screen's rectangle onto the four corners of the phone screen (a perspective transform) */
+  function phoneFit(root) {
+    var art = root.querySelector('.hx__art'), app = root.querySelector('.hx__app'), ovl = root.querySelector('.hx__ovl');
+    if (!art || !app || !ovl) return;
+    var s = [[0, 0], [PHONE.w, 0], [PHONE.w, PHONE.h], [0, PHONE.h]], t = PHONE.quad, A = [], B = [], i, j, k;
+    for (i = 0; i < 4; i++) {
+      A.push([s[i][0], s[i][1], 1, 0, 0, 0, -s[i][0] * t[i][0], -s[i][1] * t[i][0]]); B.push(t[i][0]);
+      A.push([0, 0, 0, s[i][0], s[i][1], 1, -s[i][0] * t[i][1], -s[i][1] * t[i][1]]); B.push(t[i][1]);
+    }
+    for (i = 0; i < 8; i++) {                                    // Gaussian elimination
+      var p = i; for (j = i + 1; j < 8; j++) if (Math.abs(A[j][i]) > Math.abs(A[p][i])) p = j;
+      var tmp = A[i]; A[i] = A[p]; A[p] = tmp; var tb = B[i]; B[i] = B[p]; B[p] = tb;
+      for (j = i + 1; j < 8; j++) { var f = A[j][i] / A[i][i]; for (k = i; k < 8; k++) A[j][k] -= f * A[i][k]; B[j] -= f * B[i]; }
+    }
+    var h = new Array(8);
+    for (i = 7; i >= 0; i--) { var sum = B[i]; for (k = i + 1; k < 8; k++) sum -= A[i][k] * h[k]; h[i] = sum / A[i][i]; }
+    app.style.transform = 'matrix3d(' + [h[0], h[3], 0, h[6], h[1], h[4], 0, h[7], 0, 0, 1, 0, h[2], h[5], 0, 1].join(',') + ')';
+    var size = function () { if (!art.isConnected) return; ovl.style.transform = 'scale(' + (art.clientWidth / PHONE.imgW) + ')'; };
+    size();
+    if (w.ResizeObserver) new w.ResizeObserver(size).observe(art); else w.addEventListener('resize', size);
+  }
+
   /* Product tiles lean toward the pointer and the ticket stack drifts with it. Skipped for touch and reduced motion. */
   function tilt(root) {
     if (w.matchMedia('(prefers-reduced-motion: reduce)').matches || !w.matchMedia('(hover: hover)').matches) return;
@@ -108,7 +169,10 @@
       '<div class="scrollbar" id="ccProg" aria-hidden="true"></div>' +
       '<section class="hx">' +
       '<div class="hx__top">' +
-        '<img class="hx__art" src="assets/hero/scene.jpg" width="1307" height="805" alt="The Card Crest app on a phone in an airport lounge, with floating Lounge, Movies, Offers and Pay &amp; Earn tiles" fetchpriority="high">' +
+        '<div class="hx__art" role="img" aria-label="The Card Crest app on a phone in an airport lounge, with floating Lounge, Movies, Offers and Pay &amp; Earn tiles">' +
+          '<img class="hx__artimg" src="assets/hero/scene.jpg" width="1307" height="805" alt="" fetchpriority="high">' +
+          '<div class="hx__ovl" aria-hidden="true"><div class="hx__app">' + phoneApp(firstName) + '</div></div>' +
+        '</div>' +
         '<div class="wrap hx__in">' +
           '<div class="hx__copy">' +
             '<span class="hx__pill"><span class="dot"></span>More Spend. More Rewards.</span>' +
@@ -314,6 +378,7 @@
       mount: function (root) {
         w.CC.Hero.mount(root);
         tilt(root);
+        phoneFit(root);
         fx(root);
         w.CC.Render.bindCompare(root);
         w.CC.Render.bindOfferActions(root);

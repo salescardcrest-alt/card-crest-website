@@ -584,3 +584,126 @@ html[data-theme="dark"] .hx ~ .section .accordion{background:var(--surface); bor
   .hdr__in{gap:6px}
   .hdr__burger{flex-shrink:0}
 }
+
+/* ============================================================
+   The phone screen drawn as real text, laid over the picture (sharp at any size)
+   ============================================================ */
+.hx__artimg{position:absolute; inset:0; width:100%; height:100%; object-fit:fill; display:block}
+.hx__ovl{position:absolute; left:0; top:0; width:1307px; height:805px; transform-origin:0 0; pointer-events:none}
+.hx__app{position:absolute; left:0; top:0; width:390px; height:750px; transform-origin:0 0; overflow:hidden; border-radius:50px; text-transform:none}
+.ph3{position:relative; width:100%; height:100%; color:#fff; font-family:var(--body); text-transform:none;
+  background:radial-gradient(340px 260px at 85% 0,rgba(23,160,106,.28),transparent 70%),linear-gradient(172deg,#0d4a34 0%,#073021 45%,#052218 100%)}
+.ph3 *{text-transform:none; box-sizing:border-box}
+.ph3::after{content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(100deg,rgba(255,255,255,.07),transparent 28%)}
+.ph3__notch{position:absolute; left:50%; top:12px; width:122px; height:32px; margin-left:-61px; border-radius:18px; background:#010605}
+.ph3__time{position:absolute; left:40px; top:20px; font-size:17px; font-weight:700; letter-spacing:.01em}
+.ph3__sys{position:absolute; right:38px; top:23px; display:flex; align-items:center; gap:7px}
+.ph3__sys svg{height:14px; width:auto; fill:#fff}
+.ph3__bat{display:block; width:27px; height:13px; border:1.6px solid #fff; border-radius:4px; padding:1.5px}
+.ph3__bat b{display:block; width:100%; height:100%; background:#fff; border-radius:2px}
+.ph3__brand{position:absolute; left:34px; right:34px; top:70px; display:flex; align-items:center; gap:10px; font-weight:800; font-size:22px; letter-spacing:.03em}
+.ph3__brand img{width:40px; height:40px}
+.ph3__brand em{font-style:normal; color:#4fe0a6; margin-left:.25em}
+.ph3__bell{margin-left:auto; position:relative; width:30px; height:30px; display:grid; place-items:center}
+.ph3__bell svg{width:26px; height:26px; color:#fff}
+.ph3__bell i{position:absolute; right:2px; top:0; width:9px; height:9px; border-radius:50%; background:#ff4b4b; box-shadow:0 0 0 2px #0a3a29}
+.ph3__hi{position:absolute; left:34px; top:134px; margin:0; font-size:31px; font-weight:800; letter-spacing:-.02em; line-height:1.1}
+.ph3__sub{position:absolute; left:34px; top:180px; margin:0; font-size:15.5px; color:rgba(255,255,255,.78)}
+.ph3__search{position:absolute; left:26px; right:26px; top:222px; height:54px; border-radius:27px; display:flex; align-items:center; gap:12px; padding:0 20px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.08); font-size:15px; color:rgba(255,255,255,.75)}
+.ph3__search svg{width:21px; height:21px; flex-shrink:0; color:#fff}
+.ph3__q{position:absolute; left:20px; right:20px; top:302px; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; text-align:center; font-size:13px; font-weight:600; color:rgba(255,255,255,.92)}
+.ph3__q span{display:flex; flex-direction:column; align-items:center; gap:10px}
+.ph3__q i{width:76px; height:76px; border-radius:21px; display:grid; place-items:center; background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.1); box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.ph3__q i svg{width:40px; height:40px; overflow:visible}
+.ph3__offer{position:absolute; left:22px; right:22px; top:446px; height:178px; border-radius:24px; padding:16px 18px; background:linear-gradient(160deg,rgba(255,255,255,.11),rgba(255,255,255,.04)); border:1px solid rgba(255,255,255,.08)}
+.ph3__offer small{display:block; font-size:15px; font-weight:700; margin-bottom:12px}
+.ph3__row{display:flex; align-items:center; gap:16px}
+.ph3__row i{width:84px; height:84px; flex-shrink:0; border-radius:20px; display:grid; place-items:center; background:linear-gradient(150deg,#2ea06f,#17714d)}
+.ph3__row i svg{width:50px; height:50px}
+.ph3__row span{flex:1; min-width:0}
+.ph3__row b{display:block; font-size:15px; font-weight:600; color:rgba(255,255,255,.88)}
+.ph3__row strong{display:block; font-size:32px; font-weight:800; letter-spacing:-.025em; line-height:1.15}
+.ph3__row u{width:34px; height:34px; flex-shrink:0; border-radius:50%; display:grid; place-items:center; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.14); text-decoration:none}
+.ph3__row u svg{width:18px; height:18px}
+.ph3__nav{position:absolute; left:0; right:0; bottom:0; height:112px; padding:16px 12px 0; display:grid; grid-template-columns:repeat(5,1fr); text-align:center; font-size:13.5px; font-weight:600; color:rgba(255,255,255,.7); background:linear-gradient(180deg,rgba(2,22,14,.55),rgba(2,22,14,.9)); border-top:1px solid rgba(255,255,255,.08)}
+.ph3__nav span{display:flex; flex-direction:column; align-items:center; gap:7px}
+.ph3__nav svg{width:30px; height:30px}
+.ph3__nav .on{color:#4fe0a6}
+.ph3__row b{font-size:14px; white-space:nowrap}
+.ph3__row strong{font-size:31px}
+
+/* ---------- no gaps: the page cannot be zoomed out below the phone's width, and an odd last card fills its row ---------- */
+html{max-width:100%}
+body{min-width:0; max-width:100vw}
+#homeTop,#homePop{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:1100px){
+  #homeTop,#homePop{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #homeTop > :last-child:nth-child(odd),#homePop > :last-child:nth-child(odd){grid-column:1 / -1}
+}
+@media (max-width:640px){
+  #homeTop,#homePop{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ---------- header must never be wider than the screen (this is what made phones zoom the page out) ---------- */
+@media (max-width:600px){
+  .hdr__in{gap:8px}
+  .brand{gap:9px; min-width:0}
+  .brand__mark{width:38px; height:38px}
+  .brand__word{font-size:1.2rem}
+  .hdr__auth .btn--ghost{display:none}      /* Sign in is in the menu */
+  .hdr__act{gap:8px; flex-shrink:0}
+}
+@media (max-width:430px){
+  .hdr__act > .theme-btn{display:none}      /* the menu has its own theme button */
+  .brand__word{font-size:1.12rem; letter-spacing:.03em}
+}
+@media (min-width:1261px) and (max-width:1340px){
+  .search{width:78px}
+}
+@media (min-width:1261px) and (max-width:1420px){
+  .hdr__nav a{padding:8px 6px; font-size:.8rem}
+  .hdr__nav a.nav-main{padding:8px 11px}
+  .search{width:78px}
+  .hdr__auth .btn{padding:0 14px}
+  .brand__word{font-size:1.2rem}
+  .brand__mark{width:42px; height:42px}
+}
+@media (min-width:1261px) and (max-width:1299px){
+  .search{display:none}
+}
+@media (min-width:1401px) and (max-width:1560px){
+  .hdr__nav a[href="#/refer"]{display:none}
+  .hdr__nav a{padding:8px 8px}
+}
+@media (min-width:1401px) and (max-width:1760px){
+  .search{width:140px}
+  .hdr__nav a[href="#/refer"]{display:none}
+}
+@media (min-width:1401px) and (max-width:1560px){
+  .hdr__nav a{padding:8px 6px}
+  .search{width:120px}
+}
+
+/* ============================================================
+   Site-wide light theme: the cream and soft green of the home page hero, on every page.
+   Only the colour tokens change, so every page, panel, form and table follows. Dark mode keeps its own tokens.
+   ============================================================ */
+:root{
+  --paper:#f7f6ea;        /* warm cream page */
+  --surface:#fffefa;      /* cards, panels, inputs */
+  --hdr-bg:rgba(247,246,234,.92);
+  --mist:#eef3e2;         /* alternate sections */
+  --mint:#dfeedb;
+  --line:#dde5cf;
+  --line-soft:#e8eedb;
+  --leaf-soft:#d9efdf;
+}
+html:not([data-theme="dark"]) body{background:linear-gradient(180deg,#f7f6ea 0%,#f1f5e6 60%,#eaf3e4 100%) fixed}
+/* home page sections below the hero follow the same cream and soft green */
+.hx ~ .section{background:transparent}
+.hx ~ .section--mist{background:rgba(223,238,219,.55)}
+.hx ~ .section:nth-of-type(odd){background-image:radial-gradient(700px 320px at 12% 0%,rgba(23,160,106,.10),transparent 70%)}
+.hx ~ .section .panel,.hx ~ .section .duo__c:not(.duo__c--dark),.hx ~ .section .accordion{background:var(--surface)}
+.footer,.ftr{background:#eef3e2}
+html[data-theme="dark"] .hx ~ .section{background:#0f1f18}
+html[data-theme="dark"] .hx ~ .section--mist{background:#0b1812}

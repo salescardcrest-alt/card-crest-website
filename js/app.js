@@ -15,6 +15,8 @@
     var u = Auth.current();
     var sheetAdmin = d.getElementById('sheetAdmin');   // the mobile menu link is only for staff
     if (sheetAdmin) sheetAdmin.hidden = !(u && u.role === 'admin');
+    var sheetLogin = d.getElementById('sheetLogin');   // the header Sign in button is hidden on small phones, so the menu has one
+    if (sheetLogin) sheetLogin.hidden = !!u;
 
     if (!u) {
       slot.innerHTML =
@@ -301,6 +303,15 @@
     setTimeout(function () { App.askNotifications(false); }, 4000);
   });
   /* ---------------- boot ---------------- */
+  /* The logo always goes to the home page: when you are already there it scrolls to the top, and the mobile menu closes. */
+  d.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a.brand');
+    if (!a) return;
+    var sheet = d.getElementById('sheet');
+    if (sheet && !sheet.hidden && sheet.contains(a)) { var x = d.getElementById('sheetClose'); if (x) x.click(); }
+    if ((w.location.hash || '#/') === '#/' || w.location.hash === '') { e.preventDefault(); w.scrollTo({ top: 0, behavior: 'smooth' }); }
+  });
+
   App.start = function () {
     /* A friend's link, https://cardcrest.in/join?ref=CC-RAVI-1A2B, opens sign up with the code already in place. */
     try {
