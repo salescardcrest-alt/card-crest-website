@@ -6,16 +6,91 @@
   var UI = w.CC.UI, C = w.CC.Cards, O = w.CC.Offers, DATA = w.CC.DATA;
   w.CC.Pages = w.CC.Pages || {};
 
-  var INTENTS = [
-    ['cashback', 'Cashback', 'Money straight back on what you spend'],
-    ['travel', 'Travel', 'Lounges, low forex, airline points'],
-    ['rewards', 'Rewards', 'Points that convert to real value'],
-    ['fuel', 'Fuel', 'Surcharge waivers and pump cashback'],
-    ['shopping', 'Shopping', 'Accelerated rates at big retailers'],
-    ['dining', 'Dining', 'Restaurants and food delivery'],
-    ['premium', 'Premium', 'Concierge, golf, unlimited lounge'],
-    ['lifetime-free', 'Lifetime free', 'No annual fee, ever']
+  function ico(path) {
+    return '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + path + '</svg>';
+  }
+  /* the four things Card Crest is for, in the order they are shown everywhere on this page */
+  var PRODUCTS = [
+    { key: 'lounge', name: 'Lounge Access', href: '#/market/new/lounge', cta: 'Get lounge access', price: '₹500 domestic · ₹1,000 international',
+      blurb: 'Walk into an airport lounge without holding the card that unlocks it.',
+      icon: ico('<path d="M21 15.5 13.5 11V5.5a1.5 1.5 0 0 0-3 0V11L3 15.5V17l7.5-2v3.5L9 20v1.2l3-.8 3 .8V20l-1.5-1.5V15L21 17z"/>') },
+    { key: 'movie', name: 'Movie Tickets', href: '#/market/new/movie', cta: 'Book a movie offer', price: 'Buy 1 get 1 · ₹500 off on 2 seats',
+      blurb: 'Use a card that carries the movie offer and pay a lot less at the box office.',
+      icon: ico('<circle cx="7.5" cy="6.5" r="4"/><circle cx="16" cy="6.5" r="4"/><rect x="2.5" y="11.5" width="14" height="9" rx="1.8"/><path d="M16.5 14.5 21.5 12v8l-5-2.5"/>') },
+    { key: 'pay', name: 'Pay & Earn', href: '#/market/new/pay', cta: 'Start Pay & Earn', price: 'Pay with someone’s card offer',
+      blurb: 'Share your payment link. A cardholder pays with their card, you get the discount.',
+      icon: ico('<rect x="2.5" y="6.5" width="19" height="11" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 12h.01M18 12h.01"/>') },
+    { key: 'order', name: 'Order & Earn', href: '#/market/new/order', cta: 'Start Order & Earn', price: 'Delivered to your door, at a discount',
+      blurb: 'A cardholder places the order with their card offer and ships it to you.',
+      icon: ico('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="6.4"/><path d="M9.6 9.2h4.8M9.6 11.4h4.8M10 9.2c3.2 0 3.2 4.4 0 4.4h-.4l3.4 2.2"/>') }
   ];
+
+
+  /* Product tiles lean toward the pointer and the ticket stack drifts with it. Skipped for touch and reduced motion. */
+  function tilt(root) {
+    if (w.matchMedia('(prefers-reduced-motion: reduce)').matches || !w.matchMedia('(hover: hover)').matches) return;
+    root.querySelectorAll('.bt').forEach(function (el) {
+      el.addEventListener('pointermove', function (e) {
+        var r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+        el.style.transform = 'translateY(-10px) perspective(900px) rotateY(' + (x * 10).toFixed(2) + 'deg) rotateX(' + (-y * 10).toFixed(2) + 'deg)';
+      });
+      el.addEventListener('pointerleave', function () { el.style.transform = ''; });
+    });
+    var mh = root.querySelector('.mh'), deck = root.querySelector('.mh__deck');
+    if (!mh || !deck) return;
+    mh.addEventListener('pointermove', function (e) {
+      var r = mh.getBoundingClientRect();
+      deck.style.transform = 'rotateY(' + (((e.clientX - r.left) / r.width - .5) * -14).toFixed(2) + 'deg) rotateX(' + (((e.clientY - r.top) / r.height - .5) * 8).toFixed(2) + 'deg)';
+    });
+  }
+
+  /* Hero: the scene image stays fixed, buttons pull toward it, and a bar at the top shows scroll progress. */
+  function fx(root) {
+    var reduced = w.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var hx = root.querySelector('.hx'), prog = root.querySelector('#ccProg');
+    if (hx && !reduced && w.matchMedia('(hover: hover)').matches) {
+      hx.querySelectorAll('.hx__btn').forEach(function (b) {
+        b.addEventListener('pointermove', function (e) {
+          var r = b.getBoundingClientRect();
+          b.style.transform = 'translate(' + ((e.clientX - r.left - r.width / 2) * .2).toFixed(1) + 'px,' + ((e.clientY - r.top - r.height / 2) * .3).toFixed(1) + 'px)';
+        });
+        b.addEventListener('pointerleave', function () { b.style.transform = ''; });
+      });
+    }
+    /* on desktop the hero is exactly as tall as the space left under the header, so it covers the whole screen */
+    var hxEl = root.querySelector('.hx');
+    if (hxEl) {
+      var sizeHero = function () {
+        if (!hxEl.isConnected) return w.removeEventListener('resize', sizeHero);
+        if (w.innerWidth < 1025) { hxEl.style.removeProperty('--hx-h'); return; }
+        var top = hxEl.getBoundingClientRect().top + (w.scrollY || 0);
+        hxEl.style.setProperty('--hx-h', Math.max(520, w.innerHeight - top) + 'px');
+      };
+      sizeHero(); w.addEventListener('resize', sizeHero);
+      var stripX = d.getElementById('demoStripX');
+      if (stripX) stripX.addEventListener('click', function () { setTimeout(sizeHero, 50); });
+      setTimeout(sizeHero, 300);
+    }
+    /* the green headline word changes every 2.4 seconds */
+    var rot = root.querySelector('#hxRot b');
+    if (rot && !reduced) {
+      var words = ['Swipe', 'Spend', 'Lounge Visit', 'Movie Night', 'Online Order', 'Payment'], wi = 0;
+      var timer = setInterval(function () {
+        if (!rot.isConnected) return clearInterval(timer);
+        wi = (wi + 1) % words.length;
+        rot.className = 'out';
+        setTimeout(function () { rot.textContent = words[wi]; rot.className = 'in'; }, 340);
+      }, 2400);
+    }
+    if (prog) {
+      var onScroll = function () {
+        if (!prog.isConnected) return w.removeEventListener('scroll', onScroll);
+        var h = d.documentElement.scrollHeight - w.innerHeight;
+        prog.style.transform = 'scaleX(' + (h > 0 ? Math.min(1, w.scrollY / h) : 0) + ')';
+      };
+      w.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+    }
+  }
 
   w.CC.Pages.home = function () {
     /* Amex Platinum Travel is listed under See all cards, not on the home page */
@@ -25,25 +100,88 @@
     var bestCard = top[0];
     var bestScore = C.score(bestCard);
     var ringCards = C.topByScore(9);
+    var cu = w.CC.Auth && w.CC.Auth.current && w.CC.Auth.current();
+    var firstName = cu && cu.name ? String(cu.name).split(' ')[0] : 'Ayush';
 
     var html =
-      /* ---- hero ---- */
-      '<section class="hero"><div class="wrap hero__in">' +
-        '<div>' +
-          '<span class="hero__tag"><span class="dot"></span>' + C.all().length + ' cards scored on what they return</span>' +
-          '<h1 class="h-display">Get more value from <em>every card</em></h1>' +
-          '<p class="lede">Most people carry the wrong card for the way they actually spend. Card Crest scores every card on what it gives back against what it costs, then stacks cashback on top.</p>' +
-          '<div class="hero__cta">' +
-            '<a class="btn btn--primary btn--lg" href="#/eligibility">Find my card</a>' +
-            '<a class="btn btn--ghost btn--lg" href="#/cards">Browse all cards</a>' +
-          '</div>' +
-          '<div class="hero__proof">' +
-            '<div><strong data-count="' + C.all().length + '">' + C.all().length + '</strong><span>Cards scored</span></div>' +
-            '<div><strong data-count="' + O.stores().length + '">' + O.stores().length + '</strong><span>Cashback stores</span></div>' +
-            '<div><strong data-count="' + O.all().length + '">' + O.all().length + '</strong><span>Live offers</span></div>' +
-            '<div><strong data-count="' + Math.round(bestScore.value.net) + '" data-money="1">' + UI.money(bestScore.value.net) + '</strong><span>Top card\'s net annual value</span></div>' +
+      /* ---- hero: the four products ---- */
+      '<div class="scrollbar" id="ccProg" aria-hidden="true"></div>' +
+      '<section class="hx">' +
+      '<div class="hx__top">' +
+        '<img class="hx__art" src="assets/hero/scene.jpg" width="1307" height="805" alt="The Card Crest app on a phone in an airport lounge, with floating Lounge, Movies, Offers and Pay &amp; Earn tiles" fetchpriority="high">' +
+        '<div class="wrap hx__in">' +
+          '<div class="hx__copy">' +
+            '<span class="hx__pill"><span class="dot"></span>More Spend. More Rewards.</span>' +
+            '<h1 class="hx__h">Get More Value From <br><em class="hx__rot" id="hxRot"><b>Swipe</b></em></h1>' +
+            '<p class="hx__lede">Unlock airport lounges, movie tickets, cashback, exclusive offers and more — with the cards you already own.</p>' +
+            '<div class="hx__cta">' +
+              '<a class="hx__btn hx__btn--dark" href="#/market">Start Earning <span aria-hidden="true">↗</span></a>' +
+              '<a class="hx__btn hx__btn--light" href="#/how-it-works"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 8l6 4-6 4z" fill="currentColor"/></svg>See How It Works</a>' +
+            '</div>' +
+            '<div class="hx__trust">' +
+              '<div><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="9" r="2.6"/><path d="M17 14c2.8 0 4.5 1.8 4.5 4.6"/></svg><b>50K+</b><span>Users Earning</span></div>' +
+              '<div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.3"/></svg><b>1,000+</b><span>Live Offers</span></div>' +
+              '<div><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6 15h4"/></svg><b>25+</b><span>Trusted Partners</span></div>' +
+              '<div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg><b>4.8/5</b><span>User Rating</span></div>' +
+            '</div>' +
           '</div>' +
         '</div>' +
+      '</div>' +
+
+      '<div class="wrap hx__feat">' + [
+        ['lounge', 'Lounge Access', 'Relax before you fly.', 'Exclusive lounge offers.', 'card-lounge.jpg', '<path d="M21 15.5 13.5 11V5.5a1.5 1.5 0 0 0-3 0V11L3 15.5V17l7.5-2v3.5L9 20v1.2l3-.8 3 .8V20l-1.5-1.5V15L21 17z" fill="currentColor"/>'],
+        ['movie', 'Movie Tickets', 'Book. Watch. Earn.', 'Best deals on movies.', 'card-movie.jpg', '<path d="M5 9h14l-1.6 11H6.6z" fill="currentColor"/><path d="M7 9c0-3 2-4 3.5-3.4C11.5 4 14 4 14.6 5.6 16.5 5 18 6.5 17 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'],
+        ['pay', 'Pay & Earn', 'Shop with offers.', 'You save, they earn.', 'card-pay.jpg', '<path d="M5 8h14l-1 12H6z" fill="currentColor"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'],
+        ['order', 'Order & Earn', 'Get it delivered.', 'Earn on every order.', 'card-order.jpg?v=2', '<path d="M4 8l8-4 8 4v8l-8 4-8-4z" fill="currentColor"/><path d="M4 8l8 4 8-4M12 12v8" fill="none" stroke="#fff" stroke-width="1.4"/>']
+      ].map(function (f, i) {
+        return '<a class="hx__f hx__f--' + f[0] + '" href="' + PRODUCTS[i].href + '" style="--d:' + i + '" aria-label="' + f[1] + '">' +
+          '<img class="hx__fart" src="assets/hero/' + f[4] + '" alt="" loading="lazy">' +
+          '<span class="hx__fb"><svg viewBox="0 0 24 24" aria-hidden="true">' + f[5] + '</svg></span>' +
+          '<span class="hx__ft"><b>' + f[1] + '</b><small>' + f[2] + '<br>' + f[3] + '</small></span>' +
+          '<span class="hx__go" aria-hidden="true">→</span></a>';
+      }).join('') + '</div>' +
+      '</section>' +
+
+      /* ---- product bento ---- */
+      '<section class="section"><div class="wrap">' +
+        '<div class="section__head"><div class="eyebrow">What you can do</div>' +
+        '<h2 class="h1">Four ways to <em>pay less</em> with a card you don’t have</h2></div>' +
+        '<div class="bento">' + PRODUCTS.map(function (p, i) {
+          return '<a class="bt bt--' + p.key + ' reveal" href="' + p.href + '">' +
+            '<span class="bt__n">0' + (i + 1) + '</span>' +
+            '<span class="bt__ic">' + p.icon + '</span>' +
+            '<h3 class="bt__t">' + p.name + '</h3>' +
+            '<p class="bt__p">' + p.blurb + '</p>' +
+            '<span class="bt__price">' + p.price + '</span>' +
+            '<span class="bt__go">' + p.cta + ' <i>→</i></span>' +
+          '</a>';
+        }).join('') + '</div>' +
+      '</div></section>' +
+
+      /* ---- how it works for both sides ---- */
+      '<section class="section section--mist"><div class="wrap">' +
+        '<div class="section__head"><div class="eyebrow">Two sides, one safe deal</div>' +
+        '<h2 class="h1">Need a perk? Hold a card? <em>Both win.</em></h2></div>' +
+        '<div class="duo">' +
+          '<div class="duo__c reveal"><span class="duo__k">I want a benefit</span><ol>' +
+            '<li><b>Pick a product</b><span>Lounge, movie, Pay &amp; Earn or Order &amp; Earn.</span></li>' +
+            '<li><b>Pay into escrow</b><span>Your money is held, not handed over.</span></li>' +
+            '<li><b>Confirm and save</b><span>Released only after you confirm.</span></li></ol>' +
+            '<a class="btn btn--primary" href="#/market">Get a benefit</a></div>' +
+          '<div class="duo__c duo__c--dark reveal"><span class="duo__k">I have a card</span><ol>' +
+            '<li><b>Add your card</b><span>Bank and variant only. Never the number.</span></li>' +
+            '<li><b>Accept a request</b><span>See only what your card can fulfil.</span></li>' +
+            '<li><b>Get paid</b><span>Reimbursement plus your earning, to your wallet.</span></li></ol>' +
+            '<a class="btn btn--soft" href="#/market/cards">Add my card</a></div>' +
+        '</div>' +
+      '</div></section>' +
+
+      /* ---- credit cards (the ring) ---- */
+      '<section class="section"><div class="wrap">' +
+        '<div class="spread section__head"><div><div class="eyebrow">Also on Card Crest</div>' +
+        '<h2 class="h1">Find the card that <em>returns the most</em></h2>' +
+        '<p class="lede">' + C.all().length + ' cards scored on what they give back against what they cost.</p></div>' +
+        '<div class="row row--wrap"><a class="btn btn--primary" href="#/eligibility">Find my card</a><a class="btn btn--ghost" href="#/cards">Browse all cards</a></div></div>' +
         '<div class="stage" id="heroStage" style="--step:' + (360 / ringCards.length) + 'deg">' +
           '<div class="stage__floor" aria-hidden="true"><i></i><i></i><i></i></div>' +
           '<div class="ring">' + ringCards.map(function (c, i) {
@@ -58,15 +196,12 @@
           '</div>' +
           '<div class="stage__hint" aria-hidden="true">Drag to spin</div>' +
         '</div>' +
-      '</div></section>' +
-
-      /* ---- intent ---- */
-      '<section class="section section--mist"><div class="wrap">' +
-        '<div class="section__head"><div class="eyebrow">Start here</div>' +
-        '<h2 class="h1">What do you want the card to <em>be good at</em>?</h2></div>' +
-        '<div class="intent">' + INTENTS.map(function (i) {
-          return '<a class="reveal" href="#/cards?type=' + i[0] + '"><b>' + i[1] + '</b><span>' + i[2] + '</span></a>';
-        }).join('') + '</div>' +
+        '<div class="hero__proof">' +
+          '<div><strong data-count="' + C.all().length + '">' + C.all().length + '</strong><span>Cards scored</span></div>' +
+          '<div><strong data-count="' + O.stores().length + '">' + O.stores().length + '</strong><span>Cashback stores</span></div>' +
+          '<div><strong data-count="' + O.all().length + '">' + O.all().length + '</strong><span>Live offers</span></div>' +
+          '<div><strong data-count="' + Math.round(bestScore.value.net) + '" data-money="1">' + UI.money(bestScore.value.net) + '</strong><span>Top card\'s net annual value</span></div>' +
+        '</div>' +
       '</div></section>' +
 
       /* ---- highest value ---- */
@@ -178,6 +313,8 @@
       html: html,
       mount: function (root) {
         w.CC.Hero.mount(root);
+        tilt(root);
+        fx(root);
         w.CC.Render.bindCompare(root);
         w.CC.Render.bindOfferActions(root);
       }
