@@ -427,18 +427,17 @@
     return { title: 'My requests | Share & Earn | Card Crest', html: shell('/market/requests', inner), mount: function (root) { fresh(root); onChange(root, w.CC.Router.refresh); } };
   };
 
-  /* ---------------- Pay & Earn: every Order & Earn request you made, with all its details ---------------- */
-  w.CC.Pages.marketPayEarn = function () {
+  /* ---------------- Pay & Earn: requests a cardholder can fulfil by paying with their own card, and the ones they accepted ---------------- */
+  w.CC.Pages.marketPayEarn = function (params, q) {
     if (!Auth.require()) return false;
     var u = Auth.current();
-    var list = M.asBuyer(u.id).filter(function (r) { return r.module === 'PAY' || r.module === 'ORDER'; });
     function kv(k, v) { return v ? '<div class="deal-line"><span>' + k + '</span><strong>' + v + '</strong></div>' : ''; }
     function openLink(u2) { return '<a href="' + esc(openable(u2)) + '" target="_blank" rel="noopener noreferrer">Open</a> · <a href="#" data-copy-link="' + esc(u2) + '">Copy</a>'; }
     var tasks = M.asHolder(u.id).filter(function (r) { return r.module === 'PAY' || r.module === 'ORDER'; });
     function card(r, holder) {
       var x = r.details || {}, a = x.address, s = r.feeSnapshot || {};
       var earn = holder ? Number(s.holderFee) : Number(s.saved);
-      return '<div class="panel" style="margin-bottom:16px"><div class="spread" style="gap:12px; flex-wrap:wrap; margin-bottom:10px"><div><span class="badge badge--info">Order &amp; Earn</span> ' + badge(r.status) +
+      return '<div class="panel" style="margin-bottom:16px"><div class="spread" style="gap:12px; flex-wrap:wrap; margin-bottom:10px"><div><span class="badge badge--info">' + MODS[r.module].short + '</span> ' + badge(r.status) +
         '<h2 class="h3" style="margin-top:8px">' + esc(titleOf(r)) + '</h2></div><a class="btn btn--ghost btn--sm" href="#/market/r/' + r.id + '">Open request</a></div>' +
         kv('Shopping site', esc(x.platform)) + (x.url ? kv('Product link', openLink(x.url)) : '') + (x.payUrl ? kv('Payment link', openLink(x.payUrl)) : '') +
         kv('Card', esc(UI.sentence(x.cardName) || bankName(x.bank))) + kv('Offer wanted', esc(UI.sentence(x.offerWanted))) +
@@ -448,12 +447,22 @@
         kv('Requested', dt(r.createdAt)) +
         (earn > 0 ? '<div class="deal-get mk-earn"><span>You earn<small>' + (holder ? 'Your earning on this request' : 'Your discount on this request') + '</small></span><strong>' + money(earn) + '</strong></div>' : '') + '</div>';
     }
-    var cards = (tasks.length ? '<h2 class="h2" style="margin-bottom:14px">Requests you accepted</h2>' + tasks.map(function (r) { return card(r, true); }).join('') : '') +
-      (list.length ? (tasks.length ? '<h2 class="h2" style="margin:24px 0 14px">Requests you made</h2>' : '') + list.map(function (r) { return card(r, false); }).join('') : '');
-    var inner = '<div class="spread section__head"><div><h1 class="h1">Pay &amp; Earn</h1><p class="lede">Requests you made and requests you accepted, with every detail: payment link, shopping site and delivery address.</p></div></div>' +
-      (cards || UI.empty('No requests yet', 'Create an Order & Earn request and it shows up here with all its details.', 'Start a request', '#/market/new/pay'));
+    var tab = (q && q.t) === 'tasks' ? 'tasks' : 'open', cards = M.cards(u.id);
+    var open = M.openFor(u.id).filter(function (o) { return o.request.module === 'PAY' || o.request.module === 'ORDER'; })
+      .sort(function (a, b) { return (b.eligible ? 1 : 0) - (a.eligible ? 1 : 0); });
+    var fit = open.filter(function (o) { return o.eligible; }).length;
+    var openHtml = !cards.length
+      ? UI.empty('Add a card to start earning', 'Tell us which cards you hold (bank and variant only, never the card number). We then show the requests you can pay with your own card.', 'Add a card', '#/market/cards')
+      : open.length ? '<div class="stack">' + open.map(jobCard).join('') + '</div>' : UI.empty('No requests to fulfil right now', 'New Pay & Earn and Order & Earn requests appear here as buyers pay. Check back soon.');
+    var taskHtml = tasks.length ? tasks.map(function (r) { return card(r, true); }).join('') : UI.empty('Nothing accepted yet', 'Requests you accept show up here with the payment link, shopping site and delivery address.');
+    var inner = '<div class="spread section__head"><div><h1 class="h1">Pay &amp; Earn</h1><p class="lede">Requests you can fulfil by paying with your own card. You pay, get reimbursed, and earn on top. Requests you made yourself are under <a href="#/market/requests">My requests</a>.</p></div></div>' +
+      '<div class="tabs"><button class="' + (tab === 'open' ? 'is-on' : '') + '" data-tab="open">Requests to fulfil (' + fit + ')</button>' +
+      '<button class="' + (tab === 'tasks' ? 'is-on' : '') + '" data-tab="tasks">Accepted by me (' + tasks.length + ')</button></div>' +
+      (tab === 'open' ? openHtml : taskHtml);
     return { title: 'Pay & Earn | Share & Earn | Card Crest', html: shell('/market/pay-earn', inner), mount: function (root) {
       fresh(root); onChange(root, w.CC.Router.refresh);
+      bindAccept(root);
+      root.querySelectorAll('[data-tab]').forEach(function (b) { b.onclick = function () { w.CC.Router.go('#/market/pay-earn?t=' + b.dataset.tab); }; });
       root.querySelectorAll('[data-copy-link]').forEach(function (b) {
         b.addEventListener('click', function (e) { e.preventDefault(); var t = b.getAttribute('data-copy-link'); try { navigator.clipboard.writeText(t); UI.toast('Link copied'); } catch (err) { UI.toast('Could not copy', 'error'); } });
       });
@@ -461,6 +470,33 @@
   };
 
   /* ---------------- earn ---------------- */
+  /* One open request a cardholder can pick up: what it is, what they earn, and (when their card fits) a card choice and Accept. */
+  function jobCard(o) {
+    var r = o.request, s = r.feeSnapshot, x = r.details || {}, cardReq = r.module === 'LOUNGE' ? '' : esc(UI.sentence(x.cardName) || bankName(x.bank));
+    return '<div class="panel mk-job' + (o.eligible ? '' : ' is-off') + '" data-id="' + r.id + '">' +
+      '<div class="spread" style="align-items:flex-start; gap:18px; flex-wrap:wrap"><div style="flex:1; min-width:240px"><span class="badge badge--info">' + MODS[r.module].short + '</span>' +
+      '<h3 class="h3" style="margin:8px 0 4px">' + esc(titleOf(r)) + '</h3><div class="small muted">' + esc(subOf(r)) + '</div>' +
+      (cardReq ? '<div class="small muted" style="margin-top:4px">Card: ' + cardReq + '</div>' : '') +
+      (r.module === 'PAY' || r.module === 'ORDER' ? '<div class="small muted" style="margin-top:4px">Listed ' + money(x.listPrice) + ' · you pay ' + money(s.reimbursement) + ' with your card</div>' : '') +
+      '<div class="small muted" style="margin-top:4px">Open for ' + left(r.acceptBy) + '</div></div>' +
+      '<div style="text-align:right"><div class="muted small">You earn</div><div style="font-size:1.5rem; font-weight:800">' + money(s.holderFee) + '</div>' +
+      (s.reimbursement ? '<div class="small muted">plus ' + money(s.reimbursement) + ' reimbursed</div>' : '') + '</div></div>' +
+      (o.eligible
+        ? '<div class="row row--wrap" style="margin-top:14px; gap:10px"><select data-card style="max-width:280px">' + o.cards.map(function (c) { return '<option value="' + c.id + '">' + esc(bankName(c.bank)) + ' ' + esc(c.variant) + '</option>'; }).join('') + '</select>' +
+          '<button class="btn btn--primary btn--sm" data-accept>Accept request</button></div>'
+        : '<p class="small muted" style="margin-top:12px">Not for your cards: ' + esc(o.why) + '</p>') + '</div>';
+  }
+  function bindAccept(root) {
+    root.querySelectorAll('.mk-job [data-accept]').forEach(function (b) {
+      b.onclick = function () {
+        var card = b.closest('.mk-job'), id = card.dataset.id; busy(b, true, 'Accepting…');
+        M.do('accept', { id: id, cardId: card.querySelector('[data-card]').value }).then(function (r) {
+          if (!r.ok) { busy(b, false, true); UI.toast(r.error, 'error'); w.CC.Router.refresh(); return; }
+          UI.toast('It’s yours. Upload proof once you have done it.'); w.CC.Router.go('#/market/r/' + id);
+        });
+      };
+    });
+  }
   w.CC.Pages.marketEarn = function (params, q) {
     if (!Auth.require()) return false;
     var u = Auth.current(), tab = (q && q.t) || 'open';
@@ -470,20 +506,7 @@
 
     var openHtml = !cards.length
       ? UI.empty('Add a card to start earning', 'Tell us which benefits your cards carry (bank and variant only). We then show requests they can fulfil.', 'Add a card', '#/market/cards')
-      : open.length ? '<div class="stack">' + open.map(function (o) {
-        var r = o.request, s = r.feeSnapshot;
-        return '<div class="panel mk-job' + (o.eligible ? '' : ' is-off') + '" data-id="' + r.id + '">' +
-          '<div class="spread" style="align-items:flex-start; gap:18px; flex-wrap:wrap"><div style="flex:1; min-width:240px"><span class="badge badge--info">' + MODS[r.module].short + '</span>' +
-          '<h3 class="h3" style="margin:8px 0 4px">' + esc(titleOf(r)) + '</h3><div class="small muted">' + esc(subOf(r)) + '</div>' +
-          (r.module !== 'LOUNGE' ? '<div class="small muted" style="margin-top:4px">Card: ' + esc(UI.sentence(r.details.cardName) || bankName(r.details.bank)) + '</div>' : '') +
-          '<div class="small muted" style="margin-top:4px">Open for ' + left(r.acceptBy) + '</div></div>' +
-          '<div style="text-align:right"><div class="muted small">You earn</div><div style="font-size:1.5rem; font-weight:800">' + money(s.holderFee) + '</div>' +
-          (s.reimbursement ? '<div class="small muted">plus ' + money(s.reimbursement) + ' reimbursed</div>' : '') + '</div></div>' +
-          (o.eligible
-            ? '<div class="row row--wrap" style="margin-top:14px; gap:10px"><select data-card style="max-width:280px">' + o.cards.map(function (c) { return '<option value="' + c.id + '">' + esc(bankName(c.bank)) + ' ' + esc(c.variant) + '</option>'; }).join('') + '</select>' +
-              '<button class="btn btn--primary btn--sm" data-accept>Accept request</button></div>'
-            : '<p class="small muted" style="margin-top:12px">Not for your cards: ' + esc(o.why) + '</p>') + '</div>';
-      }).join('') + '</div>' : UI.empty('No open requests right now', 'New ones appear here as buyers pay. Check back soon.');
+      : open.length ? '<div class="stack">' + open.map(jobCard).join('') + '</div>' : UI.empty('No open requests right now', 'New ones appear here as buyers pay. Check back soon.');
 
     var inner = '<div class="section__head"><h1 class="h1">Earn &amp; Alerts</h1><p class="lede">Pick up requests your cards can fulfil. You pay with your own card, get reimbursed, and earn the service fee.</p></div>' +
       '<div class="mk-live"><span class="mk-live__dot" aria-hidden="true"></span><div class="mk-live__t"><strong>Live alerts are on.</strong> You are told the moment someone needs a service one of your cards can do, with no refresh needed.</div><div class="row row--wrap" style="gap:8px"><button class="btn btn--ghost btn--xs" id="soundBtn"></button><button class="btn btn--soft btn--xs" id="alertBtn" hidden>Get desktop alerts</button><button class="btn btn--soft btn--xs" id="emailBtn" type="button"></button></div></div>' +
@@ -539,15 +562,7 @@
           }, 20000);
         }
         root.querySelectorAll('[data-tab]').forEach(function (b) { b.onclick = function () { w.CC.Router.go((w.location.hash.indexOf('#/dashboard/earn') === 0 ? '#/dashboard/earn' : '#/market/earn') + '?t=' + b.dataset.tab); }; });
-        root.querySelectorAll('.mk-job [data-accept]').forEach(function (b) {
-          b.onclick = function () {
-            var card = b.closest('.mk-job'), id = card.dataset.id; busy(b, true, 'Accepting…');
-            M.do('accept', { id: id, cardId: card.querySelector('[data-card]').value }).then(function (r) {
-              if (!r.ok) { busy(b, false, true); UI.toast(r.error, 'error'); w.CC.Router.refresh(); return; }
-              UI.toast('It’s yours. Upload proof once you have done it.'); w.CC.Router.go('#/market/r/' + id);
-            });
-          };
-        });
+        bindAccept(root);
       }
     };
   };
