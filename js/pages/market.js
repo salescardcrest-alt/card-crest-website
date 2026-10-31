@@ -163,12 +163,11 @@
 
       '<h2 class="h2" style="margin-bottom:14px">I want a benefit</h2>' +
       '<div class="grid g-4" style="margin-bottom:34px">' +
-      Object.keys(MODS).filter(function (k) { return k !== 'ORDER'; }).map(function (k) { /* Order & Earn is now part of Pay & Earn */
+      ['LOUNGE', 'MOVIE', 'PAY', 'ORDER'].map(function (k) {
         var m = MODS[k];
         return '<a class="panel mk-tile" href="#/market/new/' + m.slug + '" data-service="' + m.slug + '"><span class="mk-tile__i mk-tile__i--' + m.slug + '">' + m.icon + '</span>' +
           '<strong>' + m.title + '</strong><span class="muted small">' + m.blurb + '</span><span class="mk-tile__go">Start a request →</span></a>';
-      }).join('') +
-      '<a class="panel mk-tile" href="#/market/pay-earn"><span class="mk-tile__i mk-tile__i--order">' + MODS.ORDER.icon + '</span><strong>Order & Earn</strong><span class="muted small">See your Order & Earn requests with the payment link, shopping site and delivery address.</span><span class="mk-tile__go">Open →</span></a></div>' +
+      }).join('') + '</div>' +
 
       '<h2 class="h2" style="margin-bottom:14px">I have a card</h2>' +
       '<div class="grid g-3" style="margin-bottom:34px">' +
@@ -253,7 +252,7 @@
         field('f-bank', 'Card the offer runs on', '<select id="f-bank">' + bankOptions() + '</select>', 'Pick a bank if the offer is tied to one.');
     },
     ORDER: function (pay) {
-      return '<div class="form-grid">' + (pay ? '' : field('f-url', 'Product link', '<input id="f-url" type="url" placeholder="https://www.amazon.in/…">')) +
+      return '<div class="form-grid">' + (pay ? '' : field('f-url', 'Product link', '<input id="f-url" type="url" placeholder="https://www.amazon.in/…">', 'Attach the product: paste its link. The cardholder orders it with their card and has it delivered to you.')) +
         field('f-plat', pay ? 'Shopping site or merchant' : 'Shopping site', '<select id="f-plat"><option>Amazon</option><option>Flipkart</option><option>Myntra</option><option>Ajio</option><option>Croma</option><option>Other</option></select>') + '</div>' +
         (pay ? field('f-pay', 'Final payment link', '<input id="f-pay" placeholder="Paste the payment link" autocomplete="off">',
           'The cardholder opens this link and pays. It must open without signing in.') : '') +
