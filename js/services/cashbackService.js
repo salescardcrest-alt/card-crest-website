@@ -31,6 +31,9 @@
        reference, which is how the affiliate network reports the order back. Otherwise the store's own site opens
        with the reference attached, so the session still carries a click id. */
     trackedUrl: function (txn) {
+      /* a tracker link set by staff in Admin → Tracker links comes first */
+      var set = w.CC.Trackers && w.CC.Trackers.get('store', txn.storeId);
+      if (set) return w.CC.Trackers.fill(set, { click: txn.id, user: txn.userId });
       var store = w.CC.Offers.store(txn.storeId), cfg = (w.CC_CONFIG && w.CC_CONFIG.AFFILIATE_LINKS) || {};
       if (cfg[txn.storeId]) return String(cfg[txn.storeId]).replace(/\{click\}/g, encodeURIComponent(txn.id));
       var domain = store && (store.domain || w.CC.DATA.storeDomains[store.id]);

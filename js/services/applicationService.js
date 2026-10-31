@@ -39,6 +39,9 @@
     trackedUrl: function (app) {
       var card = w.CC.Cards.byId(app.cardId), bank = card && w.CC.Cards.bank(card.bank);
       var ref = Applications.partnerRef(card ? card.bank : ''), cfg = (w.CC_CONFIG && w.CC_CONFIG.APPLY_LINKS) || {};
+      /* a tracker link set by staff in Admin → Tracker links comes first: this card's own, then the bank's */
+      var T = w.CC.Trackers, set = T && (T.get('card', app.cardId) || (card && T.get('bank', card.bank)));
+      if (set) return T.fill(set, { click: app.id, ref: ref, user: app.userId });
       var tpl = cfg[app.cardId] || (card && cfg[card.bank]);
       if (tpl) return String(tpl).replace(/\{ref\}/g, encodeURIComponent(ref)).replace(/\{click\}/g, encodeURIComponent(app.id));
       /* straight to the bank's credit card application pages (a card can set its own applyUrl), not the homepage */

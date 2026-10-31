@@ -165,10 +165,10 @@
       '<div class="grid g-4" style="margin-bottom:34px">' +
       Object.keys(MODS).filter(function (k) { return k !== 'ORDER'; }).map(function (k) { /* Order & Earn is now part of Pay & Earn */
         var m = MODS[k];
-        return '<a class="panel mk-tile" href="#/market/new/' + m.slug + '"><span class="mk-tile__i mk-tile__i--' + m.slug + '">' + m.icon + '</span>' +
+        return '<a class="panel mk-tile" href="#/market/new/' + m.slug + '" data-service="' + m.slug + '"><span class="mk-tile__i mk-tile__i--' + m.slug + '">' + m.icon + '</span>' +
           '<strong>' + m.title + '</strong><span class="muted small">' + m.blurb + '</span><span class="mk-tile__go">Start a request →</span></a>';
       }).join('') +
-      '<a class="panel mk-tile" href="#/market/pay-earn"><span class="mk-tile__i mk-tile__i--order">' + MODS.ORDER.icon + '</span><strong>Pay & Earn</strong><span class="muted small">See your Order & Earn requests with the payment link, shopping site and delivery address.</span><span class="mk-tile__go">Open →</span></a></div>' +
+      '<a class="panel mk-tile" href="#/market/pay-earn"><span class="mk-tile__i mk-tile__i--order">' + MODS.ORDER.icon + '</span><strong>Order & Earn</strong><span class="muted small">See your Order & Earn requests with the payment link, shopping site and delivery address.</span><span class="mk-tile__go">Open →</span></a></div>' +
 
       '<h2 class="h2" style="margin-bottom:14px">I have a card</h2>' +
       '<div class="grid g-3" style="margin-bottom:34px">' +

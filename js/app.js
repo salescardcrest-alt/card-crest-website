@@ -312,6 +312,20 @@
     if ((w.location.hash || '#/') === '#/' || w.location.hash === '') { e.preventDefault(); w.scrollTo({ top: 0, behavior: 'smooth' }); }
   });
 
+  /* A product or service with a tracker link set in Admin → Tracker links opens that link (in a new tab) instead of
+     the built-in page. Without a link it works as before. */
+  d.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[data-service]');
+    if (!a || e.defaultPrevented || e.button > 0 || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    var T = w.CC.Trackers, url = T && T.serviceUrl(a.getAttribute('data-service'));
+    if (!url) return;
+    e.preventDefault();
+    var sheet = d.getElementById('sheet');
+    if (sheet && !sheet.hidden && sheet.contains(a)) { var x = d.getElementById('sheetClose'); if (x) x.click(); }
+    var win = w.open(url, '_blank', 'noopener');
+    if (!win) w.location.href = url;                 // pop-up blocked: go there in this tab instead
+  });
+
   App.start = function () {
     /* A friend's link, https://cardcrest.in/join?ref=CC-RAVI-1A2B, opens sign up with the code already in place. */
     try {

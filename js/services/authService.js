@@ -42,6 +42,7 @@
   });
   w.CC.Sync.init(sb);
   if (w.CC.Market) w.CC.Market.init(sb);
+  if (w.CC.Trackers) w.CC.Trackers.init(sb);
 
   /* Load this user's server-side rows into the local store. */
   function hydrate(u) {

@@ -198,7 +198,7 @@
         ['pay', 'Pay & Earn', 'Shop with offers.', 'You save, they earn.', 'card-pay.jpg', '<path d="M5 8h14l-1 12H6z" fill="currentColor"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'],
         ['order', 'Order & Earn', 'Get it delivered.', 'Earn on every order.', 'card-order.jpg?v=2', '<path d="M4 8l8-4 8 4v8l-8 4-8-4z" fill="currentColor"/><path d="M4 8l8 4 8-4M12 12v8" fill="none" stroke="#fff" stroke-width="1.4"/>']
       ].map(function (f, i) {
-        return '<a class="hx__f hx__f--' + f[0] + '" href="' + PRODUCTS[i].href + '" style="--d:' + i + '" aria-label="' + f[1] + '">' +
+        return '<a class="hx__f hx__f--' + f[0] + '" href="' + PRODUCTS[i].href + '" data-service="' + f[0] + '" style="--d:' + i + '" aria-label="' + f[1] + '">' +
           '<img class="hx__fart" src="assets/hero/' + f[4] + '" alt="" loading="lazy">' +
           '<span class="hx__fb"><svg viewBox="0 0 24 24" aria-hidden="true">' + f[5] + '</svg></span>' +
           '<span class="hx__ft"><b>' + f[1] + '</b><small>' + f[2] + '<br>' + f[3] + '</small></span>' +
@@ -211,7 +211,7 @@
         '<div class="section__head"><div class="eyebrow">What you can do</div>' +
         '<h2 class="h1">Four ways to <em>pay less</em> with a card you don’t have</h2></div>' +
         '<div class="bento">' + PRODUCTS.map(function (p, i) {
-          return '<a class="bt bt--' + p.key + ' reveal" href="' + p.href + '">' +
+          return '<a class="bt bt--' + p.key + ' reveal" href="' + p.href + '" data-service="' + p.key + '">' +
             '<span class="bt__n">0' + (i + 1) + '</span>' +
             '<span class="bt__ic">' + p.icon + '</span>' +
             '<h3 class="bt__t">' + p.name + '</h3>' +

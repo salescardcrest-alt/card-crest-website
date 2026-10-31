@@ -521,12 +521,12 @@
   var GROUPS = [
     ['Daily work', ['overview', 'approvals', 'transactions', 'rewards', 'applications', 'referrals', 'support']],
     ['Members and messages', ['users', 'announce']],
-    ['Catalogue', ['cards', 'stores', 'offers']],
+    ['Catalogue', ['cards', 'stores', 'offers', 'trackers']],
     ['Share & Earn', ['market', 'mk-disputes', 'mk-kyc', 'mk-fees', 'mk-payouts', 'mk-reports']],
     ['Staff', ['activity']]
   ];
   var ICON = { overview: '\u25A6', approvals: '\u2713', transactions: '\u21C4', rewards: '\u2605', applications: '\u25A4', referrals: '\u2726', support: '?',
-    users: '\u263A', announce: '\u2709', cards: '\u25AD', stores: '\u25A3', offers: '%', market: '\u21CC', 'mk-disputes': '!', 'mk-kyc': '\u25C9',
+    trackers: '\u21AA', users: '\u263A', announce: '\u2709', cards: '\u25AD', stores: '\u25A3', offers: '%', market: '\u21CC', 'mk-disputes': '!', 'mk-kyc': '\u25C9',
     'mk-fees': '\u20B9', 'mk-payouts': '\u2197', 'mk-reports': '\u2191', activity: '\u2630' };
   function adminNav(active) {
     var AX = w.CC.AdminPlus, c = AX && AX.counts ? AX.counts() : null, n = {};
@@ -556,7 +556,7 @@
     /* extra staff tools plug in here: Reward approvals, announcements, activity log, then the Share & Earn sections */
     if (!merged) {
       merged = true;
-      [w.CC.AdminPlus, w.CC.MarketAdmin].filter(Boolean).forEach(function (ext) {
+      [w.CC.AdminPlus, w.CC.MarketAdmin, w.CC.TrackerAdmin].filter(Boolean).forEach(function (ext) {
         var at = 1;
         ext.sections.forEach(function (s) {
           if (SECTIONS.some(function (x) { return x[0] === s[0]; })) return;
@@ -595,7 +595,7 @@
           }, 180));
         }
 
-        [w.CC.AdminPlus, w.CC.MarketAdmin].forEach(function (ext) { if (ext) ext.bind(root); });
+        [w.CC.AdminPlus, w.CC.MarketAdmin, w.CC.TrackerAdmin].forEach(function (ext) { if (ext) ext.bind(root); });
 
         /* status selects */
         root.querySelectorAll('[data-txn]').forEach(function (sel) {
