@@ -10,7 +10,7 @@
 
   var MA = { sections: [
     ['market', 'Marketplace'], ['mk-disputes', 'Disputes'], ['mk-kyc', 'KYC'],
-    ['mk-fees', 'Fees'], ['mk-payouts', 'Payouts'], ['mk-reports', 'Revenue']
+    ['mk-sharing', 'Reward sharing'], ['mk-fees', 'Fees'], ['mk-payouts', 'Payouts'], ['mk-reports', 'Revenue']
   ], views: {} };
 
   var STATUS_TONE = { SETTLED: 'ok', CONFIRMED: 'ok', PAID: 'info', ACCEPTED: 'warn', FULFILLED: 'warn', DISPUTED: 'danger', CREATED: 'grey', EXPIRED: 'grey', CANCELLED: 'grey', REFUNDED: 'grey' };
@@ -141,6 +141,56 @@
     });
   }
 
+  /* ---------------- reward sharing: one page for all four products ---------------- */
+  var SHARE = [
+    ['ORDER', 'Order & Earn', 'The saving on the order is shared three ways.'],
+    ['PAY', 'Pay & Earn', 'The saving on the payment is shared three ways.'],
+    ['LOUNGE', 'Lounge Access', 'The buyer pays one price. Card Crest keeps its part and the cardholder gets the rest.'],
+    ['MOVIE', 'Movie Tickets', 'The buyer pays a service fee. Card Crest keeps its part and the cardholder gets the rest.']
+  ];
+  function shNum(k, label, v, extra) {
+    return '<div class="field"><label>' + label + '</label><div class="row" style="gap:6px; flex-wrap:nowrap"><input type="number" step="any" min="0" data-sh-k="' + k + '" value="' + (v == null ? '' : v) + '" style="height:40px"' + (extra || '') + '></div></div>';
+  }
+  function shRow(f) {
+    var body;
+    if (f.mode === 'SPLIT') {
+      body = '<div class="form-grid" style="grid-template-columns:repeat(3,1fr); gap:10px">' + shNum('buyerPct', 'Buyer (%)', f.buyerPct) + shNum('holderPct', 'Cardholder (%)', f.holderPct) + shNum('platformPct', 'Card Crest (%)', f.platformPct) + '</div>' +
+        '<div class="small" data-sh-sum style="margin:4px 0 12px"></div>';
+    } else {
+      var isLounge = f.module === 'LOUNGE';
+      body = '<div class="form-grid" style="grid-template-columns:repeat(2,1fr); gap:10px">' + shNum('fee', isLounge ? 'Buyer pays (₹)' : 'Service fee (₹)', f.fee) + shNum('platformAmt', 'Card Crest keeps (₹)', f.platformAmt) + '</div>' +
+        '<div class="small" data-sh-sum style="margin:4px 0 12px"></div>';
+    }
+    return '<div data-sh="' + f.id + '" data-mode="' + f.mode + '" style="padding:14px 0; border-top:1px solid var(--line-soft)">' +
+      '' + (f.mode === 'SPLIT' ? (f.active === false ? '<div style="margin-bottom:8px"><span class="badge badge--grey">Off</span></div>' : '') : '<div class="spread" style="margin-bottom:10px"><strong>' + esc(f.label) + '</strong>' + (f.active === false ? '<span class="badge badge--grey">Off</span>' : '') + '</div>') + body +
+      '<button class="btn btn--primary btn--sm" data-sh-save>Save</button></div>';
+  }
+  MA.views['mk-sharing'] = function () {
+    var fees = M.fees();
+    return '<div class="note" style="margin-bottom:16px">Set how the reward is shared for each product. Changes apply to <strong>new</strong> requests only; every request keeps the split it was booked at. The other options (time limits, penalty, on or off) are under <a href="#/admin/mk-fees">Fees</a>.</div>' +
+      '<div class="grid g-2">' + SHARE.map(function (s) {
+        var list = fees.filter(function (f) { return f.module === s[0]; });
+        if (!list.length) return '';
+        return '<div class="panel"><h3 class="h3" style="margin-bottom:4px">' + s[1] + '</h3><p class="small muted" style="margin:0 0 6px">' + s[2] + '</p>' + list.map(shRow).join('') + '</div>';
+      }).join('') + '</div>';
+  };
+  function shRead(box) {
+    var v = {};
+    box.querySelectorAll('[data-sh-k]').forEach(function (i) { v[i.dataset.shK] = i.value === '' ? NaN : Number(i.value); });
+    return v;
+  }
+  function shSum(box) {
+    var v = shRead(box), out = box.querySelector('[data-sh-sum]'); if (!out) return;
+    if (box.dataset.mode === 'SPLIT') {
+      var t = v.buyerPct + v.holderPct + v.platformPct, ok = Math.abs(t - 100) < 0.001;
+      out.innerHTML = '<span style="color:' + (ok ? 'var(--leaf)' : 'var(--danger)') + '; font-weight:700">Total ' + (isNaN(t) ? '—' : t + '%') + (ok ? ' ✓' : ' — must be 100%') + '</span>' +
+        (ok ? '<span class="muted"> · on a ₹1,000 saving: buyer ₹' + Math.round(v.buyerPct * 10) + ', cardholder ₹' + Math.round(v.holderPct * 10) + ', Card Crest ₹' + Math.round(v.platformPct * 10) + '</span>' : '');
+    } else {
+      var rest = v.fee - v.platformAmt, ok2 = v.fee > 0 && v.platformAmt >= 0 && rest >= 0;
+      out.innerHTML = ok2 ? '<span style="color:var(--leaf); font-weight:700">Cardholder gets ' + money(rest) + '</span><span class="muted"> (' + Math.round(rest / v.fee * 100) + '% of ' + money(v.fee) + ')</span>'
+        : '<span style="color:var(--danger); font-weight:700">Card Crest’s part cannot be more than the price</span>';
+    }
+  }
   /* ---------------- payouts ---------------- */
   MA.views['mk-payouts'] = function () {
     return '<div class="note" style="margin-bottom:16px">Test mode: marking a payout as paid writes the ledger entry but sends no real money. Live payouts go through the gateway’s payout API.</div>' +
@@ -219,6 +269,22 @@
   MA.bind = function (root) {
     root.querySelectorAll('[data-dsp]').forEach(function (b) { b.onclick = function () { decide(b.dataset.dsp); }; });
     root.querySelectorAll('[data-fee]').forEach(function (b) { b.onclick = function () { feeEditor(b.dataset.fee); }; });
+    root.querySelectorAll('[data-sh]').forEach(function (box) {
+      shSum(box);
+      box.addEventListener('input', function () { shSum(box); });
+      box.querySelector('[data-sh-save]').onclick = function () {
+        var b = this, v = shRead(box), patch = {};
+        Object.keys(v).forEach(function (k) { patch[k] = v[k]; });
+        if (Object.keys(v).some(function (k) { return isNaN(v[k]); })) return UI.toast('Fill in every box with a number', 'error');
+        b.disabled = true;
+        M.do('saveFee', { id: box.dataset.sh, patch: patch }).then(function (res) {
+          b.disabled = false;
+          if (!res.ok) return UI.toast(res.error, 'error');
+          UI.toast('Reward sharing saved. New requests use it from now.');
+          w.CC.Router.refresh();
+        });
+      };
+    });
     root.querySelectorAll('[data-kyc]').forEach(function (b) {
       b.onclick = function () {
         var status = b.dataset.s;

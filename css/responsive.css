@@ -30,6 +30,7 @@
   .side-nav a{white-space:nowrap; border:1px solid var(--line); border-radius:var(--r-pill)}
   .side-nav h4{display:none}
   .admin{grid-template-columns:1fr}
+  .adm-nav{position:static; max-height:none; overflow:visible}   /* one column here: a pinned menu would sit on top of the page content */
   .ftr__in{grid-template-columns:1fr 1fr 1fr; gap:28px}
   .ftr__brand{grid-column:1/-1}
 }

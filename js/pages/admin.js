@@ -527,12 +527,12 @@
     ['Daily work', ['overview', 'approvals', 'transactions', 'rewards', 'applications', 'referrals', 'support']],
     ['Members and messages', ['users', 'announce']],
     ['Catalogue', ['cards', 'stores', 'offers', 'trackers']],
-    ['Share & Earn', ['market', 'mk-disputes', 'mk-kyc', 'mk-fees', 'mk-payouts', 'mk-reports']],
+    ['Share & Earn', ['market', 'mk-sharing', 'mk-disputes', 'mk-kyc', 'mk-fees', 'mk-payouts', 'mk-reports']],
     ['Staff', ['activity']]
   ];
   var ICON = { overview: '\u25A6', approvals: '\u2713', transactions: '\u21C4', rewards: '\u2605', applications: '\u25A4', referrals: '\u2726', support: '?',
     trackers: '\u21AA', users: '\u263A', announce: '\u2709', cards: '\u25AD', stores: '\u25A3', offers: '%', market: '\u21CC', 'mk-disputes': '!', 'mk-kyc': '\u25C9',
-    'mk-fees': '\u20B9', 'mk-payouts': '\u2197', 'mk-reports': '\u2191', activity: '\u2630' };
+    'mk-sharing': '%', 'mk-fees': '\u20B9', 'mk-payouts': '\u2197', 'mk-reports': '\u2191', activity: '\u2630' };
   function adminNav(active) {
     var AX = w.CC.AdminPlus, c = AX && AX.counts ? AX.counts() : null, n = {};
     if (c) {
