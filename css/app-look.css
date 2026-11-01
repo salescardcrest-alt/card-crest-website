@@ -243,3 +243,12 @@ p,li{line-height:1.6}
 .tray .btn--primary{background:#fff; color:#111; border-color:#fff; box-shadow:4px 4px 0 var(--leaf)}
 .tray .btn--ghost{color:#fff; border-color:rgba(255,255,255,.7)}
 .toast{font-family:var(--body); font-weight:600}
+
+/* dark mode: the four product cards under the hero had dark text on a dark card */
+html[data-theme="dark"] .hx__f{background:#161d19}
+html[data-theme="dark"] .hx__ft b{color:#fff}
+html[data-theme="dark"] .hx__ft small{color:#b8c7bf}
+/* dark mode: the hero keeps its light picture, so its outlined button needs dark text; white buttons need dark text */
+html[data-theme="dark"] .hx__btn--light{color:#0a1f16; border-color:#0a1f16}
+html[data-theme="dark"] .hx__btn--light:hover{background:rgba(10,31,22,.08)}
+html[data-theme="dark"] .btn--primary,html[data-theme="dark"] .hdr .btn--primary,html[data-theme="dark"] .hdr__nav a.nav-main{color:#111 !important}
