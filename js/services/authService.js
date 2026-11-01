@@ -95,6 +95,7 @@
 
   var Auth = {
     remote: !!sb,
+    client: sb,
 
     /* Call once at boot: restores a saved Supabase session. */
     init: function () {

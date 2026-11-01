@@ -108,7 +108,16 @@
         terms: ['Cashback is tracked only when you start your session from Card Crest.']
       }, data));
     },
-    updateStore: function (id, patch) { return S.update('stores', id, patch); },
+    /* the store's cashback rate is the rate of every deal and coupon it has, so changing it changes them all (no more 4% on the store and 4.5% on its offers) */
+    updateStore: function (id, patch) {
+      var row = S.update('stores', id, patch);
+      if (patch && patch.cashback != null) {
+        Offers.allIncludingInactive().forEach(function (o) {
+          if (o.storeId === id && o.cashback !== patch.cashback) S.update('offers', o.id, { cashback: patch.cashback });
+        });
+      }
+      return row;
+    },
     removeStore: function (id) { S.remove('stores', id); },
 
     create: function (data) {
