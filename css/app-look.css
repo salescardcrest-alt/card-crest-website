@@ -1,0 +1,128 @@
+/* ============================================================
+   Card Crest — app-look.css
+   The website wears the same look as the Card Crest app: Inter for text and Outfit for headlines, the app's colours,
+   sharp square corners, thin 1px lines, and the NeoPOP "physical block" buttons (a flat face with a green edge that
+   sinks when pressed). Loaded last, so it sits on top of the earlier theme. Source: app/ui/Theme.kt, NeoPop.kt, Components.kt.
+   ============================================================ */
+
+/* ---------- fonts and colours (light, the default) ---------- */
+:root, html:not([data-theme="dark"]){
+  --display:"Outfit", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --body:"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --paper:#ffffff;  --surface:#ffffff;  --hdr-bg:rgba(255,255,255,.94);
+  --mist:#f4f7f5;   --mint:#e3f3ea;     --leaf-soft:#e3f3ea;
+  --line:#e6ece8;   --line-soft:#eef2ef;
+  --ink:#0b1f17;    --ink-2:#3a4a42;    --muted:#6c7b73;
+  --crest:#0e5c3c;  --crest-d:#093d28;  --leaf:#17a06a;  --leaf-g:#17a06a;
+  --gold:#b98b2e;   --gold-soft:#f7efdc;
+  --danger:#c0392b; --danger-soft:#fbe9e7;
+  --warn:#d4a017;   --warn-soft:#fdf3dd;
+
+  /* NeoPOP: sharp everywhere, no soft glows */
+  --r-sm:0; --r:0; --r-lg:0; --r-pill:0;
+  --sh-1:none; --sh-2:none; --sh-3:0 10px 30px rgba(11,31,23,.10);
+  --neo-face:#111111; --neo-ink:#ffffff; --neo-edge:#17a06a; --neo-edge-d:#0f7049;
+}
+html[data-theme="dark"]{
+  --display:"Outfit", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --body:"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --paper:#0f1512;  --surface:#17211c;  --hdr-bg:rgba(15,21,18,.94);
+  --mist:#1c2622;   --mint:#173a2b;     --leaf-soft:#173a2b;
+  --line:#2b3832;   --line-soft:#222d28;
+  --ink:#eaf2ee;    --ink-2:#b8c7bf;    --muted:#8fa096;
+  --crest:#1fa971;  --crest-d:#17a06a;  --leaf:#17a06a;  --leaf-g:#17a06a;
+  --danger:#ff7a6b; --danger-soft:#3a1f1c;
+  --r-sm:0; --r:0; --r-lg:0; --r-pill:0;
+  --sh-1:none; --sh-2:none; --sh-3:0 10px 30px rgba(0,0,0,.45);
+  --neo-face:#ffffff; --neo-ink:#111111; --neo-edge:#17a06a; --neo-edge-d:#0f7049;
+}
+
+html:not([data-theme="dark"]) body{background:#fff}
+html[data-theme="dark"] body{background:#0f1512}
+body{font-family:var(--body); -webkit-font-smoothing:antialiased}
+
+/* headlines: Outfit, heavy, tight */
+.h-display,.h1,.h2,.brand__word,.hx h1,.hx__h,.stat__v,.boot__word{font-family:var(--display)}
+.h-display,.h1{font-weight:800; letter-spacing:-.025em}
+.h2{font-weight:800; letter-spacing:-.02em}
+.h3,h3{font-family:var(--display); font-weight:700; letter-spacing:-.01em}
+.brand__word{font-weight:800; letter-spacing:.08em}
+
+/* small labels in spaced capitals, like the app's section labels */
+.tbl th,.stat__k,.fact__k,.adm-box__h,.eyebrow{letter-spacing:.08em}
+
+/* ---------- square everything (the soft-corner rules that hard-code a pill or a number) ---------- */
+.btn,.chip,.badge,.tabs button,.tabs a,.pill,.tag,.search,.search input,input,select,textarea,.panel,.stat,.note,
+.modal,.modal__box,.sheet,.toast,.tray,.dd,.menu,.menu a,.logo-badge,.bank-logo,.fact,.mk-tile,.mk-tile__i,.adm-tile,.adm-tile__i,.adm-tile__n,
+.hx__f,.hx__cta,.bt,.bt__go,.faq,.faq__q,.ftr__soc a,.cmp-check,.viz__slice,.mk-job,.deal-get,.panel--flush,.admin-hd,.admin-hd .btn{border-radius:0 !important}
+.avatar,.avatar img,.nav-avatar,.hdr__me,.brand__mark,.dot,.mk-live__dot,.badge--dot,[class*="avatar"]{border-radius:50% !important}
+
+/* ---------- NeoPOP buttons ---------- */
+.btn{font-family:var(--body); font-weight:800; letter-spacing:.12em; text-transform:uppercase; font-size:.78rem; height:48px; border-width:1.5px;
+  transition:transform .09s ease, box-shadow .09s ease, background .15s, color .15s}
+.btn--sm{height:40px; font-size:.72rem}
+.btn--xs{height:32px; font-size:.68rem; letter-spacing:.08em; padding:0 12px}
+.btn--lg{height:54px; font-size:.84rem}
+
+/* the main button: a flat black block (white in dark mode) with a green edge it sinks into */
+.btn--primary,.btn--danger{background:var(--neo-face); color:var(--neo-ink); border-color:var(--neo-face);
+  box-shadow:5px 5px 0 var(--neo-edge)}
+.btn--primary:hover:not(:disabled),.btn--danger:hover:not(:disabled){background:var(--neo-face); color:var(--neo-ink); box-shadow:6px 6px 0 var(--neo-edge); transform:translate(-1px,-1px)}
+.btn--primary:active:not(:disabled),.btn--danger:active:not(:disabled){transform:translate(5px,5px); box-shadow:0 0 0 var(--neo-edge)}
+.btn--danger{border-color:#c0392b; box-shadow:5px 5px 0 #c0392b}
+.btn--danger:hover:not(:disabled){box-shadow:6px 6px 0 #c0392b}
+.btn--xs.btn--primary,.btn--xs.btn--danger{box-shadow:3px 3px 0 var(--neo-edge)}
+.btn--xs.btn--primary:hover:not(:disabled){box-shadow:4px 4px 0 var(--neo-edge)}
+.btn--xs.btn--primary:active:not(:disabled){transform:translate(3px,3px); box-shadow:0 0 0 var(--neo-edge)}
+.btn--xs.btn--danger{box-shadow:3px 3px 0 #c0392b}
+
+/* the second button: a sharp outlined block */
+.btn--ghost,.btn--soft{background:transparent; color:var(--ink); border-color:var(--ink); box-shadow:none}
+.btn--ghost:hover:not(:disabled),.btn--soft:hover:not(:disabled){background:var(--mist); color:var(--ink)}
+.btn--link{text-transform:none; letter-spacing:0; font-weight:700; border:0; height:auto; color:var(--crest)}
+.btn--block{box-shadow:5px 5px 0 var(--neo-edge)}
+.btn--block.btn--ghost,.btn--block.btn--soft{box-shadow:none}
+
+/* ---------- fields, cards, lines ---------- */
+input,select,textarea{border:1px solid var(--line); background:var(--surface); font-family:var(--body)}
+input:focus,select:focus,textarea:focus{border-color:var(--crest); box-shadow:none; outline:2px solid var(--leaf-soft); outline-offset:0}
+.panel,.stat,.mk-tile,.bt,.hx__f,.faq{background:var(--surface); border:1px solid var(--line); box-shadow:none}
+.panel:hover,.mk-tile:hover{border-color:var(--ink)}
+.stat--accent{background:var(--crest); border-color:var(--crest)}
+.note{background:var(--mist); border:0; border-left:3px solid var(--leaf)}
+.badge{font-weight:700; letter-spacing:.06em; text-transform:uppercase; font-size:.66rem}
+.chip{border:1px solid var(--line); background:var(--surface); font-weight:700}
+.chip.is-on,.tabs button.is-on{background:var(--ink); color:var(--paper); border-color:var(--ink)}
+.tabs{border-bottom:1px solid var(--line)}
+.tabs button{border:1px solid var(--line); font-weight:700; letter-spacing:.04em}
+
+/* NeoPOP tiles for the four products and the hub: a flat face with a green edge */
+.mk-tile,.hx__f,.bt{box-shadow:5px 5px 0 var(--leaf); border:1px solid var(--ink)}
+.mk-tile:hover,.hx__f:hover,.bt:hover{transform:translate(-1px,-1px); box-shadow:6px 6px 0 var(--leaf)}
+.mk-tile:active,.hx__f:active,.bt:active{transform:translate(5px,5px); box-shadow:0 0 0 var(--leaf)}
+
+/* header and menus: flat, thin line underneath */
+.hdr,header.hdr{border-bottom:1px solid var(--line); box-shadow:none; background:var(--hdr-bg)}
+.nav a.is-on,.nav a[aria-current]{color:var(--crest)}
+
+/* the dark admin banner and other solid bars stay solid */
+.admin-hd{background:var(--ink); color:var(--paper)}
+html[data-theme="dark"] .admin-hd{background:#17211c}
+.adm-tile.is-active{background:var(--ink); color:var(--paper); box-shadow:none}
+.adm-tile.is-active .adm-tile__i{background:rgba(255,255,255,.18); color:var(--paper)}
+
+/* flat page sections: no cream wash, just the app's white and its pale mint */
+.hx ~ .section--mist,.section--mist{background:var(--mist)}
+
+/* hero buttons: the same NeoPOP block as every other button */
+.hx__btn{border-radius:0 !important; text-transform:uppercase; letter-spacing:.12em; font-weight:800; font-size:.86rem; height:54px; background-image:none}
+.hx__btn--dark{background:var(--neo-face); color:var(--neo-ink); box-shadow:5px 5px 0 var(--neo-edge); border:1.5px solid var(--neo-face)}
+.hx__btn--dark:hover{box-shadow:6px 6px 0 var(--neo-edge); transform:translate(-1px,-1px)}
+.hx__btn--dark:active{transform:translate(5px,5px); box-shadow:0 0 0 var(--neo-edge)}
+.hx__btn--light{background:transparent; color:var(--ink); border:1.5px solid var(--ink); box-shadow:none}
+.hx__btn--light:hover{background:var(--mist)}
+
+/* the green edges of blocks at the screen edge must never add a sideways scroll */
+html,body{overflow-x:clip}
