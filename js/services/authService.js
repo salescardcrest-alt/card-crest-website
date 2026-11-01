@@ -43,11 +43,13 @@
   w.CC.Sync.init(sb);
   if (w.CC.Market) w.CC.Market.init(sb);
   if (w.CC.Trackers) w.CC.Trackers.init(sb);
+  if (w.CC.CatalogLive) w.CC.CatalogLive.init(sb);
 
   /* Load this user's server-side rows into the local store. */
   function hydrate(u) {
     var jobs = [w.CC.Sync.hydrate(u)];
     if (w.CC.Market) jobs.push(w.CC.Market.load(u));
+    if (w.CC.CatalogLive && u && u.role === 'admin') jobs.push(w.CC.CatalogLive.publishLocal());
     return Promise.all(jobs).then(function () { return u; });
   }
 

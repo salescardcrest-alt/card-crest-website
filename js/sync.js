@@ -65,6 +65,7 @@
       return;
     }
 
+    if (w.CC.CatalogLive && w.CC.CatalogLive.owns(col)) { w.CC.CatalogLive.push(op, col, row); return; }   // cards, stores, offers: one shared catalogue
     var spec = SPEC[col];
     if (!spec) return;
     if (spec.user && !UUID.test(row.userId || '')) return; // demo / seed rows stay local
