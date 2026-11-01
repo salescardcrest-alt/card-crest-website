@@ -64,6 +64,7 @@
     if (/already registered|already been registered/i.test(m)) return 'An account already uses that email address.';
     if (/rate limit/i.test(m)) return 'Too many attempts. Wait a minute and try again.';
     if (/only request this after|security purposes/i.test(m)) return 'Please wait a minute before asking for another code.';
+    if (/error sending (confirmation|recovery|magic|email)|sending .* email|smtp/i.test(m)) return 'We could not send the confirmation email just now. Please try again in a few minutes, or contact Card Crest support if it keeps happening.';
     return m;
   }
 

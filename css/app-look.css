@@ -258,3 +258,8 @@ html[data-theme="dark"] .hx__f{background:var(--cb,#f4f4e3); border-color:#111}
 html[data-theme="dark"] .hx__ft b{color:#0a1f16}
 html[data-theme="dark"] .hx__ft small{color:#4d655a}
 html[data-theme="dark"] .hx__fb{background:#fff !important; color:#111 !important; border-color:#111 !important}
+
+/* phones: the notification and account menus open inside the screen, never cut off at the edge */
+@media (max-width:640px){
+  .dropdown__menu,#bellMenu{position:fixed !important; left:12px !important; right:12px !important; top:calc(var(--hdr-h, 70px) + 8px) !important; width:auto !important; min-width:0 !important; max-width:none !important; max-height:calc(100vh - var(--hdr-h, 70px) - 24px); overflow-y:auto}
+}
