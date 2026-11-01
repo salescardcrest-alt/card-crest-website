@@ -252,3 +252,9 @@ html[data-theme="dark"] .hx__ft small{color:#b8c7bf}
 html[data-theme="dark"] .hx__btn--light{color:#0a1f16; border-color:#0a1f16}
 html[data-theme="dark"] .hx__btn--light:hover{background:rgba(10,31,22,.08)}
 html[data-theme="dark"] .btn--primary,html[data-theme="dark"] .hdr .btn--primary,html[data-theme="dark"] .hdr__nav a.nav-main{color:#111 !important}
+
+/* the hero and the four cards under it stay light in dark mode too (they sit on the light hero picture), so no black cards */
+html[data-theme="dark"] .hx__f{background:var(--cb,#f4f4e3); border-color:#111}
+html[data-theme="dark"] .hx__ft b{color:#0a1f16}
+html[data-theme="dark"] .hx__ft small{color:#4d655a}
+html[data-theme="dark"] .hx__fb{background:#fff !important; color:#111 !important; border-color:#111 !important}
