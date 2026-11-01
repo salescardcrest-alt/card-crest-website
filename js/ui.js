@@ -30,10 +30,23 @@
     ['/refer', 'Refer and earn'], ['/dashboard/notifications', 'Notifications'], ['/profile', 'Profile and settings']
   ];
   var NAV_ALIAS = { '/market/earn': '/dashboard/earn', '/market/cards': '/dashboard/cards', '/market/wallet': '/rewards', '/dashboard/wallet': '/rewards' };
+  var NAV_ICON = {
+    '/dashboard': '<rect x="3.5" y="3.5" width="7" height="7"/><rect x="13.5" y="3.5" width="7" height="7"/><rect x="3.5" y="13.5" width="7" height="7"/><rect x="13.5" y="13.5" width="7" height="7"/>',
+    '/market/requests': '<path d="M6 3.5h9l3 3v14H6z"/><path d="M9 11h6M9 15h6"/>',
+    '/market/pay-earn': '<rect x="2.5" y="6.5" width="19" height="11"/><circle cx="12" cy="12" r="2.6"/>',
+    '/dashboard/earn': '<path d="M12 3.5a5.5 5.5 0 0 0-5.5 5.5v4l-2 3h15l-2-3V9A5.5 5.5 0 0 0 12 3.5z"/><path d="M10 19a2 2 0 0 0 4 0"/>',
+    '/dashboard/cards': '<rect x="3" y="6" width="18" height="12"/><path d="M3 10h18M7 14.5h4"/>',
+    '/rewards': '<rect x="3.5" y="7" width="17" height="12"/><path d="M3.5 11h17M16 15h1.5"/><path d="M6 7l9-3 1 3"/>',
+    '/dashboard/transactions': '<path d="M5 8h14M15 4l4 4-4 4M19 16H5M9 12l-4 4 4 4"/>',
+    '/dashboard/applications': '<rect x="5" y="3.5" width="14" height="17"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+    '/refer': '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M17 8v6M14 11h6"/>',
+    '/dashboard/notifications': '<path d="M18 16V11a6 6 0 0 0-12 0v5l-2 2h16zM10 20a2 2 0 0 0 4 0"/>',
+    '/profile': '<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>'
+  };
   UI.sideNav = function (active) {
     active = NAV_ALIAS[active] || active;
     return '<nav class="side-nav" aria-label="Account">' + UI.NAV_ITEMS.map(function (i) {
-      return '<a href="#' + i[0] + '" class="' + (i[0] === active ? 'is-active' : '') + '">' + i[1] + '</a>';
+      return '<a href="#' + i[0] + '" class="' + (i[0] === active ? 'is-active' : '') + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + (NAV_ICON[i[0]] || '') + '</svg><span>' + i[1] + '</span></a>';
     }).join('') + '</nav>';
   };
   /* sentence case for text people type in: first letter capital, the rest as typed */

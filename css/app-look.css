@@ -7,8 +7,8 @@
 
 /* ---------- fonts and colours (light, the default) ---------- */
 :root, html:not([data-theme="dark"]){
-  --display:"Outfit", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --body:"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --display:"Outfit", "Urbanist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --body:"Urbanist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   --paper:#ffffff;  --surface:#ffffff;  --hdr-bg:rgba(255,255,255,.94);
   --mist:#f4f7f5;   --mint:#e3f3ea;     --leaf-soft:#e3f3ea;
@@ -25,8 +25,8 @@
   --neo-face:#111111; --neo-ink:#ffffff; --neo-edge:#17a06a; --neo-edge-d:#0f7049;
 }
 html[data-theme="dark"]{
-  --display:"Outfit", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --body:"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --display:"Outfit", "Urbanist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --body:"Urbanist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   --paper:#0f1512;  --surface:#17211c;  --hdr-bg:rgba(15,21,18,.94);
   --mist:#1c2622;   --mint:#173a2b;     --leaf-soft:#173a2b;
@@ -126,3 +126,46 @@ html[data-theme="dark"] .admin-hd{background:#17211c}
 
 /* the green edges of blocks at the screen edge must never add a sideways scroll */
 html,body{overflow-x:clip}
+
+/* CRED-style type: geometric Gilroy-like faces (Outfit headlines, Urbanist text), heavy weights, tight headlines, spaced capitals for small labels */
+/* Urbanist sets a little small, so the text is nudged up */
+body{font-weight:500; letter-spacing:.005em; font-size:1.07rem}
+.h-display,.h1,.hx h1,.hx__h{font-weight:900; letter-spacing:-.035em; line-height:1.04}
+.h2{font-weight:800; letter-spacing:-.03em}
+.lede,.hx__sub{font-weight:500; color:var(--ink-2)}
+.tbl th,.stat__k,.fact__k,.adm-box__h,.eyebrow,.badge,.chip{font-family:var(--display); font-weight:700}
+.stat__v,.fact__v,.mk-earn strong{font-family:var(--display); font-weight:800; letter-spacing:-.02em}
+.btn,.hx__btn{font-family:var(--display)}
+
+/* ---------- Lounge / Movies / Pay & Earn / Order & Earn icons: the app's NeoPOP tiles ----------
+   A sharp white face with a thin black rim and a thin line symbol; a slanted green edge down the right and along the bottom. */
+.hx__fb,.bt__ic,.mk-tile__i{
+  background:#fff !important; color:#111 !important; border:1px solid #111 !important; border-radius:0 !important;
+  box-shadow:none !important; transform:none !important; overflow:visible; filter:none;
+}
+html[data-theme="dark"] .hx__fb,html[data-theme="dark"] .bt__ic,html[data-theme="dark"] .mk-tile__i{background:#161616 !important; color:#fff !important; border-color:#3a3a3a !important}
+.bt__ic,.mk-tile__i{position:relative; width:54px; height:54px; margin:0 7px 7px 0}
+.hx__fb,.bt__ic,.mk-tile__i{--nd:6px}
+.hx__fb::before,.bt__ic::before,.mk-tile__i::before{content:""; position:absolute; left:calc(100% + 1px); top:-1px; bottom:calc(var(--nd) * -1 - 1px); width:var(--nd);
+  background:var(--leaf); clip-path:polygon(0 0,100% var(--nd),100% 100%,0 calc(100% - var(--nd)))}
+.hx__fb::after,.bt__ic::after,.mk-tile__i::after{content:""; position:absolute; top:calc(100% + 1px); left:-1px; right:calc(var(--nd) * -1 - 1px); height:var(--nd);
+  background:#0f7049; clip-path:polygon(0 0,calc(100% - var(--nd)) 0,100% 100%,var(--nd) 100%)}
+.bt:hover .bt__ic,.mk-tile:hover .mk-tile__i{transform:translate(2px,2px) !important}
+.bt__ic *,.hx__fb *,.mk-tile__i *{transition:none}
+/* line symbols: outline every shape instead of filling it */
+.hx__fb svg,.bt__ic svg,.mk-tile__i svg{width:46%; height:46%; overflow:visible}
+.hx__fb svg *,.bt__ic svg *,.mk-tile__i svg *{fill:none !important; stroke:currentColor !important; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round}
+.mk-tile__i svg{width:28px; height:28px}
+.bt__ic svg{width:28px; height:28px}
+
+/* ---------- account side menu: NeoPOP blocks ---------- */
+.side-nav{gap:10px}
+.side-nav a{display:flex; align-items:center; gap:12px; padding:11px 14px; border:1px solid var(--line); background:var(--surface); color:var(--ink);
+  font-family:var(--display); font-weight:700; font-size:.92rem; letter-spacing:.01em; border-radius:0 !important;
+  transition:transform .09s ease, box-shadow .09s ease, border-color .15s}
+.side-nav a svg{width:20px; height:20px; flex:none; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round}
+.side-nav a:hover{background:var(--surface); border-color:var(--ink)}
+.side-nav a.is-active{background:var(--neo-face); color:var(--neo-ink); border-color:var(--neo-face); box-shadow:4px 4px 0 var(--neo-edge); font-weight:800}
+.side-nav a.is-active:hover{background:var(--neo-face)}
+.side-nav a:active{transform:translate(2px,2px)}
+@media (max-width:1024px){ .side-nav{gap:8px; padding-bottom:10px} .side-nav a{padding:9px 12px; white-space:nowrap; border-radius:0 !important} .side-nav a.is-active{box-shadow:3px 3px 0 var(--neo-edge)} }
