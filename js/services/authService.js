@@ -44,11 +44,13 @@
   if (w.CC.Market) w.CC.Market.init(sb);
   if (w.CC.Trackers) w.CC.Trackers.init(sb);
   if (w.CC.CatalogLive) w.CC.CatalogLive.init(sb);
+  if (w.CC.Staff) w.CC.Staff.init(sb);
 
   /* Load this user's server-side rows into the local store. */
   function hydrate(u) {
     var jobs = [w.CC.Sync.hydrate(u)];
     if (w.CC.Market) jobs.push(w.CC.Market.load(u));
+    if (w.CC.Staff) jobs.push(w.CC.Staff.load(u));
     if (w.CC.CatalogLive && u && u.role === 'admin') jobs.push(w.CC.CatalogLive.publishLocal());
     return Promise.all(jobs).then(function () { return u; });
   }
@@ -207,6 +209,7 @@
 
     logout: function () {
       S.set('session', null);
+      if (w.CC.Staff) w.CC.Staff.clear();
       if (sb) { sb.auth.signOut(); w.CC.Sync.clear(); if (w.CC.Market) w.CC.Market.clear(); }
     },
 

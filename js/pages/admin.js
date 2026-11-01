@@ -244,7 +244,7 @@
         '<td class="num">' + (c.annualFee ? UI.money(c.annualFee) : 'Free') + '</td>' +
         '<td class="num">' + UI.pct(c.rewardRate) + '</td>' +
         '<td><div class="row" style="gap:4px"><input type="number" min="0" max="100" step="0.1" data-card-offer="' + c.id + '" value="' + (c.cashback || 0) + '" aria-label="Offer percentage for ' + UI.esc(c.name) + '" style="width:76px; height:36px; font-size:.86rem; text-align:right"><span class="muted">%</span></div></td>' +
-        '<td style="min-width:300px"><div class="row" style="gap:6px; flex-wrap:nowrap"><input type="url" data-card-link="' + c.id + '" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://… (backlink)" value="' + UI.esc(trackerLink(c.id)) + '" aria-label="Backlink for ' + UI.esc(c.name) + '" style="flex:1; min-width:0; height:36px; font-size:.86rem"><button class="btn btn--xs btn--primary" data-card-save="' + c.id + '">Save</button></div></td>' +
+        '<td style="min-width:300px"><div class="row" style="gap:6px; flex-wrap:nowrap"><input type="url" data-card-link="' + c.id + '" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://… (backlink)"' + (allow('trackers') ? '' : ' disabled title="You do not have the Tracker links permission"') + ' value="' + UI.esc(trackerLink(c.id)) + '" aria-label="Backlink for ' + UI.esc(c.name) + '" style="flex:1; min-width:0; height:36px; font-size:.86rem"><button class="btn btn--xs btn--primary" data-card-save="' + c.id + '">Save</button></div></td>' +
         '<td class="num">' + C.score(c).total + '</td>' +
         '<td>' + UI.statusBadge(c.active === false ? 'disabled' : 'active') + '</td>' +
         '<td><div class="row" style="gap:6px; flex-wrap:nowrap">' +
@@ -528,24 +528,27 @@
     ['Members and messages', ['users', 'announce', 'claims', 'reports']],
     ['Catalogue', ['cards', 'stores', 'offers', 'banners', 'trackers']],
     ['Share & Earn', ['market', 'mk-sharing', 'mk-disputes', 'mk-kyc', 'mk-fees', 'mk-payouts', 'mk-reports']],
-    ['Staff', ['activity']]
+    ['Staff', ['activity', 'staff']]
   ];
   var ICON = { overview: '\u25A6', approvals: '\u2713', transactions: '\u21C4', rewards: '\u2605', applications: '\u25A4', referrals: '\u2726', support: '?',
     banners: '▤', claims: '⚑', reports: '⚐', trackers: '\u21AA', users: '\u263A', announce: '\u2709', cards: '\u25AD', stores: '\u25A3', offers: '%', market: '\u21CC', 'mk-disputes': '!', 'mk-kyc': '\u25C9',
-    'mk-sharing': '%', 'mk-fees': '\u20B9', 'mk-payouts': '\u2197', 'mk-reports': '\u2191', activity: '\u2630' };
+    staff: '⚒','mk-sharing': '%', 'mk-fees': '\u20B9', 'mk-payouts': '\u2197', 'mk-reports': '\u2191', activity: '\u2630' };
+  /* main admins see every section; a member with staff permissions sees only the sections they were given */
+  function allow(k) { return Auth.isAdmin() || !!(w.CC.Staff && w.CC.Staff.can(k)); }
+
   function adminNav(active) {
     var AX = w.CC.AdminPlus, c = AX && AX.counts ? AX.counts() : null, n = {};
     if (c) {
       n.approvals = c.cashback.length + c.redemptions.length + c.referrals.length; n.applications = c.apps.length; n.support = c.tickets.length;
       n['mk-disputes'] = c.disputes.length; n['mk-kyc'] = c.kyc.length; n['mk-payouts'] = c.payouts.length;
     }
-    var label = {}; SECTIONS.forEach(function (s) { label[s[0]] = s[1]; });
+    var label = {}; SECTIONS.forEach(function (s) { if (allow(s[0])) label[s[0]] = s[1]; });
     var placed = {}, boxes = GROUPS.map(function (g) {
       var items = g[1].filter(function (k) { return label[k]; });
       items.forEach(function (k) { placed[k] = 1; });
       return [g[0], items];
     });
-    var rest = SECTIONS.map(function (s) { return s[0]; }).filter(function (k) { return !placed[k]; });
+    var rest = SECTIONS.map(function (s) { return s[0]; }).filter(function (k) { return !placed[k] && allow(k);});
     if (rest.length) boxes.push(['More', rest]);
     return '<nav class="adm-nav" aria-label="Admin">' + boxes.filter(function (b) { return b[1].length; }).map(function (b) {
       return '<section class="adm-box"><h3 class="adm-box__h">' + b[0] + '</h3>' + b[1].map(function (k) {
@@ -557,11 +560,12 @@
 
   var merged = false;
   w.CC.Pages.admin = function (params) {
-    if (!Auth.require(true)) return false;
+    if (!Auth.require()) return false;
+    if (!Auth.isAdmin() && !(w.CC.Staff && w.CC.Staff.isStaff())) { UI.toast('That area is for Card Crest staff', 'error'); w.location.hash = '#/dashboard'; return false; }
     /* extra staff tools plug in here: Reward approvals, announcements, activity log, then the Share & Earn sections */
     if (!merged) {
       merged = true;
-      [w.CC.AdminPlus, w.CC.MarketAdmin, w.CC.TrackerAdmin, w.CC.AdminApp].filter(Boolean).forEach(function (ext) {
+      [w.CC.AdminPlus, w.CC.MarketAdmin, w.CC.TrackerAdmin, w.CC.AdminApp, w.CC.StaffAdmin].filter(Boolean).forEach(function (ext) {
         var at = 1;
         ext.sections.forEach(function (s) {
           if (SECTIONS.some(function (x) { return x[0] === s[0]; })) return;
@@ -574,6 +578,7 @@
       });
     }
     var section = params.section || 'overview';
+    if (!views[section] || !allow(section)) section = Auth.isAdmin() ? 'overview' : (w.CC.Staff.sections()[0] || 'overview');
     if (!views[section]) section = 'overview';
     var label = (SECTIONS.filter(function (s) { return s[0] === section; })[0] || SECTIONS[0])[1];
 
@@ -600,7 +605,7 @@
           }, 180));
         }
 
-        [w.CC.AdminPlus, w.CC.MarketAdmin, w.CC.TrackerAdmin, w.CC.AdminApp].forEach(function (ext) { if (ext) ext.bind(root); });
+        [w.CC.AdminPlus, w.CC.MarketAdmin, w.CC.TrackerAdmin, w.CC.AdminApp, w.CC.StaffAdmin].forEach(function (ext) { if (ext) ext.bind(root); });
 
         /* status selects */
         root.querySelectorAll('[data-txn]').forEach(function (sel) {
@@ -684,7 +689,7 @@
             if (off === '' || !(pct >= 0 && pct <= 100)) return UI.toast('Offer percentage must be between 0 and 100', 'error');
             if (link && !/^https?:\/\/[^\s]+$/i.test(link)) return UI.toast('The backlink must start with https://', 'error');
             b.disabled = true;
-            (T ? T.save('card', id, link, '') : Promise.resolve({ ok: true })).then(function (res) {
+            (T && allow('trackers') ? T.save('card', id, link, '') : Promise.resolve({ ok: true })).then(function (res) {
               b.disabled = false;
               if (!res.ok) return UI.toast(res.error, 'error');
               C.update(id, { cashback: pct });

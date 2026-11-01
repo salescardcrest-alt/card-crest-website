@@ -78,7 +78,7 @@
       var id = idOf(kind, refId), had = Trackers.row(kind, refId);
       if (url && !safe(url)) return Promise.resolve({ ok: false, error: 'The link must start with https:// (or http://) and have no spaces.' });
       var who = w.CC.Auth && w.CC.Auth.current();
-      if (!who || who.role !== 'admin') return Promise.resolve({ ok: false, error: 'Only staff can change tracker links.' });
+      if (!who || (who.role !== 'admin' && !(w.CC.Staff && w.CC.Staff.can('trackers')))) return Promise.resolve({ ok: false, error: 'Only staff can change tracker links.' });
       function local() {
         var rows = col(), now = new Date().toISOString();
         if (!url) { var i = rows.indexOf(had); if (i > -1) rows.splice(i, 1); }
@@ -104,7 +104,7 @@
       var r = Trackers.row(kind, refId);
       if (!r) return Promise.resolve({ ok: false, error: 'Set a link first.' });
       var who = w.CC.Auth && w.CC.Auth.current();
-      if (!who || who.role !== 'admin') return Promise.resolve({ ok: false, error: 'Only staff can change tracker links.' });
+      if (!who || (who.role !== 'admin' && !(w.CC.Staff && w.CC.Staff.can('trackers')))) return Promise.resolve({ ok: false, error: 'Only staff can change tracker links.' });
       function local() { r.active = !!on; S.commit(); w.dispatchEvent(new CustomEvent('cc:trackers')); return { ok: true }; }
       if (!sb) return Promise.resolve(local());
       return sb.from('tracker_links').update({ active: !!on, updated_at: new Date().toISOString() }).eq('id', r.id).then(function (x) { return x.error ? { ok: false, error: x.error.message } : local(); });

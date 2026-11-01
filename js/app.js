@@ -53,7 +53,7 @@
           '<a href="#/refer">Referrals</a>' +
           '<a href="#/market">Share &amp; Earn</a>' +
           '<a href="#/profile">Profile and settings</a>' +
-          (u.role === 'admin' ? '<div class="dropdown__sep"></div><a href="#/admin">Admin panel</a>' : '') +
+          (u.role === 'admin' || (w.CC.Staff && w.CC.Staff.isStaff()) ? '<div class="dropdown__sep"></div><a href="#/admin">Admin panel</a>' : '') +
           '<div class="dropdown__sep"></div>' +
           '<button id="logoutBtn">Sign out</button>' +
         '</div>' +

@@ -169,3 +169,67 @@ html[data-theme="dark"] .hx__fb,html[data-theme="dark"] .bt__ic,html[data-theme=
 .side-nav a.is-active:hover{background:var(--neo-face)}
 .side-nav a:active{transform:translate(2px,2px)}
 @media (max-width:1024px){ .side-nav{gap:8px; padding-bottom:10px} .side-nav a{padding:9px 12px; white-space:nowrap; border-radius:0 !important} .side-nav a.is-active{box-shadow:3px 3px 0 var(--neo-edge)} }
+
+/* ---------- readable copy ----------
+   Headlines, buttons, menus and labels stay in Title Case, but sentences and descriptions read as normal sentences
+   (a capital on every word made paragraphs look messy). */
+p,li,.lede,.hx__sub,small,.small,.muted,.hint,.err,.note,dd,blockquote,figcaption,.faq__a,.flow__i p,.bt__p,.hx__ft small,
+.step p,.tl p,.mk-tile .muted,.panel p,.stat__sub,td .small,.fact__sub{text-transform:none !important}
+p,li{line-height:1.6}
+.lede{line-height:1.55; max-width:62ch}
+/* the "40 points" figures: the same face as the rest, with even digits, not a code font */
+.mono-score,.score__pts,[class*="pts"]{font-family:var(--body); font-variant-numeric:tabular-nums}
+.tl__d,[class$="__d"],[class$="__sub"],[class$="__desc"],[class$="__p"],[class$="__text"],[class$="__body"]{text-transform:none !important}
+.tl__t{font-family:var(--display); font-weight:700}
+.tl__d{line-height:1.55; color:var(--muted)}
+.hiw-grid .mono,.hiw-grid [class*="mono"],.spread .mono{font-family:var(--display); font-weight:700; font-variant-numeric:tabular-nums}
+
+/* the header's main button: "Start earning", the same NeoPOP block as the one on the home page */
+.hdr__nav a.nav-main,.sheet__nav a.nav-main{background:var(--neo-face) !important; background-image:none !important; color:var(--neo-ink) !important; border:1.5px solid var(--neo-face);
+  border-radius:0 !important; box-shadow:4px 4px 0 var(--neo-edge) !important; text-transform:uppercase; letter-spacing:.1em; font-family:var(--display); font-weight:800; font-size:.74rem;
+  margin-right:10px; white-space:nowrap}
+.hdr__nav a.nav-main:hover,.sheet__nav a.nav-main:hover{background:var(--neo-face) !important; color:var(--neo-ink) !important; box-shadow:5px 5px 0 var(--neo-edge) !important; transform:translate(-1px,-1px)}
+.hdr__nav a.nav-main:active,.sheet__nav a.nav-main:active{transform:translate(4px,4px); box-shadow:0 0 0 var(--neo-edge) !important}
+.hdr__nav a.nav-main.is-active{box-shadow:4px 4px 0 var(--neo-edge) !important}
+.nav-main__dot{display:none}
+.nav-main span[aria-hidden]{font-size:1rem; opacity:.9}
+
+/* buttons on dark green panels: a white block, so they can be seen */
+.duo__c--dark .btn,.stat--accent .btn,.hx__cta--dark .btn,.cta-band .btn,.panel--dark .btn{background:#fff !important; color:#111 !important; border-color:#fff !important; box-shadow:5px 5px 0 var(--leaf) !important}
+.duo__c--dark .btn:hover,.stat--accent .btn:hover,.cta-band .btn:hover,.panel--dark .btn:hover{background:#fff !important; color:#111 !important; box-shadow:6px 6px 0 var(--leaf) !important}
+.duo__c--dark .btn:active,.stat--accent .btn:active,.cta-band .btn:active,.panel--dark .btn:active{transform:translate(5px,5px); box-shadow:0 0 0 var(--leaf) !important}
+.panel[style*="var(--crest)"] .btn,.panel[style*="var(--crest-d)"] .btn{background:#fff !important; color:#111 !important; border-color:#fff !important; box-shadow:5px 5px 0 var(--leaf) !important}
+.panel[style*="var(--crest)"] .btn:active{transform:translate(5px,5px); box-shadow:0 0 0 var(--leaf) !important}
+
+/* ---------- account menu (the avatar dropdown): NeoPOP blocks ---------- */
+.dropdown__menu{border:1px solid var(--ink); border-radius:0 !important; padding:12px; box-shadow:6px 6px 0 var(--leaf); display:flex; flex-direction:column; gap:8px; min-width:250px}
+.dropdown__menu[hidden]{display:none}
+.dropdown__head{padding:2px 2px 12px; margin:0; border-bottom:1px solid var(--line)}
+.dropdown__head strong{font-family:var(--display); font-weight:800; font-size:1.02rem}
+.dropdown__sep{display:none}
+.dropdown__menu a,.dropdown__menu button{font-family:var(--display); font-weight:700; font-size:.9rem; padding:10px 14px; border:1px solid var(--line) !important; border-radius:0 !important;
+  background:var(--surface); color:var(--ink); text-transform:none; transition:transform .09s ease, box-shadow .09s ease, border-color .15s}
+.dropdown__menu a:hover,.dropdown__menu button:hover{background:var(--surface); color:var(--ink); border-color:var(--ink) !important}
+.dropdown__menu a:active,.dropdown__menu button:active{transform:translate(2px,2px)}
+.dropdown__menu a[href="#/admin"]{border-color:var(--ink) !important}
+.dropdown__menu #logoutBtn{margin-top:4px; background:var(--neo-face); color:var(--neo-ink); border-color:var(--neo-face) !important; text-transform:uppercase; letter-spacing:.12em; font-weight:800; font-size:.78rem;
+  text-align:center; box-shadow:4px 4px 0 var(--neo-edge)}
+.dropdown__menu #logoutBtn:hover{background:var(--neo-face); color:var(--neo-ink); box-shadow:5px 5px 0 var(--neo-edge)}
+.dropdown__menu #logoutBtn:active{transform:translate(4px,4px); box-shadow:0 0 0 var(--neo-edge)}
+
+.dropdown__head span{text-transform:none; word-break:break-all}
+
+/* ---------- admin menu: still, NeoPOP blocks ----------
+   The menu used to stick to the screen and scroll inside itself, and the boxes lifted on hover, so the panels seemed to move around. Now they stay put and scroll with the page. */
+.adm-nav{position:static !important; max-height:none !important; overflow:visible !important; padding-right:0; gap:16px}
+.adm-box{padding:12px; border:1px solid var(--line); background:var(--surface); box-shadow:none; transform:none !important; display:flex; flex-direction:column; gap:8px}
+.adm-box__h{padding:2px 2px 6px; font-family:var(--display); letter-spacing:.14em; color:var(--muted)}
+.adm-tile{border:1px solid var(--line); padding:9px 12px; background:var(--surface); color:var(--ink); font-family:var(--display); font-weight:700; transform:none !important; transition:border-color .15s, box-shadow .09s}
+.adm-tile:hover{background:var(--surface); color:var(--ink); border-color:var(--ink); transform:none !important}
+.adm-tile__i{background:transparent; border:1px solid var(--ink); color:var(--ink)}
+.adm-tile.is-active{background:var(--neo-face); color:var(--neo-ink); border-color:var(--neo-face); box-shadow:4px 4px 0 var(--neo-edge)}
+.adm-tile.is-active .adm-tile__i{background:transparent; border-color:var(--neo-ink); color:var(--neo-ink)}
+.adm-tile__n{background:var(--warn); color:#111}
+.adm-q,.adm-q:hover{transform:none !important}
+.admin{align-items:start}
+.admin > div{min-width:0}

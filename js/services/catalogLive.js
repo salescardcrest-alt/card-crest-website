@@ -90,7 +90,7 @@
 
     /* called by sync.js for every admin edit of cards, stores and offers */
     push: function (op, col, row) {
-      if (!sb || !isAdmin()) return;
+      if (!sb || !(isAdmin() || (w.CC.Staff && w.CC.Staff.can(col)))) return;
       var kind = KIND[col], rec = op === 'remove' ? { kind: kind, id: row.id, data: {}, deleted: true } : { kind: kind, id: row.id, data: row, deleted: false };
       mine[kind + ':' + row.id] = Date.now();
       sb.from('catalog_items').upsert(rec, { onConflict: 'kind,id' }).then(function (r) {
