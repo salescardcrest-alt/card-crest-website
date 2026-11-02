@@ -263,3 +263,12 @@ html[data-theme="dark"] .hx__fb{background:#fff !important; color:#111 !importan
 @media (max-width:640px){
   .dropdown__menu,#bellMenu{position:fixed !important; left:12px !important; right:12px !important; top:calc(var(--hdr-h, 70px) + 8px) !important; width:auto !important; min-width:0 !important; max-width:none !important; max-height:calc(100vh - var(--hdr-h, 70px) - 24px); overflow-y:auto}
 }
+
+/* the words on the four floating tiles in the hero picture: the website's own heavy geometric type, not the picture's handwriting */
+.hx__lbl{position:absolute; transform:translate(-50%,-50%) rotate(var(--r,0deg)); font-family:var(--display); font-weight:800; font-size:27px; letter-spacing:.01em; line-height:1; color:#0a1f16; white-space:nowrap; text-transform:none}
+.hx__art{container-type:inline-size}
+.hx__lbl{font-size:2.05cqw}
+.hx__lbl:last-of-type{font-size:1.66cqw}
+
+/* the slanted green words in headlines overhang to the right, so a "?" or "." right after them looked glued on; give them room */
+.h-display em,.h1 em,.h2 em,h1 em,h2 em{padding-right:.14em; margin-right:.02em}

@@ -170,12 +170,12 @@
       '<section class="hx">' +
       '<div class="hx__top">' +
         '<div class="hx__art" role="img" aria-label="The Card Crest app on a phone in an airport lounge, with floating Lounge, Movies, Offers and Pay &amp; Earn tiles">' +
-          '<img class="hx__artimg" src="assets/hero/scene.jpg" width="1307" height="805" alt="" fetchpriority="high">' +
-          '<div class="hx__ovl" aria-hidden="true"><div class="hx__app">' + phoneApp(firstName) + '</div></div>' +
+          '<img class="hx__artimg" src="assets/hero/scene-clean.jpg" width="1307" height="805" alt="" fetchpriority="high">' +
+'<div class="hx__ovl" aria-hidden="true"><div class="hx__app">' + phoneApp(firstName) + '</div></div>' +          [['Lounge', 216, 307, -4], ['Movies', 150, 542, 10], ['Offers', 1041, 297, -8], ['Pay &amp; Earn', 1132, 480, 8]].map(function (l) {            return '<b class="hx__lbl" aria-hidden="true" style="left:' + (l[1] / 13.07).toFixed(2) + '%; top:' + (l[2] / 8.05).toFixed(2) + '%; --r:' + l[3] + 'deg">' + l[0] + '</b>';          }).join('') +
         '</div>' +
         '<div class="wrap hx__in">' +
           '<div class="hx__copy">' +
-            '<span class="hx__pill"><span class="dot"></span>More Spend. More Rewards.</span>' +
+            '<span class="hx__pill"><span class="dot"></span>Enjoy card perks, even without the card.</span>' +
             '<h1 class="hx__h">Get More Value From <br><em class="hx__rot" id="hxRot"><b>Swipe</b></em></h1>' +
             '<p class="hx__lede">Unlock airport lounges, movie tickets, cashback, exclusive offers and more — with the cards you already own.</p>' +
             '<div class="hx__cta">' +
